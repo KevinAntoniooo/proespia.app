@@ -1959,7 +1959,8 @@ def crear_notificacion(usuario_id, titulo, mensaje, url=None, tipo='info', envia
                     vapid_private_key=app.config['VAPID_PRIVATE_KEY'],
                     vapid_claims={'sub': app.config['VAPID_CLAIM_EMAIL']},
                     ttl=86400,
-                    timeout=5
+                    timeout=5,
+                    headers={'Urgency': 'high'}
                 )
                 print(f"[NOTIF] Push enviado OK: {s.endpoint[:30]}... status={resp.status_code}")
             except requests.Timeout:
@@ -2064,7 +2065,8 @@ def push_test():
                     vapid_private_key=app.config['VAPID_PRIVATE_KEY'],
                     vapid_claims={'sub': app.config['VAPID_CLAIM_EMAIL']},
                     ttl=86400,
-                    timeout=5
+                    timeout=5,
+                    headers={'Urgency': 'high'}
                 )
                 results.append({'endpoint': s.endpoint[:30], 'status': resp.status_code, 'ok': True})
             except requests.Timeout:
