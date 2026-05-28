@@ -1209,7 +1209,7 @@ def api_eventos_agenda():
             eventos.append({
                 'id': v.id,
                 'title': nom_cliente,
-                'start': v.fecha_programada.isoformat(),
+                'start': v.fecha_programada.strftime('%Y-%m-%d'),
                 'backgroundColor': color,
                 'borderColor': color,
                 'extendedProps': {
@@ -1219,7 +1219,7 @@ def api_eventos_agenda():
                     'estado': v.estado,
                     'descripcion': v.descripcion,
                     'ubicacion': v.ubicacion or '',
-                    'fecha': v.fecha_programada.isoformat(),
+                    'fecha': v.fecha_programada.strftime('%Y-%m-%d'),
                     'cliente_id': v.cliente_id,
                     'usuario_id': v.usuario_id
                 }

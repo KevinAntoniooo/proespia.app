@@ -900,7 +900,7 @@
     function abrirModalManual() {
         var fechaBase = document.getElementById('fechaSelector').value || new Date().toISOString().split('T')[0];
         var opciones = { day: 'numeric', month: 'long', year: 'numeric' };
-        var label = new Date(fechaBase + 'T00:00:00').toLocaleDateString('es-ES', opciones);
+        var label = new Date(fechaBase + 'T12:00:00').toLocaleDateString('es-ES', opciones);
         document.getElementById('fecha_modal_label').innerText = label;
         document.getElementById('input_fecha_base').value = fechaBase;
         toggleEquipos();
