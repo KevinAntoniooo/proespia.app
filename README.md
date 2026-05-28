@@ -58,4 +58,4 @@ with app.app_context():
 
 ## Licencia
 
-Uso interno — Proespia SpA
+Uso interno — Proespia Ltda.
