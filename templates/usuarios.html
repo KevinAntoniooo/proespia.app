@@ -241,7 +241,20 @@ function toggleUbicacionNuevo(select) {
     var tipoField = document.getElementById('tipoAsignacionNuevoField');
     var isTecnico = select.value === 'tecnico';
     field.style.display = isTecnico ? '' : 'none';
-    tipoField.style.display = isTecnico ? '' : 'none';
+    // tipo_asignacion solo si es técnico Y tiene vehículo seleccionado
+    if (isTecnico) {
+        var ubiSelect = field.querySelector('select[name="ubicacion_id"]');
+        if (ubiSelect) {
+            ubiSelect.onchange = function() {
+                tipoField.style.display = this.value ? '' : 'none';
+            };
+            tipoField.style.display = ubiSelect.value ? '' : 'none';
+        } else {
+            tipoField.style.display = 'none';
+        }
+    } else {
+        tipoField.style.display = 'none';
+    }
 }
 
 function toggleUbicacionEdit(select, userId) {
@@ -249,7 +262,20 @@ function toggleUbicacionEdit(select, userId) {
     var tipoField = document.getElementById('tipoAsignacionEditField' + userId);
     var isTecnico = select.value === 'tecnico';
     field.style.display = isTecnico ? '' : 'none';
-    tipoField.style.display = isTecnico ? '' : 'none';
+    // tipo_asignacion solo si es técnico Y tiene vehículo seleccionado
+    if (isTecnico) {
+        var ubiSelect = field.querySelector('select[name="ubicacion_id"]');
+        if (ubiSelect) {
+            ubiSelect.onchange = function() {
+                tipoField.style.display = this.value ? '' : 'none';
+            };
+            tipoField.style.display = ubiSelect.value ? '' : 'none';
+        } else {
+            tipoField.style.display = 'none';
+        }
+    } else {
+        tipoField.style.display = 'none';
+    }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
