@@ -19,16 +19,13 @@ from base64 import b64encode, b64decode
 # 0. CONFIGURACIÓN E INICIALIZACIÓN DE LA APP
 # ==========================================
 # Configura el sistema en español para las fechas (Chile o estándar)
-try:
-    locale.setlocale(locale.LC_TIME, 'es_CL.UTF-8') # Para servidores Linux / macOS / Render
-except locale.Error:
+# Configura el sistema en español para las fechas (fallback silencioso si no hay locale)
+for _locale in ['es_CL.UTF-8', 'es_CL', 'Spanish_Chile.1252', 'en_US.UTF-8', '']:
     try:
-        locale.setlocale(locale.LC_TIME, 'es_CL') # Alternativa
+        locale.setlocale(locale.LC_TIME, _locale)
+        break
     except locale.Error:
-        try:
-            locale.setlocale(locale.LC_TIME, 'Spanish_Chile.1252') # Para tu PC con Windows local
-        except locale.Error:
-            locale.setlocale(locale.LC_TIME, 'en_US.UTF-8') # Fallback universal
+        continue
 app = Flask(__name__) # <--- PRIMERO CREAMOS LA APP
 # PostgreSQL for production (Render), SQLite for local dev
 _db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
@@ -2087,8 +2084,9 @@ def eliminar_notificacion():
 # ==========================================
 # 12. EJECUCIÓN DE LA APLICACIÓN
 # ==========================================
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
