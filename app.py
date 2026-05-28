@@ -2086,6 +2086,12 @@ def eliminar_notificacion():
 # ==========================================
 with app.app_context():
     db.create_all()
+    # Migrar columna password a 255 chars si es necesario
+    try:
+        db.session.execute(db.text('ALTER TABLE usuario ALTER COLUMN password TYPE VARCHAR(255)'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     # Crear admin por defecto si no hay usuarios
     if not Usuario.query.first():
         admin = Usuario(username='admin', rol='admin')

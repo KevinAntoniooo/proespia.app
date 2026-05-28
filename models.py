@@ -23,7 +23,7 @@ class Usuario(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
     username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
     rol = db.Column(db.String(20), default='tecnico')
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion_bodega.id'), nullable=True)
     tipo_asignacion = db.Column(db.String(20), default='acompanante')  # 'a_cargo' o 'acompanante'
