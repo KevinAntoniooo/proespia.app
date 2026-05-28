@@ -1,4 +1,4 @@
-const CACHE_NAME = 'proespia-v6';
+const CACHE_NAME = 'proespia-v7';
 const urlsToCache = [
   '/static/manifest.json',
   '/static/icons/icon-192x192.png',
