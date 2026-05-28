@@ -9,3 +9,20 @@ instance/
 dist/
 build/
 tmp_*.py
+
+# OpenCode / agentes
+.agents/
+.opencode/
+AGENTS.md
+skills-lock.json
+
+# Scripts locales
+crear_admin.py
+crear_bodega.py
+crear_sedes.py
+crear_vehiculos.py
+crear_herramientas.py
+
+# Referencias / backups
+adminator_reference.html
+static/css/style copy.css
