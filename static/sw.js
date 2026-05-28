@@ -1,4 +1,4 @@
-const CACHE_NAME = 'proespia-v8';
+const CACHE_NAME = 'proespia-v9';
 const urlsToCache = [
   '/static/manifest.json',
   '/static/icons/icon-192x192.png',
@@ -107,10 +107,12 @@ self.addEventListener('fetch', function(event) {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).then(function(networkResponse) {
-        var cacheClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, cacheClone);
-        });
+        if (event.request.method === 'GET') {
+          var cacheClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(event.request, cacheClone);
+          });
+        }
         return networkResponse;
       }).catch(function() {
         return caches.match(event.request).then(function(cached) {
