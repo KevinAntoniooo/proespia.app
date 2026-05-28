@@ -2086,6 +2086,13 @@ def eliminar_notificacion():
 # ==========================================
 with app.app_context():
     db.create_all()
+    # Crear admin por defecto si no hay usuarios
+    if not Usuario.query.first():
+        admin = Usuario(username='admin', rol='admin')
+        admin.set_password('123')
+        db.session.add(admin)
+        db.session.commit()
+        print('Admin por defecto creado: admin / 123')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
