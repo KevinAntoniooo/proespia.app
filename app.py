@@ -25,7 +25,10 @@ except locale.Error:
     try:
         locale.setlocale(locale.LC_TIME, 'es_CL') # Alternativa
     except locale.Error:
-        locale.setlocale(locale.LC_TIME, 'Spanish_Chile.1252') # Para tu PC con Windows local
+        try:
+            locale.setlocale(locale.LC_TIME, 'Spanish_Chile.1252') # Para tu PC con Windows local
+        except locale.Error:
+            locale.setlocale(locale.LC_TIME, 'en_US.UTF-8') # Fallback universal
 app = Flask(__name__) # <--- PRIMERO CREAMOS LA APP
 # PostgreSQL for production (Render), SQLite for local dev
 _db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
