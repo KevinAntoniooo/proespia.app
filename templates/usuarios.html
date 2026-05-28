@@ -115,14 +115,14 @@
                         </select>
                     </div>
                     <div class="mb-3 ubicacion-field" id="ubicacionEditField{{ u.id }}">
-                        <label class="form-label fw-bold">Ubicación de Stock <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">Ubicación de Stock</label>
                         <select name="ubicacion_id" class="form-select">
-                            <option value="">Seleccionar vehículo...</option>
+                            <option value="">Sin vehículo</option>
                             {% for loc in ubicaciones %}
                             <option value="{{ loc.id }}" {% if u.ubicacion_id == loc.id %}selected{% endif %}>{{ loc.nombre }}</option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Vehículo al que pertenece este técnico.</small>
+                        <small class="text-muted">Opcional. Vehículo al que pertenece este técnico.</small>
                     </div>
                     <div class="mb-3 ubicacion-field" id="tipoAsignacionEditField{{ u.id }}">
                         <label class="form-label fw-bold">Tipo de Asignación</label>
@@ -194,14 +194,14 @@
                         </select>
                     </div>
                     <div class="mb-3 ubicacion-field" id="ubicacionNuevoField">
-                        <label class="form-label fw-bold">Ubicación de Stock <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">Ubicación de Stock</label>
                         <select name="ubicacion_id" class="form-select">
-                            <option value="">Seleccionar vehículo...</option>
+                            <option value="">Sin vehículo</option>
                             {% for loc in ubicaciones %}
                             <option value="{{ loc.id }}">{{ loc.nombre }}</option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Vehículo al que pertenece este técnico.</small>
+                        <small class="text-muted">Opcional. Vehículo al que pertenece este técnico.</small>
                     </div>
                     <div class="mb-3 ubicacion-field" id="tipoAsignacionNuevoField">
                         <label class="form-label fw-bold">Tipo de Asignación</label>
@@ -242,8 +242,6 @@ function toggleUbicacionNuevo(select) {
     var isTecnico = select.value === 'tecnico';
     field.style.display = isTecnico ? '' : 'none';
     tipoField.style.display = isTecnico ? '' : 'none';
-    if (isTecnico) field.querySelector('select').setAttribute('required', '');
-    else field.querySelector('select').removeAttribute('required');
 }
 
 function toggleUbicacionEdit(select, userId) {
@@ -252,8 +250,6 @@ function toggleUbicacionEdit(select, userId) {
     var isTecnico = select.value === 'tecnico';
     field.style.display = isTecnico ? '' : 'none';
     tipoField.style.display = isTecnico ? '' : 'none';
-    if (isTecnico) field.querySelector('select').setAttribute('required', '');
-    else field.querySelector('select').removeAttribute('required');
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -826,11 +826,6 @@ def gestionar_usuarios(user_id):
         password_plana = request.form.get('password')
         tipo_asignacion = request.form.get('tipo_asignacion', 'acompanante')
 
-        # Validar: técnico debe tener vehículo asignado
-        if rol == 'tecnico' and not ubicacion_id:
-            flash('Un técnico debe tener un vehículo asignado (a cargo o acompañante).', 'danger')
-            return redirect(url_for('gestionar_usuarios', user_id=user_id))
-
         try:
             nuevo = Usuario(
                 nombre=nombre,
@@ -875,11 +870,6 @@ def actualizar_usuario_completo(target_id, admin_id):
     nueva_pass = request.form.get('password')
     nueva_ubicacion_id = request.form.get('ubicacion_id') or None
     nuevo_tipo = request.form.get('tipo_asignacion', 'acompanante')
-
-    # Validar: técnico debe tener vehículo asignado
-    if nuevo_rol == 'tecnico' and not nueva_ubicacion_id:
-        flash('Un técnico debe tener un vehículo asignado (a cargo o acompañante).', 'danger')
-        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
     # 2. VALIDACIÓN DE DUPLICADOS
     conflicto = Usuario.query.filter(
