@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-warning">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Nueva Entrada de Bitácora</h3>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Sede / Cliente Relacionado</label>
+                        <select name="cliente_id" class="form-select" required>
+                            {% for cliente in clientes %}
+                            <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción del Suceso</label>
+                        <textarea name="suceso" class="form-control" rows="4" placeholder="Ej: Se recibe señal de pánico, se contacta a plan cuadrante..."></textarea>
+                    </div>
+                    <input type="hidden" name="usuario_id" value="{{ usuario_id }}">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning">Guardar en Libro</button>
+                        <a href="javascript:history.back()" class="btn btn-light">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

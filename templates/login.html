@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content_login %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center p-3 p-md-4" style="background:linear-gradient(135deg,rgba(2,6,23,0.85),rgba(15,23,42,0.7)),url('{{ url_for('static', filename='img/bg-login.png') }}') center/cover no-repeat fixed;">
+    <div class="card border-0 shadow-lg animate-in" style="max-width:420px;width:100%;border-radius:24px;backdrop-filter:blur(20px);background:rgba(255,255,255,0.96);">
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 position-relative" style="width:80px;height:80px;background:linear-gradient(135deg,#dc2626,#991b1b);box-shadow:0 0 30px rgba(220,38,38,0.25);">
+                    <i class="fa-solid fa-shield-halved text-white fa-2x"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success border border-2 border-white" style="font-size:0.55rem;padding:0.3em 0.45em;">v2</span>
+                </div>
+                <h3 class="fw-bold mb-0 heading-font" style="color:#0f172a;letter-spacing:-0.5px;">PRO ESPÍA</h3>
+                <p class="small mt-1" style="color:#64748b;">Central de monitoreo y seguridad</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' }} py-2 px-3 rounded-3 small mb-3 text-start" role="alert">
+                  <i class="fa-solid {{ 'fa-circle-exclamation' if category == 'error' or category == 'warning' else 'fa-circle-check' }} me-1"></i>
+                  {{ message }}
+              </div>
+              {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" aria-label="Formulario de inicio de sesión">
+                <div class="mb-3">
+                    <label for="login-usuario" class="form-label small fw-semibold" style="color:#334155;">Usuario</label>
+                    <div class="input-group">
+                        <span class="input-group-text border-end-0" aria-hidden="true" style="background:#f8fafc;"><i class="fa-solid fa-user text-muted"></i></span>
+                        <input type="text" id="login-usuario" name="usuario" class="form-control border-start-0 ps-0" placeholder="Tu usuario" required autocomplete="username" style="border-left:none;background:#f8fafc;">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="login-password" class="form-label small fw-semibold" style="color:#334155;">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text border-end-0" aria-hidden="true" style="background:#f8fafc;"><i class="fa-solid fa-lock text-muted"></i></span>
+                        <input type="password" id="login-password" name="password" class="form-control border-start-0 ps-0" placeholder="••••••••" required autocomplete="current-password" style="border-left:none;background:#f8fafc;">
+                    </div>
+                </div>
+                <div class="mb-3 d-flex align-items-center">
+                    <input type="checkbox" name="remember" id="remember" class="form-check-input me-2" style="border-radius:4px;cursor:pointer;border-color:#cbd5e1;">
+                    <label for="remember" class="form-check-label small" style="color:#64748b;cursor:pointer;user-select:none;">Recordarme en este equipo</label>
+                </div>
+                <button type="submit" class="btn btn-lg w-100 fw-bold border-0 mt-1" style="border-radius:12px;padding:12px 16px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(220,38,38,0.3);">
+                    <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Acceder al Sistema
+                </button>
+            </form>
+
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-4 pt-3 border-top">
+                <button type="button" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#resetModal" style="color:#64748b;border:1px solid #e2e8f0;border-radius:20px;padding:6px 18px;font-size:0.8rem;">
+                    <i class="fa-solid fa-shield me-1"></i>Problemas de acceso
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-3">
+                <small class="d-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.65rem;">
+                    <i class="fa-solid fa-lock" style="font-size:0.5rem;"></i> Conexión segura
+                </small>
+                <small class="d-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.65rem;">
+                    <i class="fa-solid fa-shield" style="font-size:0.5rem;"></i> Datos cifrados
+                </small>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="resetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-body text-center p-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width:60px;height:60px;background:#fffbeb;">
+                    <i class="fa-solid fa-shield-halved" style="color:#f59e0b;font-size:1.5rem;"></i>
+                </div>
+                <h5 class="fw-bold heading-font">Restablecer Acceso</h5>
+                <p class="text-muted small mb-3">Contacta al administrador del sistema para restablecer tu acceso.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="#" class="btn btn-sm btn-success rounded-pill px-4"><i class="fa-brands fa-whatsapp me-2"></i>WhatsApp</a>
+                    <button class="btn btn-sm btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+if (!(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)) {
+    var loginDeferredPrompt = null;
+    var loginContainer = document.getElementById('installLoginContainer');
+    if (loginContainer) loginContainer.classList.remove('d-none');
+{% endblock %}

@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check me-2"></i>Gestor de Tareas</h2>
+        <div class="text-end">
+            <span class="badge bg-danger px-3 shadow-sm rounded-2">Pendientes: {{ tareas|selectattr('fecha_resolucion', 'none')|list|length }}</span>
+            <span class="badge bg-dark px-3 shadow-sm rounded-2">Total: {{ tareas|length }}</span>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-2 p-md-3">
+            <form method="GET" action="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="row g-2 g-md-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Filtrar por:</label>
+                    <select name="tipo_fecha" class="form-select form-select-sm rounded-3 border-primary">
+                        <option value="reporte" {% if request.args.get('tipo_fecha') == 'reporte' %}selected{% endif %}>Fecha de Reporte</option>
+                        <option value="resolucion" {% if request.args.get('tipo_fecha') == 'resolucion' %}selected{% endif %}>Fecha de Resolución</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
+                    <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_inicio', '') }}" placeholder="dd/mm/aaaa">
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Hasta:</label>
+                    <input type="date" name="fecha_fin" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_fin', '') }}" placeholder="dd/mm/aaaa">
+                </div>
+                <div class="col-12 col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm">
+                        <i class="fa-solid fa-filter me-1"></i>Filtrar
+                    </button>
+                    <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="btn btn-light btn-sm rounded-3 border w-100 shadow-sm">
+                        <i class="fa-solid fa-eraser me-1"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4"><span class="d-none d-md-inline">Prioridad / </span>Estado</th>
+                        <th>Sede / Cliente</th>
+                        <th>Reporte</th>
+                        <th>Resolución</th>
+                        <th class="d-none d-md-table-cell">Descripción</th>
+                        <th class="d-none d-md-table-cell text-center pe-4">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ns = namespace(mostro_resueltos=false) %}
+                    
+                    {% for t in tareas %}
+                        
+                        {# Fila separadora para el historial #}
+                        {% if t.fecha_resolucion and not ns.mostro_resueltos %}
+                            <tr class="bg-light shadow-sm">
+                                <td colspan="6" class="py-2 text-center">
+                                    <span class="badge bg-secondary opacity-50 small text-uppercase" style="letter-spacing: 1px;">
+                                        <i class="fa-solid fa-clock-rotate-left me-1"></i> Historial de Tareas Finalizadas
+                                    </span>
+                                </td>
+                            </tr>
+                            {% set ns.mostro_resueltos = true %}
+                        {% endif %}
+
+                        <tr class="{% if not t.fecha_resolucion %}{% if t.prioridad == 1 %}table-danger-subtle border-start border-danger border-4{% else %}table-warning-subtle{% endif %}{% endif %}" style="cursor:pointer;" onclick="verDetalleFalla(this)" data-id="{{ t.id }}" data-resuelto="{{ '1' if t.fecha_resolucion else '0' }}" data-descripcion="{{ t.descripcion|e }}" data-informe="{{ t.informe_tecnico|e if t.informe_tecnico else '' }}" data-sede="{{ t.rel_cliente.nombre|e }}" data-estado="{% if not t.fecha_resolucion %}{% if t.prioridad == 1 %}CRÍTICA{% elif t.prioridad == 2 %}ALTA{% else %}MEDIA{% endif %}{% else %}RESUELTO{% endif %}">
+                            <td class="ps-4">
+                                {% if not t.fecha_resolucion %}
+                                    {% if t.prioridad == 1 %}
+                                        <div class="d-flex flex-column align-items-start">
+                                            <span class="badge bg-danger shadow-sm animate__animated animate__flash animate__infinite">
+                                                <i class="fa-solid fa-triangle-exclamation"></i><span class="d-none d-md-inline ms-1">CRÍTICA</span>
+                                            </span>
+                                            <small class="text-danger fw-bold mt-1 d-none d-md-block" style="font-size: 0.6rem;">EMERGENCIA</small>
+                                        </div>
+                                    {% elif t.prioridad == 2 %}
+                                        <span class="badge bg-warning text-dark shadow-sm">
+                                            <i class="fa-solid fa-bolt"></i><span class="d-none d-md-inline ms-1">ALTA</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-primary shadow-sm">
+                                            <i class="fa-solid fa-clock"></i><span class="d-none d-md-inline ms-1">MEDIA</span>
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-success opacity-75">
+                                        <i class="fa-solid fa-check-double"></i><span class="d-none d-md-inline ms-1">RESUELTO</span>
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark cliente-nombre-sm">{{ t.rel_cliente.nombre }}</div>
+                                <small class="text-muted text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.5px;">{{ t.tipo_visita }}</small>
+                            </td>
+                            <td class="small text-muted">
+                                <i class="fa-regular fa-calendar-plus me-1"></i>{{ t.fecha.strftime('%d/%m/%Y') }}<br>
+                                <i class="fa-regular fa-clock me-1"></i>{{ t.fecha.strftime('%H:%M') }}
+                            </td>
+                            <td class="small text-muted">
+                                {% if t.fecha_resolucion %}
+                                    <i class="fa-regular fa-calendar-check me-1 text-success"></i>{{ t.fecha_resolucion.strftime('%d/%m/%Y') }}<br>
+                                    <i class="fa-regular fa-clock me-1 text-success"></i>{{ t.fecha_resolucion.strftime('%H:%M') }}
+                                {% else %}
+                                    <span class="text-muted opacity-50">---</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-md-table-cell">
+                                <div class="text-truncate small text-dark" style="max-width: 250px;" title="{{ t.descripcion }}">
+                                    {{ t.descripcion }}
+                                </div>
+                            </td>
+                            <td class="d-none d-md-table-cell text-center pe-4">
+                                {% if not t.fecha_resolucion %}
+                                    <a href="{{ url_for('completar_tarea', log_id=t.id, user_id=usuario.id) }}" 
+                                        class="btn btn-sm {% if t.prioridad == 1 %}btn-danger animate__animated animate__pulse animate__infinite{% else %}btn-primary{% endif %} shadow-sm fw-bold"
+                                        style="font-size:0.85rem;"
+                                        onclick="event.stopPropagation();">
+                                        <i class="fa-solid fa-wrench me-1"></i>Gestionar
+                                    </a>
+                                {% else %}
+                                    <button type="button" 
+                                            onclick="event.stopPropagation(); verDetalleInforme({{ t.id|tojson }})" 
+                                            class="btn btn-sm btn-outline-secondary shadow-sm fw-bold"
+                                            style="font-size:0.85rem;">
+                                        <i class="fa-solid fa-eye me-1"></i> Ver Informe
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if paginacion %}
+    <nav aria-label="Navegación de tareas" class="mt-4">
+        <ul class="pagination justify-content-center shadow-sm">
+            
+            {# Botón Anterior #}
+            <li class="page-item {{ 'disabled' if not paginacion.has_prev }}">
+                <a class="page-link rounded-start-pill px-3" 
+                   href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id, page=paginacion.prev_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) if paginacion.has_prev else '#' }}">
+                    <i class="fa-solid fa-chevron-left me-1"></i>Anterior
+                </a>
+            </li>
+
+            {# Números de Página #}
+            {% for p in paginacion.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    <li class="page-item {{ 'active' if p == paginacion.page }}">
+                        <a class="page-link" href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id, page=p, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) }}">{{ p }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+
+            {# Botón Siguiente #}
+            <li class="page-item {{ 'disabled' if not paginacion.has_next }}">
+                <a class="page-link rounded-end-pill px-3" 
+                   href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id, page=paginacion.next_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) if paginacion.has_next else '#' }}">
+                    Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="modalVerInforme" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-file-invoice me-2 text-success"></i>Detalles del Informe Técnico</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold text-uppercase">Sede / Cliente</label>
+                            <p id="modal-sede" class="fw-bold text-dark mb-0"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold text-uppercase">Problema Inicial</label>
+                            <p id="modal-problema" class="small text-muted mb-0"></p>
+                        </div>
+                        <hr class="opacity-10">
+                        <div class="mb-3">
+                            <label class="small text-success fw-bold text-uppercase">Solución Técnico</label>
+                            <p id="modal-informe" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light"></p>
+                        </div>
+                        <div class="small text-muted mt-4">
+                            <i class="fa-regular fa-calendar-check me-1"></i> Finalizado el: <span id="modal-fecha"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <label class="small text-muted fw-bold text-uppercase d-block mb-2">Evidencia Fotográfica</label>
+                        <div class="rounded-3 border overflow-hidden bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                            <img id="modal-foto" src="" class="img-fluid" style="max-height: 100%; display: none;">
+                            <div id="modal-sin-foto" class="text-muted small">
+                                <i class="fa-solid fa-camera fa-2x mb-2 opacity-25"></i><br>Sin evidencia adjunta
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cerrar</button>
+                <a id="modal-btn-pdf" href="#" target="_blank" class="btn btn-danger shadow-sm btn-sm fw-bold" style="font-size:0.85rem;">
+                    <i class="fa-solid fa-file-pdf me-2"></i>Descargar PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleFalla" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-bug me-2 text-danger"></i>Detalle de Falla</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Sede / Cliente</label>
+                    <p id="falla-sede" class="fw-bold text-dark mb-0"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Prioridad / Estado</label>
+                    <p id="falla-estado" class="fw-bold text-dark mb-0"></p>
+                </div>
+                <hr class="opacity-10">
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Descripción</label>
+                    <p id="falla-descripcion" class="text-dark mb-0"></p>
+                </div>
+                <hr class="opacity-10">
+                <div class="mb-3">
+                    <label class="small text-success fw-bold text-uppercase">Resolución</label>
+                    <p id="falla-resolucion" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light"></p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <a id="btn-gestionar-falla" href="#" class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;">
+                    <i class="fa-solid fa-wrench me-2"></i>Gestionar
+                </a>
+                <button id="btn-informe-falla" type="button" class="btn btn-outline-dark shadow-sm btn-sm fw-bold" style="font-size:0.85rem; display:none;">
+                    <i class="fa-solid fa-eye me-2"></i> Ver Informe
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-warning-subtle { background-color: rgba(255, 193, 7, 0.05); }
+    .table-danger-subtle { background-color: rgba(220, 53, 69, 0.05) !important; }
+    .table-hover tbody tr:hover { background-color: rgba(0,0,0,0.02); }
+    /* Estilo extra para la paginación */
+    .pagination .page-link { color: #333; border: none; margin: 0 2px; }
+    .pagination .page-item.active .page-link { background-color: #0d6efd; color: white; border-radius: 5px; }
+</style>
+
+<script>
+function verDetalleFalla(row) {
+    document.getElementById('falla-sede').innerText = row.dataset.sede || '---';
+    document.getElementById('falla-estado').innerText = row.dataset.estado || '---';
+    document.getElementById('falla-descripcion').innerText = row.dataset.descripcion || '---';
+    document.getElementById('falla-resolucion').innerText = row.dataset.informe || 'Pendiente de resolución';
+    var btnGestionar = document.getElementById('btn-gestionar-falla');
+    var btnInforme = document.getElementById('btn-informe-falla');
+    var logId = row.dataset.id;
+    if (row.dataset.resuelto === '1') {
+        btnGestionar.style.display = 'none';
+        btnInforme.style.display = 'inline-flex';
+        btnInforme.onclick = function(e) {
+            e.stopPropagation();
+            var m = bootstrap.Modal.getInstance(document.getElementById('modalDetalleFalla'));
+            if (m) m.hide();
+            verDetalleInforme(parseInt(logId));
+        };
+    } else {
+        btnGestionar.style.display = 'inline-flex';
+        btnInforme.style.display = 'none';
+        btnGestionar.href = '/completar_tarea/' + logId + '/' + {{ usuario.id }};
+    }
+    var modal = new bootstrap.Modal(document.getElementById('modalDetalleFalla'));
+    modal.show();
+}
+
+function verDetalleInforme(logId) {
+    fetch('/api/tarea_detalle/' + logId)
+        .then(response => {
+            if (!response.ok) throw new Error('Error al obtener datos');
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('modal-sede').innerText = data.sede || "---";
+            document.getElementById('modal-problema').innerText = data.problema || "---";
+            document.getElementById('modal-informe').innerText = data.informe || "Sin detalle técnico.";
+            document.getElementById('modal-fecha').innerText = data.fecha_resolucion || "---";
+
+            const imgElement = document.getElementById('modal-foto');
+            const sinFotoDiv = document.getElementById('modal-sin-foto');
+            
+            if (data.foto) {
+                imgElement.src = '/static/uploads/' + data.foto;
+                imgElement.style.display = "block";
+                sinFotoDiv.style.display = "none";
+            } else {
+                imgElement.src = "";
+                imgElement.style.display = "none";
+                sinFotoDiv.style.display = "block";
+            }
+
+            const btnPdf = document.getElementById('modal-btn-pdf');
+            if (data.usuario_id) {
+                btnPdf.href = `/reporte_falla_pdf/${logId}/${data.usuario_id}`;
+                btnPdf.style.display = "inline-block";
+            } else {
+                btnPdf.style.display = "none";
+            }
+
+            const modalElement = document.getElementById('modalVerInforme');
+            let myModal = bootstrap.Modal.getInstance(modalElement);
+            if (!myModal) myModal = new bootstrap.Modal(modalElement);
+            myModal.show();
+        })
+        .catch(err => alert("Error al cargar informe."));
+}
+</script>
+<style>
+@media (max-width: 767px) {
+    .table td:first-child, .table th:first-child { padding-left: 0.5rem !important; }
+    .table td:first-child .badge { font-size: 1rem; padding: 0.4rem 0.5rem; }
+    .table td:first-child .badge i { font-size: 1.2rem; }
+    .table thead th:first-child { font-size: 0.7rem; white-space: nowrap; }
+    #modalDetalleFalla .modal-body { font-size: 0.88rem; }
+    #modalDetalleFalla .modal-body label { font-size: 0.65rem; }
+}
+</style>
+{% endblock %}

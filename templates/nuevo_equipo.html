@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Registrar Nuevo Equipo</h3>
+                <form method="POST" id="formEquipo">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label">Sede / Cliente</label>
+                        <input type="text" id="buscarCliente" class="form-control" placeholder="Escriba el nombre del cliente..." autocomplete="off" required>
+                        <input type="hidden" name="cliente_id" id="cliente_id_hidden" value="">
+                        <div id="listaClientes" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                        <label class="form-label">Tipo de Equipo</label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="" selected disabled>Seleccione el tipo...</option>
+                                <option value="NVR">NVR</option>
+                                <option value="DVR">DVR</option>
+                                <option value="Cámara IP">Cámara IP</option>
+                                <option value="Cámara Análoga">Cámara Análoga</option>
+                                <option value="Switch PoE">Switch PoE</option>
+                                <option value="Panel de Alarma">Panel de Alarma</option>
+                                <option value="Radio Enlace">Radio Enlace</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Dirección IP</label>
+                            <input type="text" name="ip" class="form-control" placeholder="192.168.1.100">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                    <label class="form-label">Número de Serie (S/N)</label>
+                        <input type="text" 
+                            name="serie" 
+                            class="form-control" 
+                            placeholder="Ej: SN123456ABC"
+                            required 
+                            pattern="[A-Za-z0-9]+" 
+                            title="Solo se permiten letras y números"
+                            oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Usuario Acceso</label>
+                            <input type="text" name="usuario_equipo" class="form-control" placeholder="admin">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contraseña Acceso</label>
+                            <input type="text" name="pass_equipo" class="form-control" placeholder="*******">
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Guardar Equipo</button>
+                        <a href="/equipos/{{ usuario.id }}" class="btn btn-light">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalClienteNoExiste" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body text-center p-4">
+                <div class="text-warning mb-3">
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Cliente no registrado</h5>
+                <p class="text-muted small mb-3">El cliente que escribió no existe en el sistema. Verifique el nombre o regístrelo primero.</p>
+                <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var clientes = {{ clientes|tojson|safe }};
+
+clientes.sort(function(a, b) {
+    return a.nombre.localeCompare(b.nombre, 'es');
+});
+
+var inputBuscar = document.getElementById('buscarCliente');
+var hiddenId = document.getElementById('cliente_id_hidden');
+var lista = document.getElementById('listaClientes');
+
+function renderizarLista(items) {
+    lista.innerHTML = '';
+    if (items.length === 0) {
+        lista.classList.add('d-none');
+        return;
+    }
+    items.forEach(function(c) {
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'list-group-item list-group-item-action py-2';
+        item.textContent = c.nombre;
+        item.addEventListener('click', function() {
+            inputBuscar.value = c.nombre;
+            hiddenId.value = c.id;
+            lista.classList.add('d-none');
+        });
+        lista.appendChild(item);
+    });
+    lista.classList.remove('d-none');
+}
+
+inputBuscar.addEventListener('focus', function() {
+    renderizarLista(clientes);
+});
+
+inputBuscar.addEventListener('blur', function() {
+    setTimeout(function() {
+        var texto = inputBuscar.value.trim();
+        for (var i = 0; i < clientes.length; i++) {
+            if (clientes[i].nombre.toLowerCase() === texto.toLowerCase()) {
+                hiddenId.value = clientes[i].id;
+                break;
+            }
+        }
+    }, 200);
+});
+
+inputBuscar.addEventListener('input', function() {
+    hiddenId.value = '';
+
+    var texto = this.value.trim().toLowerCase();
+    var filtrados = texto.length === 0
+        ? clientes
+        : clientes.filter(function(c) {
+            return c.nombre.toLowerCase().includes(texto);
+        });
+
+    renderizarLista(filtrados);
+});
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.position-relative')) {
+        lista.classList.add('d-none');
+    }
+});
+
+document.getElementById('formEquipo').addEventListener('submit', function(e) {
+    var texto = inputBuscar.value.trim();
+    var match = null;
+    for (var i = 0; i < clientes.length; i++) {
+        if (clientes[i].nombre.toLowerCase() === texto.toLowerCase()) {
+            match = clientes[i];
+            break;
+        }
+    }
+    if (!match) {
+        e.preventDefault();
+        var modal = new bootstrap.Modal(document.getElementById('modalClienteNoExiste'));
+        modal.show();
+    } else {
+        hiddenId.value = match.id;
+    }
+});
+</script>
+{% endblock %}

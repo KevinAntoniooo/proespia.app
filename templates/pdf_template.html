@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .info { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PROESPIA - Reporte Técnico</h1>
+        <p>Fecha de emisión: {{ now.strftime('%d/%m/%Y %H:%M') }}</p>
+    </div>
+    
+    <div class="info">
+        <h3>Datos del Cliente</h3>
+        <p><strong>Nombre:</strong> {{ cliente.nombre }}</p>
+        <p><strong>Dirección:</strong> {{ cliente.direccion }}</p>
+        <p><strong>Plan Cuadrante:</strong> {{ cliente.plan_cuadrante }}</p>
+    </div>
+
+    <h3>Inventario de Equipos</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Tipo</th>
+                <th>S/N (Serie)</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in cliente.equipos %}
+            <tr>
+                <td>{{ e.tipo }}</td>
+                <td>{{ e.serie }}</td>
+                <td>{{ e.ip }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

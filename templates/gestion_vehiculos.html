@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-truck me-2"></i>Gestión de Vehículos</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoVehiculo">
+            <i class="fa-solid fa-plus me-1"></i>Nuevo Vehículo
+        </button>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Placa</th>
+                    <th class="d-none d-md-table-cell">Modelo</th>
+                    <th>Checklist</th>
+                    <th>Ubicación (Stock)</th>
+                    <th class="d-none d-lg-table-cell">Técnico(s) Asignado(s)</th>
+                    <th class="d-none d-md-table-cell text-center">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vehiculos %}
+                    <tr class="align-middle" data-vehiculo-id="{{ v.id }}" onclick="verDetalleVehiculo(this)">
+                        <td class="fw-semibold text-dark">{{ v.placa }}</td>
+                        <td class="d-none d-md-table-cell">{{ v.modelo or '—' }}</td>
+                        <td><span class="badge bg-info bg-opacity-10 text-info rounded-pill">{% set dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] %}{{ dias[v.dia_checklist] if v.dia_checklist is not none else '—' }}</span></td>
+                        <td><span class="badge bg-warning bg-opacity-10 text-warning rounded-pill">{{ v.rel_ubicacion.nombre if v.rel_ubicacion else '—' }}</span></td>
+                        <td class="d-none d-lg-table-cell">
+                            {% set tecnicos_asignados = tecnicos|selectattr('ubicacion_id', 'equalto', v.ubicacion_id)|list %}
+                            {% if tecnicos_asignados %}
+                            <div class="d-flex flex-column gap-1">
+                                {% for t in tecnicos_asignados %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill text-start d-flex align-items-center gap-1">
+                                    <i class="fa-solid fa-user fa-xs"></i>{{ t.nombre }}
+                                    {% if t.tipo_asignacion == 'a_cargo' %}
+                                    <span class="badge bg-success border border-success border-opacity-25 rounded-pill ms-auto" style="font-size:0.5rem;">Encargado</span>
+                                    {% else %}
+                                    <span class="badge bg-info border border-info border-opacity-25 rounded-pill ms-auto" style="font-size:0.5rem;">Acompañante</span>
+                                    {% endif %}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell text-center">
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                <button class="btn btn-outline-secondary" onclick="verHistorial({{ v.id }})" title="Historial de Checks">
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
+                                </button>
+                                <a href="/checklist/vehiculo/{{ v.id }}" class="btn btn-outline-success" title="Hacer Checklist">
+                                    <i class="fa-solid fa-clipboard-check"></i>
+                                </a>
+                                <button class="btn btn-outline-primary" onclick="gestionarHerramientas({{ v.id }})" title="Herramientas">
+                                    <i class="fa-solid fa-toolbox"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarVehiculo{{ v.id }}" title="Editar">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="eliminarVehiculo({{ v.id }})" title="Eliminar">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-truck fs-1 mb-3 d-block"></i>
+                            No hay vehículos registrados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+</div>
+
+<div class="modal fade" id="modalNuevoVehiculo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-truck me-2"></i>Nuevo Vehículo</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="return guardarVehiculo(event)">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Placa</label>
+                            <input type="text" name="placa" class="form-control text-uppercase" placeholder="ABC-123" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Modelo</label>
+                            <input type="text" name="modelo" class="form-control" placeholder="Ej: Toyota Hilux 2024">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Día de Checklist Semanal</label>
+                            <select name="dia_checklist" class="form-select">
+                                <option value="0">Lunes</option>
+                                <option value="1">Martes</option>
+                                <option value="2">Miércoles</option>
+                                <option value="3">Jueves</option>
+                                <option value="4" selected>Viernes</option>
+                                <option value="5">Sábado</option>
+                                <option value="6">Domingo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for v in vehiculos %}
+<div class="modal fade" id="modalEditarVehiculo{{ v.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen me-2"></i>Editar {{ v.placa }}</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="return editarVehiculo(event, {{ v.id }})">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Placa</label>
+                            <input type="text" name="placa" class="form-control text-uppercase" value="{{ v.placa }}" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Modelo</label>
+                            <input type="text" name="modelo" class="form-control" value="{{ v.modelo or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Día de Checklist Semanal</label>
+                            <select name="dia_checklist" class="form-select">
+                                <option value="0" {% if v.dia_checklist == 0 %}selected{% endif %}>Lunes</option>
+                                <option value="1" {% if v.dia_checklist == 1 %}selected{% endif %}>Martes</option>
+                                <option value="2" {% if v.dia_checklist == 2 %}selected{% endif %}>Miércoles</option>
+                                <option value="3" {% if v.dia_checklist == 3 %}selected{% endif %}>Jueves</option>
+                                <option value="4" {% if v.dia_checklist == 4 %}selected{% endif %}>Viernes</option>
+                                <option value="5" {% if v.dia_checklist == 5 %}selected{% endif %}>Sábado</option>
+                                <option value="6" {% if v.dia_checklist == 6 %}selected{% endif %}>Domingo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+function verHistorial(vehiculoId) {
+    var modalBody = document.getElementById('historialBody');
+    modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalHistorialChecklist')).show();
+    fetch('/api/checklist/historial/' + vehiculoId)
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+        if (!resp.ok || resp.checks.length === 0) {
+            modalBody.innerHTML = '<div class="text-center py-4 text-muted"><i class="fa-solid fa-clipboard-list fs-2 mb-2 d-block"></i><small>Sin checklists registrados.</small></div>';
+            return;
+        }
+        var html = '';
+        resp.checks.forEach(function(c) {
+            html += '<div class="card border-0 bg-light rounded-2 mb-1 border">';
+            html += '<div class="card-body p-2"><div class="d-flex align-items-center">';
+            html += '<div class="flex-grow-1 text-start overflow-hidden">';
+            html += '<small class="fw-bold text-dark d-block">' + c.fecha + '</small>';
+            html += '<small class="text-muted">' + c.tecnico + '</small>';
+            html += '</div>';
+            html += '<span class="badge bg-' + c.estado_badge + ' rounded-pill me-2" style="font-size:0.65rem;">' + c.estado + '</span>';
+            html += '<a href="/checklist/reporte_pdf/' + c.id + '" class="btn btn-outline-secondary btn-sm shadow-sm" style="font-size:0.75rem;"><i class="fa-solid fa-file-pdf"></i></a>';
+            html += '</div></div></div>';
+        });
+        modalBody.innerHTML = html;
+    })
+    .catch(function() { modalBody.innerHTML = '<div class="text-center py-4 text-muted"><small>Error al cargar historial.</small></div>'; });
+}
+
+function guardarVehiculo(e) {
+    e.preventDefault();
+    var f = e.target;
+    fetch('/api/vehiculos/crear', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({placa: f.placa.value, modelo: f.modelo.value, dia_checklist: parseInt(f.dia_checklist.value)})
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { location.reload(); }
+        else { alert('Error: ' + resp.msg); }
+    }).catch(function() { alert('Error de conexión'); });
+    return false;
+}
+
+function editarVehiculo(e, id) {
+    e.preventDefault();
+    var f = e.target;
+    fetch('/api/vehiculos/editar/' + id, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({placa: f.placa.value, modelo: f.modelo.value, dia_checklist: parseInt(f.dia_checklist.value)})
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { location.reload(); }
+        else { alert('Error: ' + resp.msg); }
+    }).catch(function() { alert('Error de conexión'); });
+    return false;
+}
+
+var vehiculoAEliminar = null;
+function eliminarVehiculo(id) {
+    vehiculoAEliminar = id;
+    var el = document.getElementById('modalConfirmarEliminarVehiculo');
+    if (el) bootstrap.Modal.getOrCreateInstance(el).show();
+}
+</script>
+
+<div class="modal fade" id="modalHistorialChecklist" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-clock-rotate-left me-2"></i>Historial de Checklists</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3" id="historialBody">
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-spinner fa-spin fs-2 mb-2 d-block"></i>
+                    <small>Cargando...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarEliminarVehiculo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-danger">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2">¿Eliminar vehículo?</h5>
+                <p class="text-muted small mb-3">Se eliminará también su ubicación de stock.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" id="btnConfirmarEliminarVehiculo"><i class="fa-solid fa-trash-can me-1"></i>Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalHerramientas" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-toolbox me-2"></i>Herramientas del Vehículo</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3" id="herramientasVehiculoInfo"></div>
+                <div class="table-responsive mb-3">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Herramienta</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="herramientasBody"></tbody>
+                    </table>
+                </div>
+                <hr>
+                <h6 class="fw-bold mb-2"><i class="fa-solid fa-plus me-1"></i>Agregar Herramienta</h6>
+                <form onsubmit="return agregarHerramienta(event)">
+                    <input type="hidden" name="vehiculo_id" id="herramientaVehiculoId">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Taladro Inalámbrico" required>
+                        </div>
+                        <div class="col-md-4 d-grid">
+                            <button type="submit" class="btn btn-success shadow-sm btn-sm fw-bold mt-md-2" style="font-size:0.75rem;"><i class="fa-solid fa-plus me-1"></i>Agregar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarEliminarHerramienta" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-danger">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2">¿Eliminar herramienta?</h5>
+                <p class="text-muted small mb-3">Esta acción no se puede deshacer.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" id="btnConfirmarEliminarHerramienta"><i class="fa-solid fa-trash-can me-1"></i>Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleVehiculo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-truck me-2"></i>Detalle del Vehículo</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="detalleVehiculoBody"></div>
+            <div class="modal-footer border-0 d-flex gap-2" id="detalleVehiculoFooter"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+var herramientasVehiculoId = null;
+var herramientaEliminarId = null;
+
+function verDetalleVehiculo(row) {
+    if (window.innerWidth >= 768) return;
+    var cells = row.querySelectorAll('td');
+    var id = row.dataset.vehiculoId;
+    var placa = cells[0].innerText.trim();
+    var modelo = cells[1].innerText.trim();
+    var checklist = cells[2].innerText.trim();
+    var ubicacion = cells[3].innerText.trim();
+    var bodyHtml = '';
+    bodyHtml += '<div class="mb-3"><label class="small text-muted fw-bold text-uppercase">Placa</label><p class="fw-bold text-dark mb-0">' + placa + '</p></div>';
+    bodyHtml += '<div class="mb-3"><label class="small text-muted fw-bold text-uppercase">Modelo</label><p class="text-dark mb-0">' + modelo + '</p></div>';
+    bodyHtml += '<div class="mb-3"><label class="small text-muted fw-bold text-uppercase">Checklist</label><p class="text-dark mb-0">' + checklist + '</p></div>';
+    bodyHtml += '<div class="mb-3"><label class="small text-muted fw-bold text-uppercase">Ubicación (Stock)</label><p class="text-dark mb-0">' + ubicacion + '</p></div>';
+    bodyHtml += '<div class="mb-0"><label class="small text-muted fw-bold text-uppercase">Técnico(s) Asignado(s)</label><div class="text-dark">';
+    var tecDiv = cells[4];
+    if (tecDiv) bodyHtml += tecDiv.innerHTML;
+    else bodyHtml += '<span class="text-muted">—</span>';
+    bodyHtml += '</div></div>';
+    document.getElementById('detalleVehiculoBody').innerHTML = bodyHtml;
+    var footerHtml = '<div class="btn-group btn-group-sm shadow-sm w-100">';
+    footerHtml += '<button class="btn btn-outline-secondary" onclick="cerrarModalDetalle();verHistorial(' + id + ')"><i class="fa-solid fa-clock-rotate-left"></i></button>';
+    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" onclick="cerrarModalDetalle()"><i class="fa-solid fa-clipboard-check"></i></a>';
+    footerHtml += '<button class="btn btn-outline-primary" onclick="cerrarModalDetalle();gestionarHerramientas(' + id + ')"><i class="fa-solid fa-toolbox"></i></button>';
+    footerHtml += '<button class="btn btn-outline-warning" onclick="cerrarModalDetalle();abrirModalEditar(' + id + ')"><i class="fa-solid fa-pen"></i></button>';
+    footerHtml += '<button class="btn btn-outline-danger" onclick="cerrarModalDetalle();eliminarVehiculo(' + id + ')"><i class="fa-solid fa-trash-can"></i></button>';
+    footerHtml += '</div>';
+    document.getElementById('detalleVehiculoFooter').innerHTML = footerHtml;
+    var modal = new bootstrap.Modal(document.getElementById('modalDetalleVehiculo'));
+    modal.show();
+}
+
+function cerrarModalDetalle() {
+    detalleVehiculoReabrir = true;
+    var m = bootstrap.Modal.getInstance(document.getElementById('modalDetalleVehiculo'));
+    if (m) m.hide();
+}
+
+function abrirModalEditar(id) {
+    setTimeout(function() {
+        new bootstrap.Modal(document.getElementById('modalEditarVehiculo' + id)).show();
+    }, 300);
+}
+
+var detalleVehiculoReabrir = false;
+
+document.addEventListener('hidden.bs.modal', function(e) {
+    if (detalleVehiculoReabrir && e.target.id !== 'modalDetalleVehiculo') {
+        detalleVehiculoReabrir = false;
+        new bootstrap.Modal(document.getElementById('modalDetalleVehiculo')).show();
+    }
+});
+
+function gestionarHerramientas(id) {
+    herramientasVehiculoId = id;
+    document.getElementById('herramientaVehiculoId').value = id;
+    document.getElementById('herramientasVehiculoInfo').innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-success"></div> Cargando...</div>';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalHerramientas')).show();
+    cargarHerramientas(id);
+}
+
+function cargarHerramientas(id) {
+    fetch('/api/vehiculos/' + id + '/herramientas?_=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+        if (!resp.ok) {
+            document.getElementById('herramientasVehiculoInfo').innerHTML = '<div class="alert alert-danger py-2 mb-0">Error al cargar herramientas.</div>';
+            return;
+        }
+        document.getElementById('herramientasVehiculoInfo').innerHTML = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill"><i class="fa-solid fa-tools me-1"></i>' + resp.total + ' herramienta(s) registrada(s)</span>';
+        var tbody = document.getElementById('herramientasBody');
+        var html = '';
+        resp.herramientas.forEach(function(h) {
+            html += '<tr>';
+            html += '<td class="fw-medium text-dark">' + h.nombre + '</td>';
+            html += '<td class="text-center"><button class="btn btn-outline-danger btn-sm rounded-pill px-2" onclick="eliminarHerramienta(' + h.id + ')"><i class="fa-solid fa-trash-can fa-sm"></i></button></td>';
+            html += '</tr>';
+        });
+        if (!resp.herramientas.length) {
+            html = '<tr><td colspan="2" class="text-center py-3 text-muted"><small>Sin herramientas registradas.</small></td></tr>';
+        }
+        tbody.innerHTML = html;
+    })
+    .catch(function() {
+        document.getElementById('herramientasVehiculoInfo').innerHTML = '<div class="alert alert-danger py-2 mb-0">Error de conexión.</div>';
+    });
+}
+
+function agregarHerramienta(e) {
+    e.preventDefault();
+    var f = e.target;
+    fetch('/api/vehiculos/' + herramientasVehiculoId + '/herramientas', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({nombre: f.nombre.value})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+        if (resp.ok) {
+            f.reset();
+            f.nombre.focus();
+            cargarHerramientas(herramientasVehiculoId);
+        } else {
+            alert('Error: ' + resp.msg);
+        }
+    })
+    .catch(function() { alert('Error de conexión'); });
+    return false;
+}
+
+function eliminarHerramienta(id) {
+    herramientaEliminarId = id;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminarHerramienta')).show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('btnConfirmarEliminarHerramienta')?.addEventListener('click', function() {
+        if (!herramientaEliminarId) return;
+        fetch('/api/herramientas/eliminar/' + herramientaEliminarId, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (resp.ok) {
+                var confirmModal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarHerramienta'));
+                if (confirmModal) confirmModal.hide();
+                cargarHerramientas(herramientasVehiculoId);
+            } else {
+                alert('Error: ' + resp.msg);
+            }
+        })
+        .catch(function() { alert('Error de conexión'); });
+    });
+});
+</script>
+<style>
+@media (max-width: 767px) {
+    .table td:first-child { font-size: 0.9rem; }
+}
+</style>
+{% endblock %}

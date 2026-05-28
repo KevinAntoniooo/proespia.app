@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 mt-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Gestión de Personal</h2>
+</div>
+
+<div class="row align-items-center mb-3">
+    <div class="col-md-8 col-lg-6">
+        <div class="d-flex align-items-center gap-2">
+            <div style="flex:8">
+                <div class="input-group">
+                    <span class="input-group-text bg-primary text-white border-0 shadow-sm">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="buscadorUsuarios" class="form-control shadow-sm" 
+                           placeholder="Buscar por nombre, usuario o rol..." 
+                           onkeyup="filtrarUsuarios()">
+                </div>
+            </div>
+            <div style="flex:2" class="d-md-none">
+                <button class="btn btn-success shadow-sm btn-sm fw-bold w-100" style="font-size:0.75rem;height:38px;" data-bs-toggle="modal" data-bs-target="#nuevoUserModal">
+                    <i class="bi bi-person-plus-fill"></i><span class="d-none d-sm-inline ms-1"> Nuevo Usuario</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-6 text-md-end mt-3 mt-md-0 d-none d-md-block">
+        <button class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#nuevoUserModal">
+            <i class="bi bi-person-plus-fill me-1"></i> Nuevo Usuario
+        </button>
+    </div>
+</div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre Completo</th>
+                        <th class="d-none d-md-table-cell">Nombre de Usuario</th>
+                        <th>Rol</th>
+                        <th class="d-none d-lg-table-cell">Ubicación</th>
+                        <th class="d-none d-lg-table-cell">Asignación</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuarios">
+                    {% for u in usuarios %}
+                    <tr class="fila-usuario">
+                        <td class="fw-bold">{{ u.nombre }}</td>
+                        <td class="d-none d-md-table-cell"><span class="text-muted">@</span>{{ u.username }}</td>
+                        <td>
+                            <span class="badge {% if u.rol == 'admin' %}bg-dark{% elif u.rol == 'tecnico' %}bg-primary{% else %}bg-info text-dark{% endif %} text-uppercase">
+                                {{ u.rol }}
+                            </span>
+                        </td>
+                        <td class="d-none d-lg-table-cell"><span class="small text-muted">{{ u.rel_ubicacion.nombre if u.rel_ubicacion else '—' }}</span></td>
+                        <td class="d-none d-lg-table-cell">
+                            {% if u.rol == 'tecnico' and u.rel_ubicacion %}
+                            <span class="badge {% if u.tipo_asignacion == 'a_cargo' %}bg-success bg-opacity-10 text-success{% else %}bg-info bg-opacity-10 text-info{% endif %} rounded-pill">
+                                {{ 'A cargo' if u.tipo_asignacion == 'a_cargo' else 'Acompañante' }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ u.id }}" title="Editar Perfil">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmarBorrarUser{{ u.id }}" title="Dar de baja">
+                                    <i class="fa-solid fa-user-xmark"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% for u in usuarios %}
+<div class="modal fade" id="editModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title">Editar Usuario: {{ u.nombre }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/usuarios/actualizar_completo/{{ u.id }}/{{ usuario.id }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre Completo</label>
+                        <input type="text" name="nombre" class="form-control" value="{{ u.nombre }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Username</label>
+                        <input type="text" name="username" class="form-control" value="{{ u.username }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nueva Contraseña</label>
+                        <input type="password" name="password" class="form-control" placeholder="Dejar en blanco para no cambiar">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Rol</label>
+                        <select name="rol" class="form-select text-uppercase" onchange="toggleUbicacionEdit(this, '{{ u.id }}')">
+                            <option value="admin" {% if u.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                            <option value="operador" {% if u.rol == 'operador' %}selected{% endif %}>Operador</option>
+                            <option value="tecnico" {% if u.rol == 'tecnico' %}selected{% endif %}>Técnico</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 ubicacion-field" id="ubicacionEditField{{ u.id }}">
+                        <label class="form-label fw-bold">Ubicación de Stock <span class="text-danger">*</span></label>
+                        <select name="ubicacion_id" class="form-select">
+                            <option value="">Seleccionar vehículo...</option>
+                            {% for loc in ubicaciones %}
+                            <option value="{{ loc.id }}" {% if u.ubicacion_id == loc.id %}selected{% endif %}>{{ loc.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Vehículo al que pertenece este técnico.</small>
+                    </div>
+                    <div class="mb-3 ubicacion-field" id="tipoAsignacionEditField{{ u.id }}">
+                        <label class="form-label fw-bold">Tipo de Asignación</label>
+                        <select name="tipo_asignacion" class="form-select">
+                            <option value="acompanante" {% if u.tipo_asignacion == 'acompanante' %}selected{% endif %}>Acompañante</option>
+                            <option value="a_cargo" {% if u.tipo_asignacion == 'a_cargo' %}selected{% endif %}>A cargo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary px-4">Actualizar Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmarBorrarUser{{ u.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-danger">
+            <div class="modal-body text-center p-4">
+                <i class="bi bi-exclamation-octagon text-danger fs-1"></i>
+                <h5 class="fw-bold mt-3">¿Eliminar acceso?</h5>
+                <p class="text-muted small">El usuario <strong>{{ u.username }}</strong> perderá el acceso al sistema.</p>
+                
+                {% if u.id == usuario.id %}
+                <div class="alert alert-warning py-1 small">No puedes auto-eliminarte.</div>
+                <button class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Cerrar</button>
+                {% else %}
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('borrar_usuario', target_id=u.id, admin_id=usuario.id) }}" class="btn btn-danger">Confirmar</a>
+                    <button class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="modal fade" id="nuevoUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white border-0">
+                <h5 class="modal-title">Crear Nuevo Acceso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/usuarios/{{ usuario.id }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre Completo</label>
+                        <input type="text" name="nombre" class="form-control" placeholder="Ej: Kevin Maestro" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre de Usuario</label>
+                        <input type="text" name="username" class="form-control" placeholder="Ej: k.seguridad" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Contraseña</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Rol del Sistema</label>
+                        <select name="rol" class="form-select" onchange="toggleUbicacionNuevo(this)">
+                            <option value="operador">Operador</option>
+                            <option value="tecnico">Técnico</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 ubicacion-field" id="ubicacionNuevoField">
+                        <label class="form-label fw-bold">Ubicación de Stock <span class="text-danger">*</span></label>
+                        <select name="ubicacion_id" class="form-select">
+                            <option value="">Seleccionar vehículo...</option>
+                            {% for loc in ubicaciones %}
+                            <option value="{{ loc.id }}">{{ loc.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Vehículo al que pertenece este técnico.</small>
+                    </div>
+                    <div class="mb-3 ubicacion-field" id="tipoAsignacionNuevoField">
+                        <label class="form-label fw-bold">Tipo de Asignación</label>
+                        <select name="tipo_asignacion" class="form-select">
+                            <option value="acompanante">Acompañante</option>
+                            <option value="a_cargo">A cargo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm" style="font-size:0.75rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.75rem;">Crear Cuenta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+@media (max-width: 767px) {
+    .table td:first-child { font-size: 0.85rem; }
+}
+</style>
+<script>
+function filtrarUsuarios() {
+    let filtro = document.getElementById("buscadorUsuarios").value.toLowerCase();
+    let filas = document.getElementsByClassName("fila-usuario");
+
+    for (let i = 0; i < filas.length; i++) {
+        let texto = filas[i].textContent.toLowerCase();
+        filas[i].style.display = texto.includes(filtro) ? "" : "none";
+    }
+}
+
+function toggleUbicacionNuevo(select) {
+    var field = document.getElementById('ubicacionNuevoField');
+    var tipoField = document.getElementById('tipoAsignacionNuevoField');
+    var isTecnico = select.value === 'tecnico';
+    field.style.display = isTecnico ? '' : 'none';
+    tipoField.style.display = isTecnico ? '' : 'none';
+    if (isTecnico) field.querySelector('select').setAttribute('required', '');
+    else field.querySelector('select').removeAttribute('required');
+}
+
+function toggleUbicacionEdit(select, userId) {
+    var field = document.getElementById('ubicacionEditField' + userId);
+    var tipoField = document.getElementById('tipoAsignacionEditField' + userId);
+    var isTecnico = select.value === 'tecnico';
+    field.style.display = isTecnico ? '' : 'none';
+    tipoField.style.display = isTecnico ? '' : 'none';
+    if (isTecnico) field.querySelector('select').setAttribute('required', '');
+    else field.querySelector('select').removeAttribute('required');
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("buscadorUsuarios");
+    if(input) input.value = "";
+
+    // Inicializar visibilidad en modales de edición
+    document.querySelectorAll('[id^="editModal"]').forEach(function(modal) {
+        var select = modal.querySelector('select[name="rol"]');
+        if (select) select.onchange();
+    });
+    // Inicializar visibilidad en modal nuevo
+    var selectNuevo = document.querySelector('#nuevoUserModal select[name="rol"]');
+    if (selectNuevo) toggleUbicacionNuevo(selectNuevo);
+});
+</script>
+{% endblock %}

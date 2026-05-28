@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between no-print">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">← Volver</a>
+    <button onclick="window.print()" class="btn btn-danger btn-sm">Generar PDF Oficial</button>
+</div>
+
+<div class="reporte-oficial">
+    <div class="text-center mb-4 only-print">
+        <h2 class="fw-bold">FICHA TÉCNICA DE SEGURIDAD ELECTRÓNICA</h2>
+        <p class="text-muted">PROESPIA - Rancagua, Chile</p>
+        <hr>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h4 class="border-bottom pb-2">Información del Cliente</h4>
+            <div class="row">
+                <div class="col-6"><strong>Sede:</strong> {{ cliente.nombre }}</div>
+                <div class="col-6"><strong>Dirección:</strong> {{ cliente.direccion }}</div>
+                <div class="col-6"><strong>Plan Cuadrante:</strong> {{ cliente.plan_cuadrante }}</div>
+                <div class="col-6"><strong>Estado:</strong> {{ cliente.estado_monitoreo }}</div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-4">
+        <h5 class="border-bottom pb-2">Inventario de Equipos Instalados</h5>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 40%">Tipo de Equipo</th>
+                    <th style="width: 60%">N° de Serie (S/N)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for equipo in cliente.rel_cliente_equipos %}
+                <tr>
+                    <td>{{ equipo.tipo }}</td>
+                    <td><code>{{ equipo.serie }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="firma-footer only-print">
+        <span>Documento solicitado por: <strong>{{ usuario.nombre }}</strong></span>
+        <span class="ms-3">| Fecha de emisión: {{ now }}</span>
+    </div>
+</div>
+{% endblock %}

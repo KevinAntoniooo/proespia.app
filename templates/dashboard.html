@@ -1,0 +1,702 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4 mb-3 align-items-center">
+    <div class="col-12 col-md-6 text-start">
+        <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-gauge-high me-2"></i>Panel de Control</h2>
+        <p class="text-muted small mb-0">Gestión de Seguridad Electrónica • PROESPIA LTDA</p>
+    </div>
+    <div class="col-12 col-md-6 text-center text-md-end">
+        <div class="d-block d-md-inline-block bg-white shadow-sm rounded-4 py-2 px-3 border-start border-primary border-4">
+            <h4 class="fw-bold mb-0 text-primary" id="reloj" style="font-size: 1.2rem;">00:00:00</h4>
+            <p class="text-muted small mb-0" id="fecha-actual" style="font-size: 0.7rem;"></p>
+        </div>
+    </div>
+</div>
+
+{% if usuario.rol in ['admin', 'super_su'] %}
+<div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-3 border-primary">
+            <div class="card-body d-flex align-items-center gap-2 p-2 p-sm-3">
+                <div class="bg-primary bg-opacity-10 rounded-3 p-1 p-sm-2 lh-1">
+                    <i class="fa-solid fa-building fs-6 text-primary"></i>
+                </div>
+                <div class="lh-1">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.5rem!important;letter-spacing:0.5px">Clientes</small>
+                    <h5 class="fw-bold mb-0 text-dark">{{ total_clientes }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-3 border-info">
+            <div class="card-body d-flex align-items-center gap-2 p-2 p-sm-3">
+                <div class="bg-info bg-opacity-10 rounded-3 p-1 p-sm-2 lh-1">
+                    <i class="fa-solid fa-microchip fs-6 text-info"></i>
+                </div>
+                <div class="lh-1">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.5rem!important;letter-spacing:0.5px">Equipos instalados</small>
+                    <h5 class="fw-bold mb-0 text-dark">{{ total_equipos }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-3 border-warning">
+            <div class="card-body d-flex align-items-center gap-2 p-2 p-sm-3">
+                <div class="bg-warning bg-opacity-10 rounded-3 p-1 p-sm-2 lh-1">
+                    <i class="fa-solid fa-user-gear fs-6 text-warning"></i>
+                </div>
+                <div class="lh-1">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.5rem!important;letter-spacing:0.5px">Técnicos</small>
+                    <h5 class="fw-bold mb-0 text-dark">{{ total_tecnicos }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-3 border-success">
+            <div class="card-body d-flex align-items-center gap-2 p-2 p-sm-3">
+                <div class="bg-success bg-opacity-10 rounded-3 p-1 p-sm-2 lh-1">
+                    <i class="fa-solid fa-truck fs-6 text-success"></i>
+                </div>
+                <div class="lh-1">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.5rem!important;letter-spacing:0.5px">Vehículos</small>
+                    <h5 class="fw-bold mb-0 text-dark">{{ total_vehiculos }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-3">
+            <div class="card-header bg-white border-0 pt-3 px-3">
+                <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                    {% if usuario.rol == 'tecnico' %}
+                    <li class="nav-item">
+                        <button class="nav-link active fw-bold small" id="fallas-tab" data-bs-toggle="tab" data-bs-target="#fallas">
+                            <i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i>Fallas <span class="badge bg-danger ms-1">{{ tareas|length }}</span>
+                        </button>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold small{% if usuario.rol != 'tecnico' %} active{% endif %}" id="tareas-tab" data-bs-toggle="tab" data-bs-target="#tareas">
+                            {% if usuario.rol == 'tecnico' %}
+                                <i class="fa-solid fa-route me-1 text-primary"></i>Hoja de Ruta
+                            {% elif usuario.rol == 'operador' %}
+                                <i class="fa-solid fa-headset me-1 text-primary"></i>Reportes
+                            {% else %}
+                                <i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i>Fallas <span class="badge bg-danger ms-1">{{ tareas|length }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    {% if usuario.rol in ['admin', 'super_su'] %}
+                    <li class="nav-item">
+                        <button class="nav-link fw-bold small" id="agenda-tab" data-bs-toggle="tab" data-bs-target="#agenda_resumen">
+                            <i class="fa-solid fa-calendar-week me-1 text-success"></i>Monitor <span class="badge bg-success ms-1">{{ agenda_semanal|length }}</span>
+                        </button>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <div class="card-body p-3 tab-content">
+                <div class="tab-pane fade{% if usuario.rol != 'tecnico' %} show active{% endif %}" id="tareas">
+                    {% if usuario.rol == 'operador' %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-uppercase text-muted mb-0" style="font-size: 0.7rem;"><i class="fa-solid fa-clock-rotate-left me-1"></i>Últimos Reportes</h6>
+                            <a href="/bitacora/{{ usuario.id }}" class="btn btn-primary btn-sm rounded-pill px-3 py-1 shadow-sm" style="font-size:0.65rem;">
+                                <i class="fa-solid fa-plus me-1"></i>Nuevo
+                            </a>
+                        </div>
+                        {% if ultimas_bitacoras %}
+                        <div class="overflow-auto" style="max-height: 320px;">
+                            {% for b in ultimas_bitacoras %}
+                            <div class="card border-0 bg-light rounded-2 mb-1 border">
+                                <div class="card-body p-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-white rounded-circle d-flex align-items-center justify-content-center border me-2 shadow-sm" style="width: 28px; height: 28px; min-width: 28px;">
+                                            <i class="fa-solid {% if b.tipo_visita and 'falla' in b.tipo_visita.lower() %}fa-triangle-exclamation text-danger{% else %}fa-file-lines text-primary{% endif %}" style="font-size: 0.6rem;"></i>
+                                        </div>
+                                        <div class="flex-grow-1 text-start overflow-hidden text-truncate">
+                                            <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 0.75rem;">{{ b.rel_cliente.nombre if b.rel_cliente else '—' }}</h6>
+                                            <small class="text-muted" style="font-size: 0.6rem;">{{ b.tipo_visita or 'Sin tipo' }} • {{ b.fecha.strftime('%d/%m %H:%M') }}</small>
+                                        </div>
+                                        {% set prioridad_map = {1:'danger',2:'warning',3:'primary',4:'secondary'} %}
+                                        <span class="badge bg-{{ prioridad_map.get(b.prioridad, 'secondary') }} bg-opacity-10 text-{{ prioridad_map.get(b.prioridad, 'secondary') }} rounded-pill ms-1" style="font-size: 0.5rem;">P{{ b.prioridad }}</span>
+                                    </div>
+                                    {% if b.descripcion %}
+                                    <small class="text-muted d-block mt-1 ps-1 text-truncate" style="font-size: 0.6rem; margin-left: 34px;">
+                                        <i class="fa-regular fa-note-sticky me-1"></i>{{ b.descripcion }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 border rounded-4 bg-light bg-opacity-50">
+                            <i class="fa-solid fa-clipboard-list text-primary fs-3 mb-2 d-block"></i>
+                            <p class="text-muted small mb-3">Sin reportes aún.</p>
+                            <a href="/bitacora/{{ usuario.id }}" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+                                <i class="fa-solid fa-plus me-1"></i>Nuevo Reporte
+                            </a>
+                        </div>
+                        {% endif %}
+
+                    {% elif usuario.rol == 'tecnico' %}
+                        <div class="row g-2">
+                            <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size: 0.7rem;"><i class="fa-solid fa-calendar-day me-1"></i>Agenda de Hoy</h6>
+                            {% if visitas_hoy %}
+                                {% for v in visitas_hoy %}
+                                <div class="col-12">
+                                    <div class="card border-0 bg-light rounded-3 shadow-sm border-start border-4 border-warning item-visita" 
+                                        style="cursor: pointer;" 
+                                        data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
+                                        data-hora="{{ v.fecha_programada.strftime('%H:%M') }}"
+                                        data-tipo="{{ v.tipo_trabajo }}"
+                                        data-detalle="{{ v.descripcion|replace('\n', ' ')|replace('\r', ' ') }}"
+                                        data-ubicacion="{{ v.ubicacion or '' }}">
+                                        <div class="card-body py-2 px-3">
+                                            <div class="row align-items-center">
+                                                <div class="col-8 text-start">
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <span class="fw-bold text-primary me-2" style="font-size: 0.8rem;">{{ v.fecha_programada.strftime('%H:%M') }}</span>
+                                                        <h6 class="fw-bold mb-0 text-dark small text-truncate">{{ v.rel_cliente.nombre }}</h6>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="badge bg-secondary-subtle text-secondary py-0 px-1 me-2" style="font-size: 0.6rem; border: 1px solid rgba(0,0,0,0.05);">{{ v.tipo_trabajo|upper }}</span>
+                                                        <small class="text-muted text-truncate italic" style="font-size: 0.7rem; max-width: 150px;">"{{ v.descripcion }}"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4 text-end">
+                                                    <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm" style="font-size:0.85rem;" onclick="event.stopPropagation();confirmarFinalizar({{ v.id }})">
+                                                        <i class="fa-solid fa-check me-1"></i> LISTO
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-4 bg-white rounded-3 border">
+                                    <i class="fa-solid fa-circle-check text-success fs-3 mb-1"></i>
+                                    <p class="text-muted small mb-0">Sin trabajos pendientes hoy.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                    {% else %}
+                        <div class="row g-2">
+                            {% for tarea in tareas[:4] %}
+                            <div class="col-12">
+                                <div class="d-flex align-items-center p-2 border rounded-3 bg-white shadow-sm border-start border-danger border-4">
+                                    <div class="icon-box bg-danger-soft text-danger me-2" style="width: 30px; height: 30px; min-width: 30px; font-size: 0.7rem;">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    <div class="flex-grow-1 text-start overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 0.75rem;">{{ tarea.rel_cliente.nombre }}</h6>
+                                            <small class="text-muted" style="font-size: 0.6rem;">{{ tarea.fecha.strftime('%H:%M') }}</small>
+                                        </div>
+                                        <p class="small text-muted mb-0 text-truncate" style="font-size: 0.65rem;">{{ tarea.descripcion }}</p>
+                                    </div>
+                                    <div class="ms-2">
+                                        <a href="{{ url_for('completar_tarea', log_id=tarea.id, user_id=usuario.id) }}" class="btn btn-sm rounded-3 fw-bold shadow-sm agenda-btn-light" style="font-size:0.6rem;padding:0.15rem 0.6rem;">Gestionar</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3 text-muted small italic border rounded-3">No hay reportes de falla activos.</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if usuario.rol == 'tecnico' %}
+                <div class="tab-pane fade show active" id="fallas">
+                    {% if tareas %}
+                    <div class="row g-2">
+                        {% for t in tareas %}
+                        <div class="col-12">
+                            <div class="d-flex align-items-center p-2 border rounded-3 bg-white shadow-sm border-start border-danger border-4">
+                                <div class="icon-box bg-danger-soft text-danger me-2" style="width: 30px; height: 30px; min-width: 30px; font-size: 0.7rem;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <div class="flex-grow-1 text-start overflow-hidden">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 0.75rem;">{{ t.rel_cliente.nombre }}</h6>
+                                        <small class="text-muted" style="font-size: 0.6rem;">{{ t.fecha.strftime('%H:%M') }}</small>
+                                    </div>
+                                    <p class="small text-muted mb-0 text-truncate" style="font-size: 0.65rem;">{{ t.descripcion }}</p>
+                                </div>
+                                <div class="ms-2">
+                                    <a href="{{ url_for('completar_tarea', log_id=t.id, user_id=usuario.id) }}" class="btn btn-sm rounded-3 fw-bold shadow-sm agenda-btn-light" style="font-size:0.6rem;padding:0.15rem 0.6rem;">Gestionar</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted small italic border rounded-3">
+                        <i class="fa-solid fa-circle-check text-success fs-3 mb-1"></i>
+                        <p class="mb-0">Sin fallas pendientes.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if usuario.rol in ['admin', 'super_su'] %}
+                <div class="tab-pane fade" id="agenda_resumen">
+                    <div class="row g-2 mb-3 text-center">
+                        <div class="col-4">
+                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 border border-primary border-opacity-25">
+                                <small class="text-uppercase fw-bold text-primary d-block" style="font-size: 0.6rem;">Semana</small>
+                                <h4 class="fw-bold mb-0 text-primary">{{ agenda_semanal|length }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="bg-success bg-opacity-10 p-2 rounded-3 border border-success border-opacity-25">
+                                <small class="text-uppercase fw-bold text-success d-block" style="font-size: 0.6rem;">Realizadas</small>
+                                <h4 class="fw-bold mb-0 text-success">{{ agenda_semanal|selectattr('estado', 'equalto', 'Realizada')|list|length }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="bg-warning bg-opacity-10 p-2 rounded-3 border border-warning border-opacity-25">
+                                <small class="text-uppercase fw-bold text-warning d-block" style="font-size: 0.6rem;">Pendientes</small>
+                                <h4 class="fw-bold mb-0 text-warning">{{ agenda_semanal|rejectattr('estado', 'equalto', 'Realizada')|list|length }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-auto" style="max-height: 350px;">
+                        {% if agenda_semanal %}
+                        {% for dia_num in range(7) %}
+                        {% set visitas_dia = agenda_por_dia.get(dia_num, []) %}
+                        {% if visitas_dia %}
+                        <div class="d-flex align-items-center gap-2 mt-2 mb-1">
+                            <span class="badge bg-dark text-white rounded-pill px-2" style="font-size:0.55rem;">{{ dias_semana[dia_num] }}</span>
+                            <small class="text-muted fw-bold" style="font-size:0.6rem;">{{ visitas_dia[0].fecha_programada.strftime('%d/%m') }}</small>
+                            <hr class="flex-grow-1 opacity-25 my-0">
+                        </div>
+                        {% for v in visitas_dia %}
+                        <div class="card border-0 bg-light rounded-2 mb-1 border">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-white rounded-circle d-flex align-items-center justify-content-center border me-2 shadow-sm" style="width: 28px; height: 28px; min-width: 28px;">
+                                        <i class="fa-solid {{ 'fa-check text-success' if v.estado == 'Realizada' else 'fa-person-digging text-warning' }}" style="font-size: 0.6rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1 text-start overflow-hidden text-truncate">
+                                        <h6 class="mb-0 fw-bold text-dark text-truncate" style="font-size: 0.75rem;">{{ v.rel_cliente.nombre }}</h6>
+                                        <small class="text-muted" style="font-size: 0.6rem;">{{ v.rel_usuario.nombre }} • {{ v.fecha_programada.strftime('%H:%M') }}</small>
+                                    </div>
+                                    <span class="badge {{ 'bg-success' if v.estado == 'Realizada' else 'bg-warning text-dark' }} rounded-pill ms-1" style="font-size: 0.55rem;">{{ v.estado }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-calendar-day fs-3 mb-2 d-block"></i>
+                            <small>Sin visitas esta semana.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        {% if usuario.rol not in ['tecnico'] %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3">
+            <h6 class="fw-bold mb-3 small text-start"><i class="fa-solid fa-warehouse me-1"></i>Resumen de Stock</h6>
+            <div class="row g-2 mb-2">
+                <div class="col-4">
+                    <div class="bg-primary bg-opacity-10 rounded-3 p-2 text-center border border-primary border-opacity-25">
+                        <small class="text-uppercase fw-bold text-primary d-block" style="font-size:0.55rem;">Total</small>
+                        <span class="fw-bold text-dark" style="font-size:1.1rem;">{{ stock_total }}</span>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="bg-info bg-opacity-10 rounded-3 p-2 text-center border border-info border-opacity-25">
+                        <small class="text-uppercase fw-bold text-info d-block" style="font-size:0.55rem;">Bodega</small>
+                        <span class="fw-bold text-dark" style="font-size:1.1rem;">{{ stock_bodega }}</span>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="bg-danger bg-opacity-10 rounded-3 p-2 text-center border border-danger border-opacity-25">
+                        <small class="text-uppercase fw-bold text-danger d-block" style="font-size:0.55rem;">Crítico</small>
+                        <span class="fw-bold text-dark" style="font-size:1.1rem;">{{ stock_criticos }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2 text-start">
+                <a href="/inventario/bodega/{{ usuario.id }}" class="btn btn-outline-primary btn-sm w-100 rounded-pill" style="font-size:0.65rem;">
+                    <i class="fa-solid fa-eye me-1"></i>Ir a Bodega
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if usuario.rol in ['admin', 'super_su'] and solicitudes_combustible %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-warning border-opacity-50 d-none d-lg-block">
+            <h6 class="fw-bold mb-2 small text-warning text-start" style="font-size:0.75rem;">
+                <i class="fa-solid fa-gas-pump me-1"></i>Solicitudes de Combustible
+                <span class="badge bg-warning text-dark ms-1">{{ solicitudes_combustible|length }}</span>
+            </h6>
+            <div class="overflow-auto" style="max-height:250px;">
+                {% for s in solicitudes_combustible %}
+                <div class="d-flex align-items-center p-2 border-bottom border-opacity-10 gap-2">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
+                        <i class="fa-solid fa-user text-warning" style="font-size:0.7rem;"></i>
+                    </div>
+                    <div class="flex-grow-1 text-start overflow-hidden">
+                        <span class="fw-bold d-block text-truncate" style="font-size:0.7rem;">{{ s.rel_usuario.nombre }}</span>
+                        <small class="text-muted d-block" style="font-size:0.6rem;">
+                            <i class="fa-solid fa-truck me-1"></i>{{ s.rel_vehiculo.placa if s.rel_vehiculo else '—' }}
+                            • <i class="fa-solid fa-dollar-sign me-1"></i>${{ "{:,}".format(s.monto) }}
+                            • <i class="fa-solid fa-gauge-high me-1"></i>{{ "{:,}".format(s.kilometraje) }} km
+                            • {{ s.created_at.strftime('%d/%m %H:%M') }}
+                        </small>
+                    </div>
+                    <button class="marcar-atendido btn btn-sm btn-success" data-id="{{ s.id }}" style="font-size:0.5rem;line-height:1;padding:1px 3px;" title="Marcar atendido"><i class="fa-solid fa-check"></i></button>
+                    <span class="badge bg-warning text-dark rounded-pill" style="font-size:0.55rem;">{{ s.estado }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if usuario.rol == 'tecnico' and es_viernes %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-warning border-3 bg-warning bg-opacity-10" style="animation: pulse-warning 2s infinite;">
+            <div class="d-flex align-items-start gap-2">
+                <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
+                    <i class="fa-solid fa-triangle-exclamation text-white"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1 text-dark" style="font-size:0.75rem;">CONTROL DE CIERRE REQUERIDO</h6>
+                    <p class="small mb-2 text-dark" style="font-size:0.6rem;">Realiza el control de inventario de tu camioneta antes de terminar la jornada.</p>
+                    <a href="/checklist/viernes" class="btn btn-warning btn-sm w-100 rounded-pill fw-bold shadow-sm" style="font-size:0.65rem;">
+                        <i class="fa-solid fa-clipboard-check me-1"></i>Ir al Checklist
+                    </a>
+                </div>
+            </div>
+        </div>
+        <style>@keyframes pulse-warning{0%,100%{border-color:#ffc107}50%{border-color:#ff8800}}</style>
+        {% endif %}
+        {% if usuario.rol == 'tecnico' %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-info border-opacity-50">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="bg-info rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
+                    <i class="fa-solid fa-gas-pump text-white"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0" style="font-size:0.75rem;">Carga de Combustible</h6>
+                    <small class="text-muted" style="font-size:0.6rem;">Solicita bencina para tu vehículo</small>
+                </div>
+            </div>
+            <button class="btn btn-info btn-sm w-100 rounded-3 fw-bold shadow-sm" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#modalCombustible">
+                <i class="fa-solid fa-gas-pump me-1"></i>Solicitar Carga
+            </button>
+        </div>
+        {% endif %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 bg-primary text-white shadow-lg">
+            <h6 class="fw-bold mb-3 small text-start"><i class="fa-solid fa-calendar-check me-1"></i>Próximos Días</h6>
+            <div class="list-group list-group-flush bg-transparent">
+                {% if proximas %}
+                    {% for p in proximas %}
+                    <div class="list-group-item bg-transparent text-white border-white border-opacity-10 px-0 py-2">
+                        <div class="d-flex align-items-center">
+                            <div class="text-center me-3 border-end border-white border-opacity-25 pe-3" style="width: 45px;">
+                                <span class="d-block fw-bold mb-0" style="font-size: 1rem; line-height: 1;">{{ p.fecha_programada.strftime('%d') }}</span>
+                                <span class="small text-uppercase opacity-75 d-block" style="font-size: 0.55rem;">{{ p.fecha_programada.strftime('%b') }}</span>
+                            </div>
+                            <div class="flex-grow-1 text-start overflow-hidden">
+                                <small class="d-block fw-bold text-truncate" style="font-size: 0.75rem;">{{ p.rel_cliente.nombre }}</small>
+                                <small class="opacity-75 d-block text-truncate" style="font-size: 0.65rem;">{{ p.tipo_trabajo }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-2 opacity-75">
+                        <p class="small mb-0 italic" style="font-size: 0.7rem;">Sin visitas futuras.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% if usuario.rol in ['admin', 'super_su'] and solicitudes_combustible %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-warning border-opacity-50 d-lg-none">
+            <h6 class="fw-bold mb-2 small text-warning text-start" style="font-size:0.75rem;">
+                <i class="fa-solid fa-gas-pump me-1"></i>Solicitudes de Combustible
+                <span class="badge bg-warning text-dark ms-1">{{ solicitudes_combustible|length }}</span>
+            </h6>
+            <div class="overflow-auto" style="max-height:250px;">
+                {% for s in solicitudes_combustible %}
+                <div class="d-flex align-items-center p-2 border-bottom border-opacity-10 gap-2">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
+                        <i class="fa-solid fa-user text-warning" style="font-size:0.7rem;"></i>
+                    </div>
+                    <div class="flex-grow-1 text-start overflow-hidden">
+                        <span class="fw-bold d-block text-truncate" style="font-size:0.7rem;">{{ s.rel_usuario.nombre }}</span>
+                        <small class="text-muted d-block" style="font-size:0.6rem;">
+                            <i class="fa-solid fa-truck me-1"></i>{{ s.rel_vehiculo.placa if s.rel_vehiculo else '—' }}
+                            • <i class="fa-solid fa-dollar-sign me-1"></i>${{ "{:,}".format(s.monto) }}
+                            • <i class="fa-solid fa-gauge-high me-1"></i>{{ "{:,}".format(s.kilometraje) }} km
+                            • {{ s.created_at.strftime('%d/%m %H:%M') }}
+                        </small>
+                    </div>
+                    <button class="marcar-atendido btn btn-sm btn-success" data-id="{{ s.id }}" style="font-size:0.5rem;line-height:1;padding:1px 3px;" title="Marcar atendido"><i class="fa-solid fa-check"></i></button>
+                    <span class="badge bg-warning text-dark rounded-pill" style="font-size:0.55rem;">{{ s.estado }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-dark text-white">
+            <h6 class="fw-bold mb-2 small text-warning text-start" style="font-size: 0.75rem;"><i class="fa-solid fa-headset me-1"></i>Soporte</h6>
+            <p class="mb-2 text-start opacity-75" style="font-size: 0.65rem;">¿Problemas con el sistema?</p>
+            <a href="mailto:soporte@proespia.cl" class="btn btn-outline-warning btn-sm w-100 rounded-pill py-1" style="font-size: 0.65rem;">Enviar Ticket</a>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarFinalizar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-success text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-check-circle me-2"></i>Finalizar Visita</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <p class="mb-3">¿Marcar esta visita como <strong>Realizada</strong>?</p>
+                <form id="formFinalizarVisita" method="POST">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-check me-1"></i>Sí, Finalizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if usuario.rol == 'tecnico' %}
+<div class="modal fade" id="modalCombustible" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-info text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-gas-pump me-2"></i>Solicitar Carga de Combustible</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formCombustible">
+                <div class="modal-body p-4">
+                    <div class="mb-3 text-start">
+                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size:0.65rem;">Monto a Solicitar ($)</label>
+                        <input type="number" class="form-control form-control-lg shadow-sm rounded-3" name="monto" min="1000" step="500" required placeholder="Ej: 15000">
+                    </div>
+                    <div class="mb-0 text-start">
+                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size:0.65rem;">Kilometraje Actual (km)</label>
+                        <input type="number" class="form-control shadow-sm rounded-3" name="kilometraje" min="0" required placeholder="Ej: 125000">
+                    </div>
+                    <div id="msgCombustible" class="mt-3"></div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-paper-plane me-1"></i>Enviar Solicitud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="modalDetalleVisita" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header bg-primary text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-circle-info me-2"></i>Detalles del Servicio</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3 text-start">
+                    <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Cliente / Empresa</label>
+                    <h5 class="fw-bold text-dark" id="modal-cliente-nombre">---</h5>
+                </div>
+                
+                <div class="row g-3 mb-3 text-start">
+                    <div class="col-6">
+                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Hora Programada</label>
+                        <p class="mb-0 fw-semibold" id="modal-hora">---</p>
+                    </div>
+                    <div class="col-6">
+                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Tipo de Trabajo</label>
+                        <p class="mb-0"><span class="badge bg-secondary-subtle text-secondary" id="modal-tipo">---</span></p>
+                    </div>
+                </div>
+
+                <div class="mb-0 text-start">
+                    <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Instrucciones / Detalle</label>
+                    <div class="p-3 bg-light rounded-3 border">
+                        <p class="mb-0 small" id="modal-descripcion">---</p>
+                    </div>
+                </div>
+                <div id="modal-ubicacion-container" class="mt-3 text-start d-none">
+                    <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Ubicación</label>
+                    <a id="modal-ubicacion-maps" href="#" target="_blank" class="btn btn-outline-danger btn-sm fw-bold shadow-sm w-100" style="font-size:0.85rem;">
+                        <i class="fa-solid fa-location-dot me-1"></i>Abrir Ruta
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+        </div>
+    </div>
+</div>
+<script>
+function actualizarReloj() {
+    const ahora = new Date();
+    
+    // Configuración para la fecha
+    const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    
+    // Configuración para el reloj en formato 24h
+    const opcionesReloj = { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: false  // <--- Esto es lo que activa el formato 24h
+    };
+
+    const reloj = document.getElementById('reloj');
+    const fecha = document.getElementById('fecha-actual');
+
+    if(reloj) {
+        // Aplicamos el formato 24h explícitamente
+        reloj.textContent = ahora.toLocaleTimeString('es-CL', opcionesReloj);
+    }
+    
+    if(fecha) {
+        // Formato para la fecha
+        fecha.textContent = ahora.toLocaleDateString('es-CL', opcionesFecha);
+    }
+}
+
+setInterval(actualizarReloj, 1000);
+actualizarReloj();
+document.addEventListener('DOMContentLoaded', function() {
+    var visitaFinalizarId = null;
+    function confirmarFinalizar(visitaId) {
+        visitaFinalizarId = visitaId;
+        document.getElementById('formFinalizarVisita').action = '/finalizar_visita/' + visitaId;
+        new bootstrap.Modal(document.getElementById('modalConfirmarFinalizar')).show();
+    }
+    window.confirmarFinalizar = confirmarFinalizar;
+
+    document.querySelectorAll('.marcar-atendido').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.getAttribute('data-id');
+            fetch('/api/combustible/atender/' + id, { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                if (resp.ok) {
+                    var card = btn.closest('.d-flex');
+                    if (card) card.remove();
+                }
+            });
+        });
+    });
+
+    var formComb = document.getElementById('formCombustible');
+    if (formComb) {
+        formComb.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = formComb.querySelector('button[type=submit]');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...';
+            var data = new FormData(formComb);
+            fetch('/vehiculo/solicitar_combustible', { method: 'POST', body: data })
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                var msg = document.getElementById('msgCombustible');
+                msg.innerHTML = resp.ok
+                    ? '<div class="alert alert-success py-2 mb-0 rounded-3" style="font-size:0.75rem;"><i class="fa-solid fa-check-circle me-1"></i>' + resp.msg + '</div>'
+                    : '<div class="alert alert-danger py-2 mb-0 rounded-3" style="font-size:0.75rem;"><i class="fa-solid fa-triangle-exclamation me-1"></i>' + resp.msg + '</div>';
+                if (resp.ok) {
+                    setTimeout(function() {
+                        var modal = bootstrap.Modal.getInstance(document.getElementById('modalCombustible'));
+                        if (modal) modal.hide();
+                        msg.innerHTML = '';
+                        formComb.reset();
+                    }, 2000);
+                }
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Enviar Solicitud';
+            });
+        });
+    }
+
+    // Buscamos todas las cards que tengan la clase 'item-visita'
+    const items = document.querySelectorAll('.item-visita');
+    
+    items.forEach(item => {
+        item.addEventListener('click', function() {
+            var cliente = this.getAttribute('data-cliente');
+            var hora = this.getAttribute('data-hora');
+            var tipo = this.getAttribute('data-tipo');
+            var detalle = this.getAttribute('data-detalle');
+            var ubicacion = this.getAttribute('data-ubicacion');
+
+            document.getElementById('modal-cliente-nombre').textContent = cliente;
+            document.getElementById('modal-hora').textContent = hora;
+            document.getElementById('modal-tipo').textContent = tipo;
+            document.getElementById('modal-descripcion').textContent = detalle || "Sin descripción.";
+
+            var ubContainer = document.getElementById('modal-ubicacion-container');
+            var mapsBtn = document.getElementById('modal-ubicacion-maps');
+            if (ubicacion) {
+                ubContainer.classList.remove('d-none');
+                mapsBtn.href = ubicacion;
+            } else {
+                ubContainer.classList.add('d-none');
+            }
+
+            var myModal = new bootstrap.Modal(document.getElementById('modalDetalleVisita'));
+            myModal.show();
+        });
+    });
+});
+</script>
+
+<style>
+    .bg-primary-soft { background-color: #e0e7ff; }
+    .bg-danger-soft { background-color: #fee2e2; }
+    .icon-box {
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .nav-tabs .nav-link { color: #6c757d; border: none; padding: 0.5rem 1rem; }
+    .nav-tabs .nav-link.active {
+        border: none;
+        border-bottom: 3px solid #0d6efd;
+        color: #0d6efd;
+        background: none;
+    }
+    .badge.bg-success { background-color: #198754 !important; }
+    .italic { font-style: italic; }
+    /* Ajuste para móviles */
+    @media (max-width: 768px) {
+        h2 { font-size: 1.4rem; }
+        .card-body { padding: 0.75rem !important; }
+    }
+</style>
+{% endblock %}

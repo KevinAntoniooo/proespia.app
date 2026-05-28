@@ -1,0 +1,887 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-days me-2"></i>Agenda de Terreno</h2>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-5 order-2 order-lg-1" style="display:none;">
+            <div class="rounded-4 overflow-hidden shadow-sm border agenda-card-bg">
+                <div id="calendar"></div>
+            </div>
+        </div>
+
+        <div class="col-12 order-1 order-lg-2 d-flex flex-column" style="gap:0.75rem;">
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-2" style="flex-wrap:wrap;">
+                <div class="rounded-4 p-2 d-flex align-items-center justify-content-between shadow-sm border flex-shrink-0 agenda-card-bg" style="max-width:360px;width:100%;">
+                    <button id="btnFechaPrev" class="btn d-flex align-items-center justify-content-center rounded-3 agenda-btn-light flex-shrink-0" style="width:38px;height:38px;">
+                        <i class="fa-solid fa-chevron-left" style="font-size:0.85rem;"></i>
+                    </button>
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-center px-2">
+                        <input type="date" id="fechaSelector" class="form-control border-0 text-center fw-bold agenda-text-primary" style="font-size:0.9rem;background:transparent;max-width:180px;cursor:pointer;" value="{{ hoy }}">
+                    </div>
+                    <button id="btnFechaNext" class="btn d-flex align-items-center justify-content-center rounded-3 agenda-btn-light flex-shrink-0" style="width:38px;height:38px;">
+                        <i class="fa-solid fa-chevron-right" style="font-size:0.85rem;"></i>
+                    </button>
+                </div>
+                <button class="btn rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 flex-shrink-0" id="btnAgregarVisita" style="font-size:0.85rem;padding:0.7rem 1.25rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;margin-left:auto;">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Agendar Visita</span>
+                </button>
+            </div>
+
+            <div class="rounded-4 shadow-sm border d-flex flex-column overflow-hidden agenda-card-bg">
+                <div class="p-3 pb-0 d-flex align-items-center justify-content-between">
+                    <h6 class="fw-bold mb-0 agenda-text-primary" id="fechaLabel" style="font-size:0.8rem;">Cargando...</h6>
+                    <span class="badge agenda-badge-indigo" id="visitasCount" style="font-size:0.65rem;font-weight:600;padding:0.25rem 0.75rem;border-radius:999px;">0 visitas</span>
+                </div>
+                <div id="visitListContainer" class="p-3" style="min-height:100px;">
+                    <div class="agenda-vacia-container" id="emptyState">
+                        <div class="agenda-vacia-icon">
+                            <i class="fa-solid fa-calendar-day"></i>
+                        </div>
+                        <p class="agenda-vacia-title">Sin visitas para esta fecha</p>
+                        <p class="agenda-vacia-subtitle">Selecciona un día en el calendario</p>
+                    </div>
+                    <div id="visitCardsWrapper" style="display:none;"></div>
+                </div>
+            </div>
+    </div>
+</div>
+
+</div>
+
+<div id="detalleModal" class="detalle-modal-container">
+    <div class="detalle-card-content">
+        <div class="detalle-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-circle-info text-white" style="font-size:1rem;opacity:0.9;"></i>
+                <h6 class="fw-bold mb-0 text-white" style="font-size:0.95rem;">Detalle de la Visita</h6>
+            </div>
+            <button id="btnCerrarDetalle" class="detalle-close-btn" type="button">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="p-3">
+            <div class="d-flex align-items-start gap-3 mb-2">
+                <div style="width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;" class="agenda-badge-indigo">
+                    <i class="fa-solid fa-building" style="color:#6366f1;font-size:1rem;"></i>
+                </div>
+                <div class="flex-grow-1" style="min-width:0;">
+                    <p style="font-size:0.6rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.15rem;font-weight:600;">Cliente / Sede</p>
+                    <h5 id="detailCliente" class="fw-bold mb-0 agenda-text-primary" style="font-size:1.05rem;">---</h5>
+                </div>
+                <span id="detailEstadoBadge" class="badge" style="font-size:0.6rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:999px;"></span>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <div class="d-flex align-items-center gap-2 p-2 rounded-3 agenda-subtle-bg">
+                        <i class="fa-regular fa-clock" style="color:#6366f1;font-size:0.8rem;"></i>
+                        <div>
+                            <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0;font-weight:600;">Hora</p>
+                            <p id="detailHora" class="fw-bold mb-0 agenda-text-primary" style="font-size:0.9rem;">--:--</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="d-flex align-items-center gap-2 p-2 rounded-3 agenda-subtle-bg">
+                        <i class="fa-solid fa-calendar" style="color:#6366f1;font-size:0.8rem;"></i>
+                        <div>
+                            <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0;font-weight:600;">Fecha</p>
+                            <p id="detailFecha" class="fw-bold mb-0 agenda-text-primary" style="font-size:0.9rem;">--/--/----</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-3 agenda-subtle-bg">
+                <i class="fa-solid fa-user-gear" style="color:#6366f1;font-size:0.8rem;"></i>
+                <div>
+                    <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0;font-weight:600;">Técnico Asignado</p>
+                    <p id="detailTecnico" class="fw-bold mb-0 agenda-text-primary" style="font-size:0.85rem;">---</p>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mb-2 p-2 rounded-3 agenda-subtle-bg">
+                <i class="fa-solid fa-toolbox" style="color:#6366f1;font-size:0.8rem;"></i>
+                <div>
+                    <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0;font-weight:600;">Tipo de Servicio</p>
+                    <p id="detailTipo" class="fw-bold mb-0 agenda-text-primary" style="font-size:0.85rem;">---</p>
+                </div>
+            </div>
+
+            <div class="mb-2 p-2 rounded-3 agenda-subtle-bg" id="detailDescripcionContainer">
+                <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem;font-weight:600;">Notas</p>
+                <p id="detailDescripcion" class="mb-0" style="font-size:0.8rem;color:#475569;white-space:pre-line;">---</p>
+            </div>
+
+            <div id="detailUbicacionContainer" class="mb-2" style="display:none;">
+                <a id="detailUbicacionLink" href="#" target="_blank" class="btn d-flex align-items-center gap-2 w-100 rounded-3 agenda-bg-indigo" style="font-size:0.8rem;font-weight:600;color:#6366f1;border:none;padding:0.5rem 0.75rem;">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>Abrir Ruta</span>
+                </a>
+            </div>
+
+            <div class="d-flex flex-column gap-2 mt-2">
+                <button id="btnEditarVisita" class="btn w-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" style="font-size:0.8rem;padding:0.45rem;background:#fef3c7;color:#d97706;border:none;transition:all 0.2s;">
+                    <i class="fa-solid fa-pen"></i>
+                    <span>Editar Visita</span>
+                </button>
+                <button id="btnReportarVisita" class="btn w-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" style="font-size:0.8rem;padding:0.45rem;background:transparent;color:#ef4444;border:1.5px solid #fecaca;transition:all 0.2s;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Reportar Incidencia / Cancelar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgendar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-dark">
+            <form action="{{ url_for('agendar_visita') }}" method="POST">
+                <div class="modal-header border-0" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                    <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-calendar-plus me-2"></i>Agendar Actividad</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert border-0 rounded-3 d-flex align-items-center agenda-bg-indigo">
+                        <i class="fa-solid fa-calendar-day me-2" style="color:#6366f1;"></i>
+                        <span id="fecha_modal_label" class="fw-bold small" style="color:#4338ca;"></span>
+                        <input type="hidden" name="fecha_programada_base" id="input_fecha_base">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Tipo de Servicio</label>
+                            <select name="tipo_trabajo" id="select_tipo_trabajo" class="form-select shadow-sm rounded-3" onchange="toggleEquipos()">
+                                <option value="Cotización">Visita de Cotización / Terreno</option>
+                                <option value="Instalación">Instalación CCTV / Alarma</option>
+                                <option value="Mantención Preventiva">Mantención Preventiva</option>
+                                <option value="Reparación">Reparación Técnica / Soporte</option>
+                                <option value="Emergencia">Emergencia (Prioridad Alta)</option>
+                                <option value="Otra">Otro...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Hora Estimada</label>
+                            <input type="time" name="hora_visita" class="form-control shadow-sm rounded-3" value="09:00" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Cliente</label>
+                            <select name="cliente_id" class="form-select border rounded-3" style="border-color:#6366f1!important;" required>
+                                <option value="0">-- CLIENTE NUEVO --</option>
+                                {% for c in clientes %}
+                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Asignar Técnico</label>
+                            <select name="tecnico_id" class="form-select border rounded-3" style="border-color:#6366f1!important;" required>
+                                {% for t in tecnicos %}
+                                <option value="{{ t.id }}">{{ t.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div id="seccion_equipos" class="col-12" style="display:none;">
+                            <label class="form-label fw-bold small text-uppercase text-muted" style="font-size:0.65rem;">Equipos a Instalar</label>
+                            <div class="row g-2 p-3 rounded-3 border agenda-subtle-bg">
+                                <div class="col-4"><input type="number" name="cant_camaras" class="form-control form-control-sm" placeholder="Cáms"></div>
+                                <div class="col-4"><input type="text" name="tipo_grabador" class="form-control form-control-sm" placeholder="NVR"></div>
+                                <div class="col-4"><input type="number" name="mts_cable" class="form-control form-control-sm" placeholder="Mts"></div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Descripción / Dirección</label>
+                            <textarea name="descripcion" class="form-control shadow-sm rounded-3" rows="2" placeholder="Detalles de la visita..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Ubicación <span class="text-muted fw-normal">(haz clic en el mapa)</span></label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-white rounded-start-3"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                <input type="text" id="inputBuscarDireccion" class="form-control" placeholder="Buscar dirección..." autocomplete="off">
+                                <button class="btn rounded-end-3" style="background:#6366f1;color:#fff;border:none;" type="button" onclick="buscarEnMapa()"><i class="fa-solid fa-search"></i></button>
+                            </div>
+                            <div id="mapa-ubicacion" style="height:250px;border-radius:12px;border:2px solid #e2e8f0;cursor:crosshair;"></div>
+                            <input type="hidden" name="ubicacion" id="input-ubicacion">
+                            <small class="text-muted" id="label-ubicacion"><i class="fa-regular fa-circle-dot me-1"></i>Haz clic en el mapa para marcar la ubicación</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn shadow-sm btn-sm fw-bold px-3 rounded-3 agenda-btn-light" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn shadow-sm btn-sm fw-bold rounded-3" style="font-size:0.85rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmarEliminarVisita" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-danger">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2">¿Eliminar visita?</h5>
+                <p class="text-muted small mb-3">Esta acción no se puede deshacer.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn shadow-sm btn-sm fw-bold px-3 rounded-3 agenda-btn-light" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger shadow-sm btn-sm fw-bold px-3 rounded-3" style="font-size:0.85rem;" id="btnConfirmarEliminarVisita"><i class="fa-solid fa-trash-can me-1"></i>Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalVerDetalle" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered text-dark">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0" style="background:#1e293b;">
+                <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-circle-info me-2" style="color:#fbbf24;"></i>Detalle de la Visita</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Cliente / Sede</label>
+                    <h5 id="det_cliente" class="fw-bold" style="color:#6366f1;"></h5>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Técnico</label>
+                        <span id="det_tecnico" class="badge shadow-sm agenda-badge-indigo"></span>
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Servicio</label>
+                        <span id="det_tipo" class="badge shadow-sm agenda-subtle-bg" style="color:#475569;"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Estado</label>
+                    <span id="det_estado" class="badge shadow-sm"></span>
+                </div>
+                <hr>
+                <div class="mb-0">
+                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Notas y Requerimientos</label>
+                    <div class="p-3 rounded-3 border agenda-subtle-bg">
+                        <p id="det_descripcion" class="mb-0 small" style="white-space:pre-line;"></p>
+                    </div>
+                </div>
+                <div id="det_ubicacion_container" class="mt-3 d-none">
+                    <label class="small text-uppercase fw-bold text-muted d-block mb-1" style="font-size:0.6rem;">Ubicación</label>
+                    <a id="det_ubicacion_link" href="#" target="_blank" class="btn shadow-sm w-100 rounded-3 agenda-bg-indigo" style="font-size:0.85rem;color:#6366f1;border:none;">
+                        <i class="fa-solid fa-location-dot me-1"></i>Ver Ruta
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer border-0 d-flex gap-2">
+                <button type="button" class="btn shadow-sm btn-sm fw-bold rounded-3 agenda-btn-light" style="font-size:0.85rem;" onclick="eliminarVisita()">
+                    <i class="fa-solid fa-trash-can me-1"></i>Eliminar
+                </button>
+                <button type="button" class="btn shadow-sm btn-sm fw-bold rounded-3" style="font-size:0.85rem;background:#fef3c7;color:#d97706;border:none;" onclick="editarVisita()">
+                    <i class="fa-solid fa-pen me-1"></i>Editar
+                </button>
+                <button type="button" class="btn shadow-sm btn-sm fw-bold px-3 rounded-3 agenda-btn-light" style="font-size:0.85rem;" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarVisita" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered text-dark">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0" style="background:#1e293b;">
+                <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-pen-to-square me-2" style="color:#fbbf24;"></i>Editar Visita</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Cliente</label>
+                    <p class="fw-bold mb-0" id="edit_cliente"></p>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Hora</label>
+                        <input type="time" id="edit_hora" class="form-control rounded-3">
+                    </div>
+                    <div class="col-6">
+                        <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Técnico</label>
+                        <select id="edit_tecnico" class="form-select rounded-3">
+                            {% for t in tecnicos %}
+                            <option value="{{ t.id }}">{{ t.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Tipo de Servicio</label>
+                    <select id="edit_tipo" class="form-select rounded-3">
+                        <option>Mantención</option>
+                        <option>Instalación</option>
+                        <option>Emergencia</option>
+                        <option>Retiro</option>
+                        <option>Cotización</option>
+                    </select>
+                </div>
+                <div class="mt-3">
+                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Notas</label>
+                    <textarea id="edit_descripcion" class="form-control rounded-3" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn shadow-sm btn-sm fw-bold px-3 rounded-3 agenda-btn-light" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn shadow-sm btn-sm fw-bold rounded-3" style="font-size:0.85rem;background:#f59e0b;color:#fff;border:none;" onclick="guardarEdicion()">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --accent: #6366f1;
+        --accent-dark: #4f46e5;
+        --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+        --bg-body: #f8fafc;
+        --card-bg: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+        --border-color: #e2e8f0;
+    }
+
+    body {
+        background: var(--bg-body);
+    }
+
+    #calendar {
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        font-size: 0.85rem;
+        padding: 0.5rem;
+    }
+    .fc .fc-toolbar-title { font-size: 1rem !important; font-weight: 700; color: var(--text-primary); }
+    .fc .fc-button { font-size: 0.75rem !important; padding: 0.3rem 0.6rem !important; border-radius: 8px !important; border: 1px solid var(--border-color) !important; background: #fff !important; color: var(--text-secondary) !important; font-weight: 600 !important; box-shadow: none !important; }
+    .fc .fc-button:hover { background: #f1f5f9 !important; }
+    .fc .fc-button-primary:not(:disabled).fc-button-active, .fc .fc-button-primary:not(:disabled):active { background: #eef2ff !important; border-color: var(--accent) !important; color: var(--accent) !important; }
+    .fc .fc-daygrid-day { border: none !important; }
+    .fc .fc-daygrid-day-number { padding: 6px !important; font-weight: 600; color: var(--text-secondary); text-decoration: none !important; font-size: 0.8rem; }
+    .fc .fc-daygrid-day:hover { background: #f1f5f9 !important; cursor: pointer; border-radius: 8px; }
+    .fc .fc-daygrid-day.fc-day-today { background: #eef2ff !important; border-radius: 8px; }
+    .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { background: var(--accent); color: #fff !important; border-radius: 8px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; margin: 2px; font-size: 0.8rem; }
+    .fc .fc-daygrid-day.selected-day { background: #eef2ff !important; border-radius: 8px; }
+    .fc .fc-daygrid-day.selected-day .fc-daygrid-day-number { background: var(--accent); color: #fff !important; border-radius: 8px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; margin: 2px; }
+    .fc .fc-col-header-cell { border: none !important; padding: 6px 0 !important; }
+    .fc .fc-col-header-cell-cushion { text-decoration: none !important; text-transform: uppercase; font-size: 0.65rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+    .fc .fc-scrollgrid { border: none !important; }
+    .fc .fc-scrollgrid td, .fc .fc-scrollgrid th { border: none !important; }
+    .fc .fc-daygrid-more-link { text-decoration: none !important; font-size: 0.65rem; color: var(--accent) !important; font-weight: 600; }
+    .fc .fc-event { border-radius: 6px !important; border: none !important; font-size: 0.65rem !important; padding: 1px 4px !important; margin: 1px 2px !important; }
+    .fc .fc-day-other .fc-daygrid-day-number { color: #cbd5e1; }
+    .fc .fc-header-toolbar { margin-bottom: 0.5rem !important; }
+    .fc .fc-toolbar-chunk { display: flex; align-items: center; gap: 0.25rem; }
+
+    .visit-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-radius: 14px;
+        background: #fff;
+        border: 1.5px solid var(--border-color);
+        padding: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+    .visit-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(99,102,241,0.1); transform: translateY(-1px); }
+    .visit-card.active { border-color: var(--accent); background: #fafaff; box-shadow: 0 4px 16px rgba(99,102,241,0.15); }
+    .visit-card .visit-time { font-size: 1.3rem; font-weight: 800; color: var(--text-primary); line-height: 1; letter-spacing: -0.5px; }
+    .visit-card .visit-time-divider { width: 2px; height: 32px; border-radius: 2px; background: var(--accent); opacity: 0.3; flex-shrink: 0; }
+    .visit-card .visit-client { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+    .visit-card .visit-meta { font-size: 0.68rem; color: var(--text-muted); }
+    .visit-card .visit-meta i { width: 14px; text-align: center; margin-right: 3px; font-size: 0.6rem; }
+
+    .badge-estado {
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+    .badge-estado-pendiente { background: #eef2ff; color: #6366f1; }
+    .badge-estado-en-curso { background: #fef3c7; color: #d97706; }
+    .badge-estado-realizada { background: #ecfdf5; color: #059669; }
+    .badge-estado-vencida { background: #f1f5f9; color: #94a3b8; }
+
+    #fechaSelector::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+    #fechaSelector::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    .animacion-entrada { animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .detalle-modal-container {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 1050;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+    }
+    .detalle-modal-container.active { display: flex; }
+    .detalle-card-content {
+        background-color: #ffffff;
+        width: 90%;
+        max-width: 500px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        animation: modalSlideUp 0.3s ease-out;
+        overflow: hidden;
+    }
+    @keyframes modalSlideUp {
+        from { transform: translateY(40px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .detalle-header {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        padding: 0.85rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .detalle-close-btn {
+        background: rgba(255,255,255,0.15);
+        border: none;
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1.1rem;
+    }
+    .detalle-close-btn:hover { background: rgba(255,255,255,0.3); }
+    .detalle-close-btn i { line-height: 1; }
+
+    .agenda-vacia-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        text-align: center;
+        color: #94a3b8;
+        background-color: #ffffff;
+        border-radius: 16px;
+        margin: 20px 0;
+        border: 1px dashed #cbd5e1;
+    }
+    .agenda-vacia-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+        color: #94a3b8;
+        font-size: 1.2rem;
+    }
+    .agenda-vacia-title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #94a3b8;
+        margin-bottom: 0.25rem;
+    }
+    .agenda-vacia-subtitle {
+        font-size: 0.7rem;
+        color: #cbd5e1;
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 991.98px) {
+        .container-fluid { padding: 0.75rem !important; }
+        .visit-card { padding: 0.7rem; }
+        .visit-card .visit-time { font-size: 1.1rem; }
+        #calendar { padding: 0.25rem; font-size: 0.75rem; }
+        .fc .fc-toolbar-title { font-size: 0.85rem !important; }
+        .fc .fc-daygrid-day-number { font-size: 0.7rem; padding: 3px !important; }
+        .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number { width: 24px; height: 24px; font-size: 0.7rem; }
+        .fc .fc-daygrid-day.selected-day .fc-daygrid-day-number { width: 24px; height: 24px; font-size: 0.7rem; }
+        #btnAgregarVisita { width: 100% !important; }
+    }
+
+    .dark-mode .container-fluid h2 { color: #f1f5f9 !important; }
+    .dark-mode .container-fluid .text-muted { color: var(--text-muted) !important; }
+    .dark-mode .border[style*="#e2e8f0"] { border-color: var(--border-subtle) !important; }
+    .dark-mode [style*="background:#fff"] { background: var(--bg-card) !important; }
+    .dark-mode [style*="background:#f8fafc"] { background: rgba(255,255,255,0.04) !important; }
+    .dark-mode [style*="background:#f1f5f9"] { background: rgba(255,255,255,0.06) !important; }
+    .dark-mode [style*="background:#eef2ff"] { background: rgba(99,102,241,0.12) !important; }
+    .dark-mode [style*="color:#1e293b"] { color: var(--text-heading) !important; }
+    .dark-mode [style*="color:#475569"] { color: var(--text-body) !important; }
+    .dark-mode [style*="color:#94a3b8"] { color: var(--text-muted) !important; }
+    .dark-mode [style*="color:#cbd5e1"] { color: var(--text-muted) !important; }
+    .dark-mode [style*="color:#4338ca"] { color: #818cf8 !important; }
+    .dark-mode .agenda-vacia-container {
+        background: transparent !important;
+        border-color: var(--border-subtle) !important;
+    }
+    .dark-mode .agenda-vacia-icon { background: rgba(255,255,255,0.06) !important; color: var(--text-muted) !important; }
+    .dark-mode .detalle-card-content { background: var(--bg-card) !important; }
+    .dark-mode .detalle-modal-container { background-color: rgba(0,0,0,0.7) !important; }
+    .dark-mode .visit-card { background: var(--bg-card) !important; border-color: var(--border-subtle) !important; }
+    .dark-mode .visit-card:hover { border-color: var(--accent) !important; }
+    .dark-mode .visit-card.active { background: rgba(99,102,241,0.08) !important; border-color: var(--accent) !important; }
+    .dark-mode .visit-card .visit-time { color: var(--text-heading) !important; }
+    .dark-mode .visit-card .visit-client { color: var(--text-heading) !important; }
+    .dark-mode .visit-card .visit-meta { color: var(--text-muted) !important; }
+    .dark-mode [style*="background:transparent;color:#ef4444"] { color: #f87171 !important; border-color: rgba(248,113,113,0.3) !important; }
+    .dark-mode [style*="background:#fef3c7;color:#d97706"] { background: rgba(251,191,36,0.12) !important; color: #fbbf24 !important; }
+    .dark-mode [style*="background:linear-gradient(135deg,#059669,#10b981)"] { background: linear-gradient(135deg, #047857, #059669) !important; }
+    .dark-mode .badge[style*="background:#eef2ff;color:#6366f1"] { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+    .dark-mode .badge-estado-pendiente { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+    .dark-mode .badge-estado-en-curso { background: rgba(251,191,36,0.15) !important; color: #fbbf24 !important; }
+    .dark-mode .badge-estado-realizada { background: rgba(74,222,128,0.12) !important; color: #4ade80 !important; }
+    .dark-mode .badge-estado-vencida { background: rgba(148,163,184,0.15) !important; color: var(--text-muted) !important; }
+    .dark-mode .fc .fc-button { background: var(--bg-card) !important; color: var(--text-body) !important; border-color: var(--border-subtle) !important; }
+    .dark-mode .fc .fc-button:hover { background: rgba(255,255,255,0.08) !important; }
+    .dark-mode .fc .fc-col-header-cell-cushion { color: var(--text-muted) !important; }
+    .dark-mode .fc .fc-daygrid-day-number { color: var(--text-body) !important; }
+    .dark-mode .fc .fc-day-other .fc-daygrid-day-number { color: var(--text-muted) !important; opacity: 0.4; }
+    .dark-mode .fc .fc-daygrid-day:hover { background: rgba(255,255,255,0.04) !important; }
+    .dark-mode .fc .fc-daygrid-day.fc-day-today { background: rgba(99,102,241,0.1) !important; }
+    .dark-mode .fc .fc-toolbar-title { color: var(--text-heading) !important; }
+    .dark-mode [style*="background:linear-gradient(135deg,#6366f1,#8b5cf6)"] { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; }
+    .dark-mode #fechaSelector { color: var(--text-heading) !important; }
+    .dark-mode [style*="background:transparent;max-width:180px"] { color: var(--text-heading) !important; }
+</style>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+    var mapa = null;
+    var marcador = null;
+    var currentVisitaId = null;
+    var visitasData = [];
+    var detalleAbierto = null;
+
+    function initMapa() {
+        if (mapa) { mapa.invalidateSize(); return; }
+        mapa = L.map('mapa-ubicacion').setView([-34.17, -70.74], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapa);
+        mapa.on('click', function(e) { colocarMarcador(e.latlng.lat, e.latlng.lng); });
+        setTimeout(function() { mapa.invalidateSize(); }, 500);
+    }
+
+    function colocarMarcador(lat, lng) {
+        if (marcador) mapa.removeLayer(marcador);
+        marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
+        var url = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+        document.getElementById('input-ubicacion').value = url;
+        document.getElementById('label-ubicacion').innerHTML = '<i class="fa-regular fa-circle-check text-success me-1"></i>Ubicación marcada <a href="' + url + '" target="_blank" class="text-decoration-none small">(ver en Maps)</a>';
+        marcador.on('dragend', function() {
+            var pos = marcador.getLatLng();
+            document.getElementById('input-ubicacion').value = 'https://www.google.com/maps?q=' + pos.lat + ',' + pos.lng;
+        });
+    }
+
+    function buscarEnMapa() {
+        var dir = document.getElementById('inputBuscarDireccion').value.trim();
+        if (!dir) return;
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(dir) + '&limit=5&countrycodes=cl')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.length === 0) { alert('No se encontró la dirección.'); return; }
+                var r = data[0];
+                mapa.setView([r.lat, r.lon], 16);
+                colocarMarcador(r.lat, r.lon);
+            }).catch(function() { alert('Error al buscar la dirección.'); });
+    }
+    document.getElementById('inputBuscarDireccion')?.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); buscarEnMapa(); }
+    });
+    document.getElementById('modalAgendar')?.addEventListener('shown.bs.modal', function() { initMapa(); });
+    document.getElementById('btnAgregarVisita')?.addEventListener('click', function() { abrirModalManual(); });
+
+    function getEstadoBadgeClass(estado) {
+        var map = { 'Pendiente': 'badge-estado-pendiente', 'En Curso': 'badge-estado-en-curso', 'Realizada': 'badge-estado-realizada', 'Vencida': 'badge-estado-vencida' };
+        return map[estado] || 'badge-estado-pendiente';
+    }
+
+    function getEstadoLabel(estado) {
+        var map = { 'Pendiente': 'Programada', 'En Curso': 'En Curso', 'Realizada': 'Realizada', 'Vencida': 'Vencida' };
+        return map[estado] || estado;
+    }
+
+    function renderVisitCards(visitas) {
+        visitasData = visitas;
+        var container = document.getElementById('visitCardsWrapper');
+        var emptyState = document.getElementById('emptyState');
+        var countBadge = document.getElementById('visitasCount');
+        var fechaLabel = document.getElementById('fechaLabel');
+
+        if (!visitas || visitas.length === 0) {
+            emptyState.style.display = 'flex';
+            container.style.display = 'none';
+            countBadge.textContent = '0 visitas';
+            cerrarDetalle();
+            return;
+        }
+        emptyState.style.display = 'none';
+        container.style.display = 'block';
+        countBadge.textContent = visitas.length + (visitas.length === 1 ? ' visita' : ' visitas');
+
+        var fechaStr = visitas[0].fecha_str || visitas[0].fecha;
+        var d = new Date(visitas[0].fecha + 'T12:00:00');
+        var opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+        fechaLabel.textContent = d.toLocaleDateString('es-ES', opciones);
+
+        container.innerHTML = '';
+        visitas.forEach(function(v, idx) {
+            var card = document.createElement('div');
+            card.className = 'visit-card d-flex align-items-center gap-3 animacion-entrada' + (idx === 0 ? ' active' : '');
+            card.style.setProperty('animation-delay', (idx * 0.05) + 's');
+            card.setAttribute('data-idx', idx);
+            card.onclick = function() {
+                document.querySelectorAll('.visit-card').forEach(function(c) { c.classList.remove('active'); });
+                card.classList.add('active');
+                abrirDetalle(v);
+            };
+            card.innerHTML = '<div class="d-flex align-items-center gap-3 flex-shrink-0"><span class="visit-time">' + v.hora + '</span><div class="visit-time-divider"></div></div><div class="flex-grow-1" style="min-width:0;"><div class="visit-client text-truncate">' + v.title + '</div><div class="visit-meta d-flex flex-wrap gap-2 mt-1"><span><i class="fa-solid fa-user-gear"></i>' + (v.tecnico || 'Sin técnico') + '</span><span><i class="fa-solid fa-toolbox"></i>' + v.tipo + '</span></div></div><span class="badge-estado ' + getEstadoBadgeClass(v.estado) + ' flex-shrink-0">' + getEstadoLabel(v.estado) + '</span>';
+            container.appendChild(card);
+        });
+        if (visitas.length > 0) {
+            detalleAbierto = visitas[0];
+            currentVisitaId = visitas[0].id;
+        }
+    }
+
+    function abrirDetalle(v) {
+        detalleAbierto = v;
+        currentVisitaId = v.id;
+        var modal = document.getElementById('detalleModal');
+
+        document.getElementById('detailCliente').textContent = v.title;
+        document.getElementById('detailHora').textContent = v.hora;
+        document.getElementById('detailFecha').textContent = v.fecha_str || v.fecha;
+        document.getElementById('detailTecnico').textContent = v.tecnico || 'Sin asignar';
+        document.getElementById('detailTipo').textContent = v.tipo;
+
+        var badge = document.getElementById('detailEstadoBadge');
+        badge.textContent = getEstadoLabel(v.estado);
+        badge.className = 'badge ' + getEstadoBadgeClass(v.estado);
+
+        document.getElementById('detailDescripcion').textContent = v.descripcion || 'Sin notas adicionales.';
+
+        var ubContainer = document.getElementById('detailUbicacionContainer');
+        var ubLink = document.getElementById('detailUbicacionLink');
+        if (v.ubicacion) {
+            ubContainer.style.display = 'block';
+            ubLink.href = v.ubicacion;
+        } else {
+            ubContainer.style.display = 'none';
+        }
+
+        var btnReportar = document.getElementById('btnReportarVisita');
+
+        btnReportar.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>' + (v.estado === 'Realizada' ? 'Eliminar visita' : 'Eliminar / Cancelar') + '</span>';
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarDetalle() {
+        var modal = document.getElementById('detalleModal');
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function cargarVisitas(fechaStr) {
+        fetch('/api/eventos_por_fecha?fecha=' + fechaStr)
+            .then(function(r) { return r.json(); })
+            .then(function(data) { renderVisitCards(data); })
+            .catch(function() { renderVisitCards([]); });
+    }
+
+    function navegarFecha(delta) {
+        var input = document.getElementById('fechaSelector');
+        var d = new Date(input.value + 'T12:00:00');
+        d.setDate(d.getDate() + delta);
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        var nuevaFecha = y + '-' + m + '-' + day;
+        input.value = nuevaFecha;
+        cargarVisitas(nuevaFecha);
+        if (calendar) { calendar.gotoDate(nuevaFecha); }
+    }
+
+    document.getElementById('btnFechaPrev')?.addEventListener('click', function() { navegarFecha(-1); });
+    document.getElementById('btnFechaNext')?.addEventListener('click', function() { navegarFecha(1); });
+    document.getElementById('fechaSelector')?.addEventListener('change', function() {
+        if (this.value) {
+            cargarVisitas(this.value);
+            if (calendar) { calendar.gotoDate(this.value); }
+        }
+    });
+
+    document.getElementById('btnReportarVisita')?.addEventListener('click', function() {
+        if (!currentVisitaId) return;
+        eliminarVisita();
+    });
+
+    document.getElementById('btnEditarVisita')?.addEventListener('click', function() {
+        cerrarDetalle();
+        setTimeout(function() { editarVisita(); }, 300);
+    });
+
+    document.getElementById('btnCerrarDetalle')?.addEventListener('click', cerrarDetalle);
+
+    document.getElementById('detalleModal')?.addEventListener('click', function(e) {
+        if (e.target === this) cerrarDetalle();
+    });
+
+    var calendar;
+
+    function verDetalleVisita(evento) {
+        currentVisitaId = evento.extendedProps.id;
+        document.getElementById('det_cliente').innerText = evento.title;
+        document.getElementById('det_tecnico').innerText = evento.extendedProps.tecnico || 'No asignado';
+        document.getElementById('det_tipo').innerText = evento.extendedProps.tipo || 'General';
+        var est = evento.extendedProps.estado || 'Pendiente';
+        var badge = document.getElementById('det_estado');
+        badge.innerText = est;
+        badge.className = 'badge shadow-sm ' + (est === 'Vencida' ? 'bg-secondary' : est === 'Realizada' ? 'bg-success' : 'bg-warning text-dark');
+        document.getElementById('det_descripcion').innerText = evento.extendedProps.descripcion || "Sin notas adicionales.";
+
+        var ubicacion = evento.extendedProps.ubicacion || '';
+        var container = document.getElementById('det_ubicacion_container');
+        var rutaLink = document.getElementById('det_ubicacion_link');
+        if (ubicacion) { container.classList.remove('d-none'); rutaLink.href = ubicacion; }
+        else { container.classList.add('d-none'); }
+
+        new bootstrap.Modal(document.getElementById('modalVerDetalle')).show();
+    }
+
+    function eliminarVisita() {
+        if (!currentVisitaId) return;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminarVisita')).show();
+    }
+    document.getElementById('btnConfirmarEliminarVisita')?.addEventListener('click', function() {
+        if (!currentVisitaId) return;
+        fetch('/api/eliminar_visita/' + currentVisitaId, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVisita')).hide();
+                    var modalDetalle = bootstrap.Modal.getInstance(document.getElementById('modalVerDetalle'));
+                    if (modalDetalle) modalDetalle.hide();
+                    cerrarDetalle();
+                    if (calendar) calendar.refetchEvents();
+                    var fecha = document.getElementById('fechaSelector').value;
+                    cargarVisitas(fecha);
+                } else { alert('Error: ' + data.msg); }
+            }).catch(function() { alert('Error al eliminar la visita.'); });
+    });
+
+    function editarVisita() {
+        var ev = calendar ? calendar.getEventById(currentVisitaId) : null;
+        if (!ev) return;
+        var props = ev.extendedProps;
+        document.getElementById('edit_cliente').innerText = ev.title;
+        var hora = ev.start ? ev.start.toTimeString().slice(0, 5) : '12:00';
+        document.getElementById('edit_hora').value = hora;
+        document.getElementById('edit_tecnico').value = props.usuario_id || '';
+        document.getElementById('edit_tipo').value = props.tipo || 'Mantención';
+        document.getElementById('edit_descripcion').value = props.descripcion || '';
+        new bootstrap.Modal(document.getElementById('modalEditarVisita')).show();
+    }
+
+    function guardarEdicion() {
+        if (!currentVisitaId) return;
+        var data = {
+            hora: document.getElementById('edit_hora').value,
+            tipo_trabajo: document.getElementById('edit_tipo').value,
+            descripcion: document.getElementById('edit_descripcion').value,
+            tecnico_id: parseInt(document.getElementById('edit_tecnico').value)
+        };
+        fetch('/api/editar_visita/' + currentVisitaId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (resp.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('modalEditarVisita')).hide();
+                if (calendar) calendar.refetchEvents();
+                var fecha = document.getElementById('fechaSelector').value;
+                cargarVisitas(fecha);
+            }
+        }).catch(function() { alert('Error al guardar los cambios.'); });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var hoy = new Date();
+        var y = hoy.getFullYear();
+        var m = String(hoy.getMonth() + 1).padStart(2, '0');
+        var d = String(hoy.getDate()).padStart(2, '0');
+        var fechaHoy = y + '-' + m + '-' + d;
+
+        var inputFecha = document.getElementById('fechaSelector');
+        if (!inputFecha.value) inputFecha.value = fechaHoy;
+
+        const calendarEl = document.getElementById('calendar');
+        if (calendarEl) {
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                firstDay: 1,
+                height: 'auto',
+                headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+                dateClick: function(info) {
+                    inputFecha.value = info.dateStr;
+                    cargarVisitas(info.dateStr);
+                    document.querySelectorAll('.fc-daygrid-day').forEach(function(el) { el.classList.remove('selected-day'); });
+                    info.dayEl.classList.add('selected-day');
+                },
+                events: '/api/eventos_agenda?_=' + Date.now(),
+                eventClick: function(info) {
+                    inputFecha.value = info.event.startStr.slice(0, 10);
+                    cargarVisitas(info.event.startStr.slice(0, 10));
+                }
+            });
+            calendar.render();
+        }
+
+        cargarVisitas(fechaHoy);
+    });
+
+    function toggleEquipos() {
+        var tipo = document.getElementById('select_tipo_trabajo').value;
+        var seccion = document.getElementById('seccion_equipos');
+        if (seccion) seccion.style.display = (tipo === 'Instalación') ? 'block' : 'none';
+    }
+
+    function abrirModalManual() {
+        var fechaBase = document.getElementById('fechaSelector').value || new Date().toISOString().split('T')[0];
+        var opciones = { day: 'numeric', month: 'long', year: 'numeric' };
+        var label = new Date(fechaBase + 'T00:00:00').toLocaleDateString('es-ES', opciones);
+        document.getElementById('fecha_modal_label').innerText = label;
+        document.getElementById('input_fecha_base').value = fechaBase;
+        toggleEquipos();
+        new bootstrap.Modal(document.getElementById('modalAgendar')).show();
+    }
+</script>
+{% endblock %}

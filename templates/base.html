@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRO ESPÍA - Gestión</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('manifest_json') }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PRO ESPÍA">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f172a">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0f172a">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>if (localStorage.getItem('darkMode') === 'enabled' || (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme:dark)').matches)) { document.documentElement.classList.add('dark-mode') }</script>
+    <script>if (document.documentElement.classList.contains('dark-mode')){var _x=document.createElement('style');_x.textContent='body{background:#0f172a!important}[style*="background:#fff"],[style*="background: #fff"]{background:#1e293b!important}[style*="color:#1e293b"],[style*="color: #1e293b"]{color:#f1f5f9!important}[style*="border-color:#e2e8f0"],[style*="border-color: #e2e8f0"]{border-color:rgba(255,255,255,0.08)!important}';document.head.appendChild(_x)}</script>
+    <style>
+        @media(prefers-reduced-motion:reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important
+            }
+        }
+    </style>
+    <style>
+        :root {
+            --modal-overlay: rgba(15, 23, 42, 0.5);
+            --modal-overlay-dark: rgba(0, 0, 0, 0.7);
+            --modal-card-bg: #ffffff;
+            --modal-card-radius: 20px;
+            --modal-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+            --modal-border: rgba(255, 255, 255, 0.1);
+            --bg-card: #ffffff;
+            --text-heading: #1e293b;
+            --border-subtle: #e2e8f0;
+        }
+        html.dark-mode {
+            --bg-card: #1e293b;
+            --text-heading: #f1f5f9;
+            --border-subtle: rgba(255,255,255,0.08);
+        }
+        html.dark-mode [style*="background:#fff"],
+        html.dark-mode [style*="background: #fff"],
+        html.dark-mode [style*="background-color:#fff"],
+        html.dark-mode [style*="background-color: #fff"],
+        html.dark-mode .bg-white {
+            background: var(--bg-card) !important;
+        }
+        html.dark-mode [style*="color:#1e293b"],
+        html.dark-mode [style*="color: #1e293b"],
+        html.dark-mode .text-dark {
+            color: var(--text-heading) !important;
+        }
+        html.dark-mode [style*="border-color:#e2e8f0"],
+        html.dark-mode [style*="border-color: #e2e8f0"] {
+            border-color: var(--border-subtle) !important;
+        }
+        .modal-backdrop {
+            background-color: var(--modal-overlay) !important;
+            backdrop-filter: blur(5px) !important;
+            -webkit-backdrop-filter: blur(5px) !important;
+        }
+        .modal-backdrop.show { opacity: 1 !important; }
+
+        .modal-content {
+            border-radius: var(--modal-card-radius) !important;
+            box-shadow: var(--modal-shadow) !important;
+            border: 1px solid var(--modal-border) !important;
+            animation: modalFadeUp 0.25s ease-out !important;
+        }
+        @keyframes modalFadeUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            border-radius: var(--modal-card-radius) var(--modal-card-radius) 0 0 !important;
+            border-bottom: none !important;
+        }
+        .modal-footer { border-top: none !important; }
+
+        .modal.fade .modal-dialog { transform: none !important; }
+        .modal.fade.show .modal-dialog { transform: none !important; }
+
+        .dark-mode .modal-backdrop { background-color: var(--modal-overlay-dark) !important; }
+        .dark-mode .modal-content {
+            background-color: var(--bg-card) !important;
+            border-color: var(--border-subtle) !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+        }
+        .dark-mode .modal-header,
+        .dark-mode .modal-footer { border-color: var(--border-subtle) !important; }
+
+        /* Agenda utility classes (pre-empt flash in dark mode) */
+        .agenda-card-bg { background: #fff; border-color: #e2e8f0; }
+        .agenda-text-primary { color: #1e293b; }
+        .agenda-subtle-bg { background: #f8fafc; }
+        .agenda-badge-indigo { background: #eef2ff; color: #6366f1; }
+        .agenda-btn-light { background: #f1f5f9; border: none; color: #475569; }
+        .agenda-bg-indigo { background: #eef2ff; }
+        html.dark-mode .agenda-card-bg { background: var(--bg-card) !important; border-color: var(--border-subtle) !important; }
+        html.dark-mode .agenda-text-primary { color: var(--text-heading) !important; }
+        html.dark-mode .agenda-subtle-bg { background: rgba(255,255,255,0.04) !important; }
+        html.dark-mode .agenda-badge-indigo { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+        html.dark-mode .agenda-btn-light { background: rgba(255,255,255,0.06) !important; color: var(--text-body) !important; }
+        html.dark-mode .agenda-bg-indigo { background: rgba(99,102,241,0.12) !important; }
+    </style>
+</head>
+
+<body>
+    <div id="loading-bar-mask"
+        style="position:fixed;top:0;left:0;right:0;height:3px;background:#0f172a;z-index:99999;pointer-events:none;">
+    </div>
+    <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+    {% if request.path != '/' and usuario %}
+
+    <nav class="navbar navbar-dark d-md-none sticky-top shadow-sm" style="background-color: #0f172a !important;">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center ms-1" href="#">
+                <img src="{{ url_for('static', filename='img/logo-proespia.png') }}"
+                    style="max-height:32px;filter:brightness(0) invert(1);">
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <div class="text-end me-2 d-none d-sm-block">
+                    <p class="mb-0 fw-bold small text-white" style="font-size:0.85rem;line-height:1.2;">{{
+                        usuario.nombre }}</p>
+                    <small class="text-white-50" style="font-size:0.65rem;">{{ usuario.rol.upper() }}{% if usuario.rol
+                        == 'tecnico' and usuario.rel_ubicacion and usuario.rel_ubicacion.vehiculo %} · {{
+                        usuario.rel_ubicacion.vehiculo.placa }}{% endif %}</small>
+                </div>
+                <div class="user-avatar-circle-new shadow-sm d-sm-none"
+                    style="width:32px;height:32px;font-size:0.8rem;">{{ usuario.nombre[0].upper() }}</div>
+                <button class="dark-mode-toggle border-0" id="darkModeToggleMobile" type="button" title="Modo oscuro">
+                    <i class="fa-solid fa-moon" id="darkModeIconMobile"></i>
+                </button>
+                <button class="dark-mode-toggle position-relative border-0" type="button" id="notifBellMobile"
+                    title="Notificaciones" style="color:#fff;">
+                    <i class="fa-regular fa-bell"></i>
+                    <span id="notifBadgeMobile"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        style="font-size:0.45rem;display:none;">0</span>
+                </button>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#sidebarMobile">
+                    <i class="fa-solid fa-bars text-white"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-wrapper">
+
+        <aside class="sidebar-pro d-none d-md-flex">
+            <div class="brand-logo-container">
+                <img src="{{ url_for('static', filename='img/logo-proespia.png') }}" class="img-fluid side-logo">
+            </div>
+            <nav class="nav flex-column px-2 mt-2 flex-grow-1" aria-label="Navegación principal">
+                <a href="{{ url_for('dashboard', user_id=usuario.id) }}"
+                    class="nav-link-pro {{ 'active' if 'dashboard' in request.endpoint }}">
+                    <i class="fa-solid fa-house"></i> <span>Inicio</span>
+                </a>
+                <a href="/equipos/{{ usuario.id }}" class="nav-link-pro {{ 'active' if 'equipo' in request.endpoint }}">
+                    <i class="fa-solid fa-camera"></i> <span>Inventario</span>
+                </a>
+                <a href="/clientes/{{ usuario.id }}"
+                    class="nav-link-pro {{ 'active' if 'cliente' in request.endpoint }}">
+                    <i class="fa-solid fa-users"></i> <span>Clientes</span>
+                </a>
+
+                {% if usuario.rol in ['super_su', 'admin', 'operador'] %}
+                <a href="/bitacora/{{ usuario.id }}"
+                    class="nav-link-pro {{ 'active' if 'bitacora' in request.endpoint }}">
+                    <i class="fa-solid fa-file-lines"></i> <span>Bitácora Digital</span>
+                </a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin'] %}
+                <a href="{{ url_for('ver_agenda', user_id=usuario.id) }}"
+                    class="nav-link-pro {{ 'active' if 'agenda' in request.path }}">
+                    <i class="fa-solid fa-calendar-check"></i> <span>Agenda Terreno</span>
+                </a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}"
+                    class="nav-link-pro {{ 'active' if 'tareas' in request.path }}">
+                    <i class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
+                </a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin'] %}
+                <a href="/boveda/{{ usuario.id }}" class="nav-link-pro {{ 'active' if 'boveda' in request.endpoint }}">
+                    <i class="fa-solid fa-table-cells-large"></i> <span>Bóveda Apps</span>
+                </a>
+                <a href="/usuarios/{{ usuario.id }}"
+                    class="nav-link-pro {{ 'active' if 'usuario' in request.endpoint }}">
+                    <i class="fa-solid fa-user-gear"></i> <span>Personal</span>
+                </a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                <a href="/inventario/bodega/{{ usuario.id }}"
+                    class="nav-link-pro {{ 'active' if 'bodega' in request.endpoint }}">
+                    <i class="fa-solid fa-warehouse"></i> <span>Bodega Técnica</span>
+                </a>
+                {% endif %}
+                {% if usuario.rol in ['super_su', 'admin'] %}
+                <a href="/inventario/vehiculos" class="nav-link-pro {{ 'active' if 'vehiculos' in request.endpoint }}">
+                    <i class="fa-solid fa-truck"></i> <span>Vehículos</span>
+                </a>
+                {% endif %}
+                {% if usuario.rol in ['tecnico'] %}
+                <a href="/checklist/viernes" class="nav-link-pro {{ 'active' if 'checklist' in request.endpoint }}">
+                    <i class="fa-solid fa-clipboard-check"></i> <span>Checklist</span>
+                </a>
+                {% endif %}
+            </nav>
+
+            <div class="px-3 pb-4 mt-auto">
+                <hr class="text-white opacity-10 my-2">
+                <button id="btnInstalarPWA" class="nav-link-pro text-info py-2 px-3 mb-1 d-none d-md-none"
+                    style="font-size: 0.85rem; cursor: pointer;">
+                    <i class="fa-solid fa-download fa-sm"></i> <span class="small">Instalar App</span>
+                </button>
+                <a href="{{ url_for('logout') }}" class="nav-link-pro text-danger py-2 px-3"
+                    style="font-size: 0.85rem;">
+                    <i class="fa-solid fa-power-off fa-sm"></i> <span class="small">Cerrar Sesión</span>
+                </a>
+            </div>
+        </aside>
+
+        <div class="main-content-pro">
+            <header class="top-bar-pro d-none d-md-flex">
+                <div class="page-title">
+                    <h5 class="mb-0 fw-bold heading-font" style="color: var(--text-heading);">Panel de Gestión</h5>
+                    <small style="color: var(--text-muted);">PRO ESPÍA - Central de Monitoreo</small>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="dark-mode-toggle" id="darkModeToggle" type="button" title="Modo oscuro">
+                        <i class="fa-solid fa-moon" id="darkModeIcon"></i>
+                    </button>
+                    <!-- Notificaciones desktop -->
+                    <div class="dropdown" id="notifDropdown">
+                        <button class="dark-mode-toggle position-relative" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false" id="notifBell" title="Notificaciones">
+                            <i class="fa-regular fa-bell"></i>
+                            <span id="notifBadge"
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                style="font-size:0.55rem;display:none;">0</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
+                            style="width:320px;max-height:400px;overflow-y:auto;background:var(--bg-card);"
+                            id="notifMenu">
+                            <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom border-opacity-10"
+                                style="border-color:var(--text-muted);">
+                                <small class="fw-bold" style="color:var(--text-heading);"><i
+                                        class="fa-regular fa-bell me-1"></i>Notificaciones</small>
+                                <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidas"
+                                    style="font-size:0.75rem;color:var(--bs-info);">Marcar todas leídas</button>
+                            </div>
+                            <div id="notifList">
+                                <div class="text-center py-3"><small class="text-muted">Cargando...</small></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <div class="user-profile-trigger d-flex align-items-center" data-bs-toggle="dropdown"
+                            style="cursor: pointer;">
+                            <div class="text-end me-3">
+                                <p class="mb-0 fw-bold small" style="color: var(--text-heading);">{{ usuario.nombre }}
+                                </p>
+                                <div class="d-flex align-items-center gap-1 justify-content-end">
+                                    <span class="badge border border-primary text-primary bg-transparent"
+                                        style="font-size: 0.6rem;">{{ usuario.rol.upper() }}</span>
+                                    {% if usuario.rol == 'tecnico' and usuario.rel_ubicacion and
+                                    usuario.rel_ubicacion.vehiculo %}
+                                    <span
+                                        class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"
+                                        style="font-size: 0.55rem; line-height: 1.2;">
+                                        <i class="fa-solid fa-truck me-1"></i>{{ usuario.rel_ubicacion.vehiculo.placa }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="user-avatar-circle-new shadow-sm">{{ usuario.nombre[0].upper() }}</div>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                            <li>
+                                <a href="{{ url_for('logout') }}" class="dropdown-item text-danger">
+                                    <i class="fa-solid fa-power-off fa-sm me-2"></i>Cerrar Sesión
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <main class="p-3 p-md-4" id="main-content" tabindex="-1">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="sidebarMobile"
+        style="width: 280px; background-color: #0f172a !important;">
+        <div class="offcanvas-header border-bottom border-white border-opacity-10 text-white">
+            <div class="d-flex align-items-center gap-2 w-100">
+                <div class="user-avatar-circle-new shadow-sm" style="width:32px;height:32px;font-size:0.75rem;">{{
+                    usuario.nombre[0].upper() }}</div>
+                <div class="flex-grow-1">
+                    <p class="mb-0 fw-bold small text-white" style="font-size:0.75rem;line-height:1.2;">{{
+                        usuario.nombre }}</p>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="badge border border-primary text-primary bg-transparent"
+                            style="font-size:0.55rem;">{{ usuario.rol.upper() }}</span>
+                        {% if usuario.rol == 'tecnico' and usuario.rel_ubicacion and usuario.rel_ubicacion.vehiculo %}
+                        <span
+                            class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"
+                            style="font-size:0.5rem;">{{ usuario.rel_ubicacion.vehiculo.placa }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+            </div>
+        </div>
+        <div class="offcanvas-body p-0 d-flex flex-column">
+            <nav class="nav flex-column p-3 flex-grow-1" aria-label="Navegación móvil">
+                <a href="{{ url_for('dashboard', user_id=usuario.id) }}" class="nav-link-pro"><i
+                        class="fa-solid fa-house"></i> <span>Inicio</span></a>
+                <a href="/equipos/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-camera"></i>
+                    <span>Inventario</span></a>
+                <a href="/clientes/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-users"></i>
+                    <span>Clientes</span></a>
+
+                {% if usuario.rol in ['super_su', 'admin', 'operador'] %}
+                <a href="/bitacora/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-file-lines"></i>
+                    <span>Bitácora Digital</span></a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin'] %}
+                <a href="{{ url_for('ver_agenda', user_id=usuario.id) }}" class="nav-link-pro"><i
+                        class="fa-solid fa-calendar-check"></i> <span>Agenda Terreno</span></a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="nav-link-pro"><i
+                        class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span></a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin'] %}
+                <a href="/boveda/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-table-cells-large"></i>
+                    <span>Bóveda Apps</span></a>
+                <a href="/usuarios/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-user-gear"></i>
+                    <span>Personal</span></a>
+                {% endif %}
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                <a href="/inventario/bodega/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-warehouse"></i>
+                    <span>Bodega Técnica</span></a>
+                {% endif %}
+                {% if usuario.rol in ['super_su', 'admin'] %}
+                <a href="/inventario/vehiculos" class="nav-link-pro"><i class="fa-solid fa-truck"></i>
+                    <span>Vehículos</span></a>
+                {% endif %}
+                {% if usuario.rol in ['tecnico'] %}
+                <a href="/checklist/viernes" class="nav-link-pro"><i class="fa-solid fa-clipboard-check"></i>
+                    <span>Checklist</span></a>
+                {% endif %}
+            </nav>
+
+            <div class="p-3 border-top border-white border-opacity-10">
+                <a href="{{ url_for('logout') }}" class="nav-link-pro text-danger py-2 px-3"
+                    style="font-size: 0.85rem;">
+                    <i class="fa-solid fa-power-off fa-sm"></i> <span class="small">Cerrar Sesión</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offcanvas notificaciones (mobile) -->
+    <div class="offcanvas offcanvas-end d-md-none" tabindex="-1" id="offcanvasNotif"
+        style="width:300px;background-color: var(--bg-card);">
+        <div class="offcanvas-header border-bottom border-opacity-10" style="border-color:var(--text-muted);">
+            <small class="fw-bold" style="color:var(--text-heading);"><i
+                    class="fa-regular fa-bell me-1"></i>Notificaciones</small>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" style="filter:invert(.5);"></button>
+        </div>
+        <div class="offcanvas-body" id="notifListMobile" style="padding:0.75rem 1.5rem !important;">
+            <div class="text-center py-4"><small class="text-muted">Cargando...</small></div>
+        </div>
+    </div>
+
+    {% else %}
+    <main class="p-0 m-0 w-100 min-vh-100" id="main-content" tabindex="-1">
+        {% block content_login %}{% endblock %}
+    </main>
+    {% endif %}
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 2000">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="toast show align-items-center text-white bg-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} border-0 shadow-lg mb-2"
+            role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i
+                        class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-triangle-exclamation' }} me-2"></i>
+                    {{ message }}
+                </div>
+                <button type="button" class="btn-close btn-close-white m-auto me-2" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+            var toastList = toastElList.map(function (toastEl) {
+                var t = new bootstrap.Toast(toastEl, { delay: 4000 });
+                t.show();
+                return t;
+            });
+
+            function setDarkMode(enabled) {
+                document.documentElement.classList.toggle('dark-mode', enabled);
+                document.body.classList.toggle('dark-mode', enabled);
+                var icons = [
+                    document.getElementById('darkModeIcon'),
+                    document.getElementById('darkModeIconMobile')
+                ];
+                icons.forEach(function (el) {
+                    if (!el) return;
+                    if (enabled) {
+                        el.classList.remove('fa-moon');
+                        el.classList.add('fa-sun');
+                    } else {
+                        el.classList.remove('fa-sun');
+                        el.classList.add('fa-moon');
+                    }
+                });
+            }
+
+            if (localStorage.getItem('darkMode') === 'enabled' || (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
+                setDarkMode(true);
+            }
+
+            var toggleBtn = document.getElementById('darkModeToggle');
+            var toggleMobile = document.getElementById('darkModeToggleMobile');
+
+            function toggleDarkMode() {
+                var willEnable = !document.body.classList.contains('dark-mode');
+                setDarkMode(willEnable);
+                localStorage.setItem('darkMode', willEnable ? 'enabled' : 'disabled');
+            }
+
+            if (toggleBtn) toggleBtn.addEventListener('click', toggleDarkMode);
+            if (toggleMobile) toggleMobile.addEventListener('click', toggleDarkMode);
+
+            // Modal back button handler (mobile)
+            var modalBackFlag = false;
+            document.querySelectorAll('.modal').forEach(function (m) {
+                m.addEventListener('shown.bs.modal', function () {
+                    if (!modalBackFlag) {
+                        history.pushState({ modal: true }, '');
+                        modalBackFlag = true;
+                    }
+                });
+                m.addEventListener('hide.bs.modal', function () {
+                    modalBackFlag = false;
+                });
+            });
+            window.addEventListener('popstate', function (e) {
+                if (modalBackFlag) {
+                    var openModal = document.querySelector('.modal.show');
+                    if (openModal) {
+                        var modal = bootstrap.Modal.getInstance(openModal);
+                        if (modal) modal.hide();
+                    }
+                }
+            });
+        });
+    </script>
+    <script>
+        var deferredPrompt = null;
+        var installBtn = document.getElementById('btnInstalarPWA');
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+            if (installBtn) installBtn.style.display = 'none';
+        } else {
+            window.addEventListener('beforeinstallprompt', function (e) {
+                e.preventDefault();
+                deferredPrompt = e;
+                if (installBtn) installBtn.innerHTML = '<i class="fa-solid fa-download fa-sm"></i> <span class="small">Instalar App</span>';
+            });
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('#btnInstalarPWA')) {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then(function () {
+                            deferredPrompt = null;
+                            if (installBtn) installBtn.style.display = 'none';
+                        });
+                    } else {
+                        alert('Abre el men\u00fa de Chrome (3 puntos \u22ee) y selecciona "Instalar aplicaci\u00f3n" o "Agregar a pantalla de inicio".');
+                    }
+                }
+            });
+            window.addEventListener('appinstalled', function () {
+                if (installBtn) installBtn.style.display = 'none';
+            });
+        }
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' });
+            });
+        }
+
+        // Push notifications
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.ready.then(function (reg) {
+                    // VAPID version - incrementar si cambian las keys del servidor
+                    var VAPID_VERSION = 3;
+                    var storedVersion = parseInt(localStorage.getItem('vapidVersion') || '0');
+                    reg.pushManager.getSubscription().then(function (sub) {
+                        if (sub) {
+                            if (storedVersion < VAPID_VERSION) {
+                                // VAPID keys cambiaron, desuscribir y volver a suscribir
+                                sub.unsubscribe().then(function () {
+                                    localStorage.setItem('vapidVersion', String(VAPID_VERSION));
+                                    subscribePush(reg);
+                                });
+                                return;
+                            }
+                            fetch('/api/push/subscribe', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    endpoint: sub.endpoint,
+                                    keys: { auth: arrayToBase64(sub.getKey('auth')), p256dh: arrayToBase64(sub.getKey('p256dh')) }
+                                })
+                            });
+                            return;
+                        }
+                        localStorage.setItem('vapidVersion', String(VAPID_VERSION));
+                        var promptUI = function () {
+                            Notification.requestPermission().then(function (perm) {
+                                if (perm === 'granted') {
+                                    subscribePush(reg);
+                                }
+                            });
+                        };
+                        var clickHandler = function () {
+                            if (Notification.permission === 'default') {
+                                promptUI();
+                            } else if (Notification.permission === 'granted') {
+                                subscribePush(reg);
+                            }
+                            document.removeEventListener('click', clickHandler);
+                        };
+                        if (Notification.permission === 'default') {
+                            document.addEventListener('click', clickHandler);
+                        } else if (Notification.permission === 'granted') {
+                            subscribePush(reg);
+                        }
+                    });
+                });
+        }
+
+        // ====== NOTIFICACIONES IN-APP ======
+        var notifInterval = null;
+        function cargarNotificaciones() {
+            fetch('/api/notificaciones?pagina=1&_=' + Date.now()).then(function (r) { return r.json(); }).then(function (data) {
+                if (!data.ok) return;
+                // Badge
+                var badge = document.getElementById('notifBadge');
+                var badgeMob = document.getElementById('notifBadgeMobile');
+                if (data.no_leidas > 0) {
+                    if (badge) { badge.style.display = 'inline'; badge.textContent = data.no_leidas > 9 ? '9+' : data.no_leidas; }
+                    if (badgeMob) { badgeMob.style.display = 'inline'; badgeMob.textContent = data.no_leidas > 9 ? '9+' : data.no_leidas; }
+                } else {
+                    if (badge) badge.style.display = 'none';
+                    if (badgeMob) badgeMob.style.display = 'none';
+                }
+                // Lista en dropdown
+                var list = document.getElementById('notifList');
+                if (!list) return;
+                if (data.items.length === 0) {
+                    list.innerHTML = '<div class="text-center py-4"><i class="fa-regular fa-bell-slash text-muted" style="font-size:1.5rem;"></i><br><small class="text-muted">Sin notificaciones</small></div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < data.items.length; i++) {
+                    var n = data.items[i];
+                    var colorMap = { falla: 'text-danger', combustible: 'text-warning', exito: 'text-success', visita: 'text-info', stock: 'text-danger' };
+                    var iconColor = colorMap[n.tipo] || 'text-info';
+                    html += '<div class="dropdown-item border-bottom border-opacity-10 py-2 px-3 ' + (n.leida ? '' : 'fw-bold') + '" style="border-color:var(--text-muted);cursor:pointer;" data-id="' + n.id + '" data-url="' + (n.url || '') + '">';
+                    html += '  <div class="d-flex align-items-start gap-2">';
+                    html += '    <div><i class="fa-regular fa-bell ' + iconColor + ' mt-1" style="font-size:0.8rem;"></i></div>';
+                    html += '    <div class="flex-grow-1" style="min-width:0;">';
+                    html += '      <small style="color:var(--text-heading);font-size:0.78rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + n.titulo + '</small>';
+                    html += '      <small class="text-muted" style="font-size:0.68rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (n.mensaje || '') + '</small>';
+                    html += '      <small class="text-muted opacity-50" style="font-size:0.6rem;">' + n.created_at + '</small>';
+                    html += '    </div>';
+                    html += '    <button class="btn btn-link text-danger p-0 eliminar-notif" data-id="' + n.id + '" style="font-size:0.65rem;line-height:1;" title="Eliminar"><i class="fa-solid fa-trash"></i></button>';
+                    if (!n.leida) html += '    <div><span class="badge bg-info rounded-pill" style="width:6px;height:6px;padding:0;"></span></div>';
+                    html += '  </div>';
+                    html += '</div>';
+                }
+                list.innerHTML = html;
+                // Click en notificación
+                list.querySelectorAll('.dropdown-item').forEach(function (el) {
+                    el.addEventListener('click', function (e) {
+                        if (e.target.closest('.eliminar-notif')) return;
+                        var id = this.getAttribute('data-id');
+                        var url = this.getAttribute('data-url');
+                        var blob = new Blob([JSON.stringify({ id: parseInt(id) })], { type: 'application/json' });
+                        navigator.sendBeacon('/api/notificaciones/marcar-leida', blob);
+                        this.classList.remove('fw-bold');
+                        var dot = this.querySelector('.badge.bg-info');
+                        if (dot) dot.remove();
+                        if (url && url !== '#' && url !== '/') {
+                            var dd = bootstrap.Dropdown.getInstance(document.getElementById('notifBell'));
+                            if (dd) dd.hide();
+                            window.location.href = url;
+                        } else {
+                            cargarNotificaciones();
+                        }
+                    });
+                });
+                // Eliminar notificación
+                list.querySelectorAll('.eliminar-notif').forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        var id = this.getAttribute('data-id');
+                        fetch('/api/notificaciones/eliminar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: parseInt(id) })
+                        }).then(function () { cargarNotificaciones(); });
+                    });
+                });
+            });
+        }
+
+        // Marcar todas leídas
+        var btnMarcar = document.getElementById('marcarTodasLeidas');
+        if (btnMarcar) {
+            btnMarcar.addEventListener('click', function (e) {
+                e.stopPropagation();
+                fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: 'todas' })
+                }).then(function () { cargarNotificaciones(); });
+            });
+        }
+
+        // Mobile: al hacer clic en campana mobile, redirigir a una página minimalista
+        // Por ahora abrir dropdown desktop via JS o redirigir
+        var bellMobile = document.getElementById('notifBellMobile');
+        if (bellMobile) {
+            bellMobile.addEventListener('click', function () {
+                var canvas = new bootstrap.Offcanvas(document.getElementById('offcanvasNotif'));
+                // Poblar con datos actualizados
+                cargarNotificacionesMovil();
+                canvas.show();
+            });
+        }
+
+        function cargarNotificacionesMovil() {
+            fetch('/api/notificaciones?pagina=1&_=' + Date.now()).then(function (r) { return r.json(); }).then(function (data) {
+                if (!data.ok) return;
+                var list = document.getElementById('notifListMobile');
+                if (!list) return;
+                if (data.items.length === 0) {
+                    list.innerHTML = '<div class="text-center py-5"><i class="fa-regular fa-bell-slash text-muted" style="font-size:2rem;"></i><br><small class="text-muted mt-2 d-block">Sin notificaciones</small></div>';
+                    return;
+                }
+                var html = '';
+                for (var i = 0; i < data.items.length; i++) {
+                    var n = data.items[i];
+                    var colorMap = { falla: 'text-danger', combustible: 'text-warning', exito: 'text-success', visita: 'text-info', stock: 'text-danger' };
+                    var iconColor = colorMap[n.tipo] || 'text-info';
+                    html += '<div class="d-flex align-items-start gap-2 py-3 border-bottom border-opacity-10 ' + (n.leida ? '' : 'bg-info bg-opacity-10') + '" style="border-color:var(--text-muted);cursor:pointer;" data-id="' + n.id + '" data-url="' + (n.url || '') + '">';
+                    html += '  <div><i class="fa-regular fa-bell ' + iconColor + ' mt-1" style="font-size:1rem;"></i></div>';
+                    html += '  <div class="flex-grow-1" style="min-width:0;">';
+                    html += '    <small style="color:var(--text-heading);font-size:0.82rem;display:block;">' + n.titulo + '</small>';
+                    html += '    <small class="text-muted" style="font-size:0.72rem;display:block;">' + (n.mensaje || '') + '</small>';
+                    html += '    <small class="text-muted opacity-50" style="font-size:0.6rem;">' + n.created_at + '</small>';
+                    html += '  </div>';
+                    html += '  <button class="btn btn-link text-danger p-0 align-self-start eliminar-notif-movil" data-id="' + n.id + '" style="font-size:0.75rem;line-height:1;" title="Eliminar"><i class="fa-solid fa-trash"></i></button>';
+                    html += '</div>';
+                }
+                list.innerHTML = html;
+                // Click en cada item (marcar leída + navegar)
+                list.querySelectorAll('[data-id]').forEach(function (el) {
+                    el.addEventListener('click', function (e) {
+                        if (e.target.closest('.eliminar-notif-movil')) return;
+                        var id = this.getAttribute('data-id');
+                        var url = this.getAttribute('data-url');
+                        var blob = new Blob([JSON.stringify({ id: parseInt(id) })], { type: 'application/json' });
+                        navigator.sendBeacon('/api/notificaciones/marcar-leida', blob);
+                        this.classList.remove('bg-info', 'bg-opacity-10');
+                        var icon = this.querySelector('.fa-bell');
+                        if (icon) icon.classList.remove('text-info');
+                        if (icon) icon.classList.add('text-muted');
+                        if (url && url !== '#' && url !== '/') {
+                            var canvasEl = document.getElementById('offcanvasNotif');
+                            var canvas = bootstrap.Offcanvas.getInstance(canvasEl);
+                            if (canvas) canvas.hide();
+                            window.location.href = url;
+                        }
+                    });
+                });
+                // Eliminar notificación mobile
+                list.querySelectorAll('.eliminar-notif-movil').forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        var id = this.getAttribute('data-id');
+                        fetch('/api/notificaciones/eliminar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: parseInt(id) })
+                        }).then(function () { cargarNotificaciones(); cargarNotificacionesMovil(); });
+                    });
+                });
+            });
+        }
+
+        // Cargar notificaciones al inicio y cada 30s
+        if (document.getElementById('notifBell')) {
+            cargarNotificaciones();
+            notifInterval = setInterval(cargarNotificaciones, 10000);
+        }
+        // También polling en segundo plano aunque la pestaña no esté activa
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) cargarNotificaciones();
+        });
+
+        function subscribePush(reg) {
+            var key = '{{ VAPID_PUBLIC_KEY_B64 }}';
+            var appKey = urlBase64ToUint8Array(key);
+            reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: appKey
+            }).then(function (sub) {
+                fetch('/api/push/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        endpoint: sub.endpoint,
+                        keys: { auth: arrayToBase64(sub.getKey('auth')), p256dh: arrayToBase64(sub.getKey('p256dh')) }
+                    })
+                });
+            }).catch(function (err) {
+                console.warn('Push sub error:', err);
+            });
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            var padding = '='.repeat((4 - base64String.length % 4) % 4);
+            var base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            var rawData = window.atob(base64);
+            var output = new Uint8Array(rawData.length);
+            for (var i = 0; i < rawData.length; ++i) output[i] = rawData.charCodeAt(i);
+            return output;
+        }
+
+        function arrayToBase64(array) {
+            if (!array) return '';
+            var binary = '';
+            var bytes = new Uint8Array(array);
+            for (var i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+            return window.btoa(binary);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-book me-2"></i>Libro de Novedades (Operaciones)</h2>
+        <div class="d-flex gap-2 d-none d-sm-flex">
+            <button class="btn btn-warning shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoSuceso">
+                <i class="bi bi-plus-lg me-1"></i> Registrar Suceso
+            </button>
+            <button class="btn btn-dark shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal"
+                data-bs-target="#modalBuscador">
+                <i class="bi bi-search me-1"></i> Buscar / Reporte PDF
+            </button>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-3 d-flex d-sm-none">
+        <button class="btn btn-warning shadow-sm btn-sm fw-bold flex-fill" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoSuceso">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Suceso
+        </button>
+        <button class="btn btn-dark shadow-sm btn-sm fw-bold flex-fill" style="font-size:0.75rem;" data-bs-toggle="modal"
+            data-bs-target="#modalBuscador">
+            <i class="bi bi-search me-1"></i> Buscar / Reporte PDF
+        </button>
+    </div>
+
+    {# Alerta de Filtros Activos #}
+    {% if request.args.get('fecha_inicio') %}
+    <div class="alert alert-info d-flex justify-content-between align-items-center shadow-sm border-info">
+        <div>
+            <i class="bi bi-search me-1"></i>
+            Mostrando resultados desde <strong>{{ request.args.get('fecha_inicio') }}</strong> hasta <strong>{{
+                request.args.get('fecha_fin') }}</strong>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('reporte_bitacora_pdf', user_id=usuario.id, inicio=request.args.get('fecha_inicio'), fin=request.args.get('fecha_fin')) }}"
+                target="_blank" class="btn btn-danger btn-sm fw-bold">
+                <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar PDF
+            </a>
+            <a href="/bitacora/{{ usuario.id }}" class="btn btn-outline-secondary btn-sm">Limpiar Filtro</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Hora</th>
+                        <th>Sede</th>
+                        <th>Tipo de Suceso</th>
+                        <th class="d-none d-md-table-cell">Operador</th>
+                        <th class="d-none d-md-table-cell">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ultimo_dia = namespace(valor='') %}
+                    {% for r in registros %}
+
+                    {# Lógica de Separador de Día #}
+                    {% set dia_actual = r.fecha.strftime('%Y-%m-%d') %}
+                    {% if dia_actual != ultimo_dia.valor %}
+                    <tr class="table-secondary">
+                        <td colspan="5" class="py-2 text-center shadow-sm">
+                            <span class="fw-bold text-uppercase" style="letter-spacing: 2px; font-size: 0.8rem;">
+                                {# AGREGAMOS |capitalize AL FINAL DE LA FECHA #}
+                                <i class="bi bi-calendar-check me-2"></i> {{ r.fecha.strftime('%A %d de %B,
+                                %Y')|capitalize }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% set ultimo_dia.valor = dia_actual %}
+                    {% endif %}
+
+                    <tr onclick="verDetalleBitacora('{{ r.id }}','{{ r.fecha.strftime('%d/%m/%Y %H:%M') }}','{{ r.rel_cliente.nombre }}','{{ r.tipo_visita }}','{{ r.rel_usuario.nombre }}','{{ r.descripcion|e }}')" style="cursor:pointer;">
+                        <td class="small text-muted">{{ r.fecha.strftime('%H:%M') }} hrs.</td>
+                        <td><span class="fw-bold">{{ r.rel_cliente.nombre }}</span></td>
+                        <td>
+                            {# --- LOGICA DE COLORES CORREGIDA --- #}
+                            {% if 'RESUELTA' in r.tipo_visita %}
+                            <span class="badge bg-success shadow-sm">
+                                <i class="fa-solid fa-circle-check me-1"></i> Falla Resuelta
+                            </span>
+                            {% elif 'ROBO' in r.tipo_visita or 'Incidente Crítico' in r.tipo_visita %}
+                            <span class="badge bg-danger shadow-sm animate__animated animate__flash animate__infinite">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i> {{ r.tipo_visita }}
+                            </span>
+                            {% elif 'Activación de Alarma' in r.tipo_visita %}
+                            <span class="badge bg-danger shadow-sm">
+                                <i class="fa-solid fa-bell me-1"></i> {{ r.tipo_visita }}
+                            </span>
+                            {% elif 'Ronda de Vigilancia' in r.tipo_visita or 'Apertura/Cierre' in r.tipo_visita %}
+                            <span class="badge bg-info text-dark shadow-sm">
+                                <i class="fa-solid fa-building-shield me-1"></i> {{ r.tipo_visita }}
+                            </span>
+                            {% elif r.prioridad == 1 %}
+                            {# Respaldamos por si hay otra alerta crítica heredada de la DB #}
+                            <span class="badge bg-danger shadow-sm">
+                                <i class="fa-solid fa-circle-exclamation me-1"></i> {{ r.tipo_visita }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark shadow-sm">
+                                <i class="fa-solid fa-wrench me-1"></i> {{ r.tipo_visita }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="small d-none d-md-table-cell">{{ r.rel_usuario.nombre }}</td>
+                        <td class="small d-none d-md-table-cell">
+                            <div class="d-flex flex-column">
+                                <span class="text-dark text-truncate d-inline-block" style="max-width:200px;">{{ r.descripcion }}</span>
+                                {% if 'RESUELTA' in r.tipo_visita %}
+                                <div class="mt-1">
+                                    <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}#informe-{{ r.id }}"
+                                        class="text-success text-decoration-none fw-bold"
+                                        style="font-size: 0.7rem; letter-spacing: 0.3px;">
+                                        <i class="fa-solid fa-eye me-1"></i>VER DETALLE EN GESTOR
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Sin registros para mostrar.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if paginacion and paginacion.pages > 1 %}
+    <nav aria-label="Navegación de bitácora" class="mt-4">
+        <ul class="pagination justify-content-center shadow-sm">
+            <li class="page-item {{ 'disabled' if not paginacion.has_prev }}">
+                <a class="page-link rounded-start-pill px-3"
+                    href="{{ url_for('ver_bitacora', user_id=usuario.id, page=paginacion.prev_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) if paginacion.has_prev else '#' }}">
+                    <i class="bi bi-chevron-left me-1"></i>Anterior
+                </a>
+            </li>
+
+            {% for p in paginacion.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+            <li class="page-item {{ 'active' if p == paginacion.page }}">
+                <a class="page-link"
+                    href="{{ url_for('ver_bitacora', user_id=usuario.id, page=p, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) }}">{{
+                    p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+            {% endfor %}
+
+            <li class="page-item {{ 'disabled' if not paginacion.has_next }}">
+                <a class="page-link rounded-end-pill px-3"
+                    href="{{ url_for('ver_bitacora', user_id=usuario.id, page=paginacion.next_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) if paginacion.has_next else '#' }}">
+                    Siguiente<i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="modalNuevoSuceso" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="/bitacora/nueva/{{ usuario.id }}" method="POST">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Nuevo Registro
+                        de Novedad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Sede del Suceso</label>
+                        <div class="position-relative">
+                            <input type="text" id="cliente_search" class="form-control border-primary"
+                                placeholder="Escriba para buscar sede..." autocomplete="off" required
+                                onfocus="mostrarSedes()" oninput="filtrarSedes()">
+                            <div id="sede-dropdown" class="list-group position-absolute w-100 shadow-sm d-none border agenda-card-bg" style="z-index: 1050; max-height: 200px; overflow-y: auto; border-radius: 8px; top: 100%;">
+                                {% for c in clientes %}
+                                <button type="button" class="list-group-item list-group-item-action" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" onclick="seleccionarSede(this)">{{ c.nombre }}</button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="hidden" name="cliente_id" id="cliente_id_real" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fecha y Hora del Suceso</label>
+                        <input type="datetime-local" id="fecha_suceso" name="fecha_suceso" class="form-control" step="1"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de Suceso / Novedad</label>
+                        <select name="tipo_suceso" id="tipo_suceso" class="form-select" onchange="verificarGravedad()">
+                            <option value="Incidente Crítico">⚠️ Incidente Crítico / Emergencia</option>
+                            <option value="Activación de Alarma">🚨 Activación de Alarma</option>
+                            <option value="Ronda de Vigilancia">✅ Ronda de Vigilancia</option>
+                            <option value="Apertura/Cierre Sede">🏢 Apertura/Cierre Sede</option>
+                            <option value="Falla Técnica (CCTV/Red)">🔌 Falla Técnica (CCTV/Red)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="div_prioridad">
+                        <label class="form-label fw-bold">Gravedad de la Falla</label>
+                        <select name="prioridad" id="prioridad_select" class="form-select border-primary">
+                            <option value="1">🔴 CRÍTICA</option>
+                            <option value="2">🟡 ALTA</option>
+                            <option value="3" selected>🔵 MEDIA</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción y Acciones Tomadas</label>
+                        <textarea name="descripcion" class="form-control" rows="4" required
+                            placeholder="Detalle lo sucedido..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning fw-bold shadow-sm">Guardar en Bitácora</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalBuscador" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="bi bi-search me-2"></i>Consulta y Reportes</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2 mb-4">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Desde:</label>
+                        <input type="date" id="busq_inicio" class="form-control">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Hasta:</label>
+                        <input type="date" id="busq_fin" class="form-control">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" onclick="consultarSucesos()" class="btn btn-primary w-100"><i
+                                class="bi bi-search"></i></button>
+                    </div>
+                </div>
+                <div id="zona-previa" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0">Resultados encontrados:</h6>
+                        <a href="#" id="btn-descargar-pdf" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar PDF
+                        </a>
+                    </div>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm table-hover border">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Sede</th>
+                                    <th>Suceso</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-previa-cuerpo"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleBitacora" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-book me-2"></i>Detalle de Suceso</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2"><span class="fw-bold text-muted small">Fecha:</span><br><span id="detalle-fecha" class="fw-bold"></span></div>
+                <div class="mb-2"><span class="fw-bold text-muted small">Sede:</span><br><span id="detalle-sede" class="fw-bold"></span></div>
+                <div class="mb-2"><span class="fw-bold text-muted small">Tipo de Suceso:</span><br><span id="detalle-tipo"></span></div>
+                <div class="mb-2"><span class="fw-bold text-muted small">Operador:</span><br><span id="detalle-operador"></span></div>
+                <div class="mb-2"><span class="fw-bold text-muted small">Descripción:</span><br><span id="detalle-descripcion"></span></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lógica de Prioridad Dinámica
+    function verificarGravedad() {
+        const tipo = document.getElementById('tipo_suceso').value;
+        const divPrioridad = document.getElementById('div_prioridad');
+        const selectPrioridad = document.getElementById('prioridad_select');
+        const criticos = ['Incidente Crítico', 'Activación de Alarma', 'Ronda de Vigilancia', 'Apertura/Cierre Sede'];
+
+        if (criticos.includes(tipo)) {
+            selectPrioridad.value = "1";
+            divPrioridad.style.display = 'none';
+        } else {
+            divPrioridad.style.display = 'block';
+            selectPrioridad.value = "3";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        verificarGravedad();
+        // Fecha actual con segundos para el modal
+        const ahora = new Date();
+        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+        document.getElementById('fecha_suceso').value = ahora.toISOString().slice(0, 19);
+
+        // Auto-abrir detalles si hay hash
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#informe-')) {
+            const logId = hash.split('-')[1];
+            if (typeof verDetalleInforme === "function") verDetalleInforme(logId);
+        }
+    });
+
+    // Bitácora detail modal (mobile)
+    function verDetalleBitacora(id, fecha, sede, tipo, operador, descripcion) {
+        document.getElementById('detalle-fecha').textContent = fecha;
+        document.getElementById('detalle-sede').textContent = sede;
+        document.getElementById('detalle-tipo').innerHTML = tipo;
+        document.getElementById('detalle-operador').textContent = operador;
+        document.getElementById('detalle-descripcion').textContent = descripcion;
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalleBitacora'));
+        modal.show();
+    }
+
+    // Consulta AJAX para el buscador modal
+    function consultarSucesos() {
+        const inicio = document.getElementById('busq_inicio').value;
+        const fin = document.getElementById('busq_fin').value;
+        if (!inicio || !fin) { alert("Selecciona ambas fechas"); return; }
+
+        fetch(`/api/bitacora/consulta?inicio=${inicio}&fin=${fin}`)
+            .then(response => response.json())
+            .then(data => {
+                const cuerpo = document.getElementById('tabla-previa-cuerpo');
+                cuerpo.innerHTML = "";
+                if (data.sucesos.length > 0) {
+                    data.sucesos.forEach(s => {
+                        cuerpo.innerHTML += `<tr><td class="small">${s.fecha}</td><td class="small">${s.sede}</td><td class="small">${s.suceso}</td></tr>`;
+                    });
+                    document.getElementById('btn-descargar-pdf').href = `/bitacora/reporte_pdf/{{ usuario.id }}?inicio=${inicio}&fin=${fin}`;
+                    document.getElementById('zona-previa').style.display = "block";
+                } else {
+                    alert("Sin registros en este rango.");
+                    document.getElementById('zona-previa').style.display = "none";
+                }
+            });
+    }
+
+    // Sede dropdown
+    function mostrarSedes() {
+        document.getElementById('sede-dropdown').classList.remove('d-none');
+    }
+    function filtrarSedes() {
+        const input = document.getElementById('cliente_search').value.toLowerCase();
+        const items = document.querySelectorAll('#sede-dropdown .list-group-item');
+        let visible = 0;
+        items.forEach(function(item) {
+            if (item.dataset.nombre.toLowerCase().includes(input)) {
+                item.style.display = 'block';
+                visible++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        document.getElementById('sede-dropdown').classList.toggle('d-none', visible === 0);
+    }
+    function seleccionarSede(btn) {
+        document.getElementById('cliente_search').value = btn.dataset.nombre;
+        document.getElementById('cliente_id_real').value = btn.dataset.id;
+        document.getElementById('sede-dropdown').classList.add('d-none');
+    }
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#cliente_search') && !e.target.closest('#sede-dropdown')) {
+            document.getElementById('sede-dropdown').classList.add('d-none');
+        }
+    });
+</script>
+{% endblock %}

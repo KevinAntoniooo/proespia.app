@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-3">
+    <div class="d-flex align-items-center gap-2 mb-4">
+        <div class="bg-warning bg-opacity-10 rounded-3 p-2 lh-1">
+            <i class="fa-solid fa-clipboard-check text-warning fs-4"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-0 text-dark">Checklist de Herramientas</h5>
+            <small class="text-muted">Vehículo: <strong>{{ vehiculo.placa }}</strong> — {{ vehiculo.modelo or '' }}</small>
+        </div>
+    </div>
+
+    {% if dia_habilitado %}
+    <div class="card border-0 shadow-sm rounded-4 mb-3 border-start border-4 border-warning">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-2 mb-0">
+                <i class="fa-solid fa-circle-info text-warning"></i>
+                <small class="text-muted">Activa cada interruptor para confirmar que la herramienta está en el vehículo.</small>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-4 mb-3 border-start border-4 border-secondary bg-light">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-2 mb-0">
+                <i class="fa-solid fa-lock text-secondary"></i>
+                <small class="text-muted">El checklist solo está disponible los <strong>{{ dia_nombre }}</strong>. Hoy no es día de checklist.</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <form id="formChecklist" method="POST" action="{% if usuario.rol == 'tecnico' %}/checklist/enviar{% else %}/checklist/vehiculo/{{ vehiculo.id }}{% endif %}">
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+            <div class="card-body p-3">
+                <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-tools me-2"></i>Herramientas</h6>
+                {% if herramientas %}
+                {% for h in herramientas %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+                    <div>
+                        <span class="fw-semibold text-dark small">{{ h.nombre }}</span>
+                    </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="herramientas_ok" value="{{ h.nombre }}" id="check{{ h.id }}" style="width:1.1rem;height:1.1rem;cursor:pointer;" {% if not dia_habilitado %}disabled{% endif %}>
+                        <label class="form-check-label small text-success fw-bold" for="check{{ h.id }}" id="label{{ h.id }}" style="font-size:0.6rem;">OK</label>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-toolbox fs-2 mb-2 d-block"></i>
+                    <small>No hay herramientas registradas para este vehículo.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+            <div class="card-body p-3">
+                <label class="form-label small fw-bold text-dark"><i class="fa-regular fa-note-sticky me-1"></i>Observaciones</label>
+                <textarea name="observaciones" class="form-control shadow-sm" rows="2" placeholder="Ingresa alguna novedad si es necesario..." {% if not dia_habilitado %}disabled{% endif %}></textarea>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-warning w-100 shadow-sm py-2 fw-bold" style="font-size:0.85rem;" id="btnPrevisualizar" {% if not herramientas or not dia_habilitado %}disabled{% endif %}>
+            <i class="fa-solid fa-eye me-1"></i>Previsualizar y Guardar
+        </button>
+    </form>
+</div>
+
+<div class="modal fade" id="modalVistaPrevia" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-receipt me-2"></i>Resumen del Checklist</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="cuerpoVistaPrevia">
+            </div>
+            <div class="modal-footer border-0 d-flex gap-2">
+                <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Corregir</button>
+                <button type="button" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" id="btnConfirmarChecklist"><i class="fa-solid fa-check me-1"></i>Confirmar y Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalExito" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-success">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-circle-check text-success fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-1">Checklist Guardado</h5>
+                <p class="text-muted small mb-3" id="msgExito">Registro completado exitosamente.</p>
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" id="btnDescargarPDF"><i class="fa-solid fa-file-pdf me-1"></i>Descargar Comprobante PDF</a>
+                    <a href="/dashboard/{{ usuario.id }}" class="btn btn-light shadow-sm btn-sm fw-bold" style="font-size:0.85rem;">Volver al Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('btnPrevisualizar')?.addEventListener('click', function() {
+    var checks = document.querySelectorAll('input[name="herramientas_ok"]');
+    var html = '<div class="mb-2"><small class="text-muted text-uppercase fw-bold" style="font-size:0.55rem;">Herramientas verificadas</small></div>';
+    var okCount = 0;
+    checks.forEach(function(ch) {
+        var label = document.getElementById('label' + ch.id.replace('check', ''));
+        if (ch.checked) {
+            okCount++;
+            html += '<div class="d-flex align-items-center gap-2 mb-1"><i class="fa-solid fa-circle-check text-success" style="font-size:0.7rem;"></i><small class="text-dark">' + ch.value + '</small></div>';
+        } else {
+            html += '<div class="d-flex align-items-center gap-2 mb-1"><i class="fa-solid fa-circle-xmark text-danger" style="font-size:0.7rem;"></i><small class="text-dark">' + ch.value + ' <span class="text-danger fw-bold faltante-text">(FALTANTE)</span></small></div>';
+        }
+    });
+    var total = checks.length;
+    var obs = document.querySelector('textarea[name="observaciones"]').value.trim();
+    html += '<hr class="opacity-25 my-2">';
+    html += '<div class="d-flex justify-content-between"><small class="text-muted">Completado:</small><small class="fw-bold">' + okCount + '/' + total + '</small></div>';
+    if (obs) {
+        html += '<hr class="opacity-25 my-2"><small class="text-muted d-block mb-1">Observaciones:</small><small class="text-dark">' + obs + '</small>';
+    }
+    document.getElementById('cuerpoVistaPrevia').innerHTML = html;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalVistaPrevia')).show();
+});
+
+document.getElementById('btnConfirmarChecklist')?.addEventListener('click', function() {
+    var modal = bootstrap.Modal.getInstance(document.getElementById('modalVistaPrevia'));
+    if (modal) modal.hide();
+    var form = document.getElementById('formChecklist');
+    var data = new FormData(form);
+    fetch(form.action, { method: 'POST', body: data })
+    .then(function(r) {
+        {% if usuario.rol == 'tecnico' %}
+        return r.json();
+        {% else %}
+        if (r.redirected) { window.location.href = r.url; }
+        return null;
+        {% endif %}
+    })
+    .then(function(resp) {
+        {% if usuario.rol == 'tecnico' %}
+        if (resp && resp.ok) {
+            document.getElementById('msgExito').textContent = resp.msg;
+            document.getElementById('btnDescargarPDF').href = '/checklist/reporte_pdf/' + resp.checklist_id;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalExito')).show();
+        } else if (resp) {
+            alert('Error: ' + resp.msg);
+        }
+        {% endif %}
+    })
+    .catch(function() { alert('Error de conexión'); });
+});
+</script>
+<style>
+@media (max-width: 576px) {
+    .faltante-text { font-size: 0.6rem; }
+}
+</style>
+{% endblock %}
