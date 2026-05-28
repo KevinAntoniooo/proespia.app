@@ -47,12 +47,20 @@
             --modal-border: rgba(255, 255, 255, 0.1);
             --bg-card: #ffffff;
             --text-heading: #1e293b;
+            --text-body: #475569;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
             --border-subtle: #e2e8f0;
+            --bg-body: #f8fafc;
         }
         html.dark-mode {
             --bg-card: #1e293b;
             --text-heading: #f1f5f9;
+            --text-body: #cbd5e1;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
             --border-subtle: rgba(255,255,255,0.08);
+            --bg-body: #0f172a;
         }
         html.dark-mode [style*="background:#fff"],
         html.dark-mode [style*="background: #fff"],
@@ -119,6 +127,22 @@
         html.dark-mode .agenda-badge-indigo { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
         html.dark-mode .agenda-btn-light { background: rgba(255,255,255,0.06) !important; color: var(--text-body) !important; }
         html.dark-mode .agenda-bg-indigo { background: rgba(99,102,241,0.12) !important; }
+        html.dark-mode .visit-card { background: var(--bg-card) !important; border-color: var(--border-subtle) !important; }
+        html.dark-mode .visit-card .visit-time { color: var(--text-heading) !important; }
+        html.dark-mode .visit-card .visit-client { color: var(--text-heading) !important; }
+        html.dark-mode .visit-card .visit-meta { color: var(--text-muted) !important; }
+        html.dark-mode .agenda-vacia-container { background: transparent !important; border-color: var(--border-subtle) !important; }
+        html.dark-mode .agenda-vacia-icon { background: rgba(255,255,255,0.06) !important; color: var(--text-muted) !important; }
+        html.dark-mode .fc .fc-button { background: var(--bg-card) !important; color: var(--text-body) !important; border-color: var(--border-subtle) !important; }
+        html.dark-mode .fc .fc-button:hover { background: rgba(255,255,255,0.08) !important; }
+        html.dark-mode .fc .fc-col-header-cell-cushion { color: var(--text-muted) !important; }
+        html.dark-mode .fc .fc-daygrid-day-number { color: var(--text-secondary) !important; }
+        html.dark-mode .fc .fc-daygrid-day:hover { background: rgba(255,255,255,0.04) !important; }
+        html.dark-mode .fc .fc-daygrid-day.fc-day-today { background: rgba(99,102,241,0.12) !important; }
+        html.dark-mode .badge-estado-pendiente { background: rgba(99,102,241,0.15) !important; color: #818cf8 !important; }
+        html.dark-mode .badge-estado-en-curso { background: rgba(251,191,36,0.15) !important; color: #fbbf24 !important; }
+        html.dark-mode .badge-estado-realizada { background: rgba(74,222,128,0.12) !important; color: #4ade80 !important; }
+        html.dark-mode .badge-estado-vencida { background: rgba(148,163,184,0.15) !important; color: var(--text-muted) !important; }
     </style>
 </head>
 
