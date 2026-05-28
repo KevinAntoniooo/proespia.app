@@ -2094,7 +2094,7 @@ with app.app_context():
         db.session.rollback()
     # Crear admin por defecto si no hay usuarios
     if not Usuario.query.first():
-        admin = Usuario(username='admin', rol='admin')
+        admin = Usuario(username='admin', nombre='Administrador', rol='admin')
         admin.set_password('123')
         db.session.add(admin)
         db.session.commit()
