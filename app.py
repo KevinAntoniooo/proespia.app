@@ -27,7 +27,11 @@ except locale.Error:
     except locale.Error:
         locale.setlocale(locale.LC_TIME, 'Spanish_Chile.1252') # Para tu PC con Windows local
 app = Flask(__name__) # <--- PRIMERO CREAMOS LA APP
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+# PostgreSQL for production (Render), SQLite for local dev
+_db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
+if _db_url.startswith('postgres://'):
+    _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'proespiapt_seguridad_2026')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=15)
