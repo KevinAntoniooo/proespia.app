@@ -448,7 +448,7 @@
                 <div class="toast-body">
                     <i
                         class="fa-solid {{ 'fa-circle-check' if category == 'success' else 'fa-triangle-exclamation' }} me-2"></i>
-                    {{ message }}
+                    {{ message | safe }}
                 </div>
                 <button type="button" class="btn-close btn-close-white m-auto me-2" data-bs-dismiss="toast"
                     aria-label="Close"></button>
@@ -618,8 +618,9 @@
                         subscribePush(notifReg).then(function () {
                             mostrarToast('success', 'Notificaciones activadas');
                             actualizarEstadoNotificaciones();
-                        }).catch(function () {
-                            mostrarToast('error', 'Error al activar notificaciones');
+                        }).catch(function (err) {
+                            var msg = (err && (err.message || err.toString())) || 'Error desconocido';
+                            mostrarToast('error', 'Error al activar: ' + msg);
                         });
                     } else {
                         mostrarToast('error', 'Permiso denegado');
@@ -852,7 +853,9 @@
                     })
                 });
             }).catch(function (err) {
-                console.warn('Push sub error:', err);
+                var msg = err.message || err.toString() || 'Error desconocido';
+                console.error('Push sub error:', msg);
+                mostrarToast('error', 'Push: ' + msg);
                 throw err;
             });
         }

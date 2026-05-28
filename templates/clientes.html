@@ -165,6 +165,14 @@
                                 </div>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label fw-bold">Plan Cuadrante (Contacto Policial)</label>
+                                <input type="text" name="plan_cuadrante" class="form-control" value="{{ c.plan_cuadrante or '' }}" placeholder="Ej: Cuadrante 5">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Contacto Emergencia</label>
+                                <input type="text" name="contacto_emergencia" class="form-control" value="{{ c.contacto_emergencia or '' }}" placeholder="Nombre y teléfono">
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label fw-bold">Estado</label>
                                 <select name="estado_monitoreo" class="form-select">
                                     <option value="Activo" {% if c.estado_monitoreo == 'Activo' %}selected{% endif %}>Activo</option>
@@ -252,6 +260,10 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Plan Cuadrante (Contacto Policial)</label>
                                 <input type="text" name="plan_cuadrante" class="form-control" placeholder="Ej: Cuadrante 5 - +569...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Contacto Emergencia</label>
+                                <input type="text" name="contacto_emergencia" class="form-control" placeholder="Nombre y teléfono de contacto">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Estado de Monitoreo</label>

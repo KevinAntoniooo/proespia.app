@@ -39,6 +39,7 @@ class Cliente(db.Model):
     nombre = db.Column(db.String(100))
     direccion = db.Column(db.String(200))
     plan_cuadrante = db.Column(db.String(20))
+    contacto_emergencia = db.Column(db.String(100))
     estado_monitoreo = db.Column(db.String(50), default='En Instalación')
     latitud = db.Column(db.Float, nullable=True)
     longitud = db.Column(db.Float, nullable=True)

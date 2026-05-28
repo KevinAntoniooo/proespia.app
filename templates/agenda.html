@@ -171,10 +171,10 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Cliente</label>
-                            <select name="cliente_id" class="form-select border rounded-3" style="border-color:#6366f1!important;" required>
+                            <select name="cliente_id" class="form-select border rounded-3" style="border-color:#6366f1!important;" required onchange="cargarUbicacionCliente(this)">
                                 <option value="0">-- CLIENTE NUEVO --</option>
                                 {% for c in clientes %}
-                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                <option value="{{ c.id }}" data-lat="{{ c.latitud or '' }}" data-lng="{{ c.longitud or '' }}">{{ c.nombre }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -609,6 +609,21 @@
                 colocarMarcador(r.lat, r.lon);
             }).catch(function() { alert('Error al buscar la dirección.'); });
     }
+
+    function cargarUbicacionCliente(select) {
+        var opt = select.options[select.selectedIndex];
+        var lat = opt.getAttribute('data-lat');
+        var lng = opt.getAttribute('data-lng');
+        if (lat && lng && lat !== '' && lng !== '') {
+            mapa.setView([lat, lng], 16);
+            colocarMarcador(lat, lng);
+        } else if (marcador) {
+            mapa.removeLayer(marcador);
+            marcador = null;
+            document.getElementById('input-ubicacion').value = '';
+            document.getElementById('label-ubicacion').innerHTML = '<i class="fa-regular fa-circle-dot me-1"></i>Haz clic en el mapa para marcar la ubicación';
+        }
+    }
     document.getElementById('inputBuscarDireccion')?.addEventListener('keydown', function(e) {
         if (e.key === 'Enter') { e.preventDefault(); buscarEnMapa(); }
     });
@@ -625,7 +640,7 @@
         return map[estado] || estado;
     }
 
-    function renderVisitCards(visitas) {
+    function renderVisitCards(visitas, fechaStr) {
         visitasData = visitas;
         var container = document.getElementById('visitCardsWrapper');
         var emptyState = document.getElementById('emptyState');
@@ -637,6 +652,11 @@
             container.style.display = 'none';
             countBadge.textContent = '0 visitas';
             cerrarDetalle();
+            if (fechaStr) {
+                var d = new Date(fechaStr + 'T12:00:00');
+                var opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+                fechaLabel.textContent = d.toLocaleDateString('es-ES', opciones);
+            }
             return;
         }
         emptyState.style.display = 'none';
@@ -711,8 +731,11 @@
     function cargarVisitas(fechaStr) {
         fetch('/api/eventos_por_fecha?fecha=' + fechaStr)
             .then(function(r) { return r.json(); })
-            .then(function(data) { renderVisitCards(data); })
-            .catch(function() { renderVisitCards([]); });
+            .then(function(data) { renderVisitCards(data, fechaStr); })
+            .catch(function(err) {
+                mostrarToast('error', 'Error al cargar visitas: ' + (err.message || 'Error de red'));
+                renderVisitCards([], fechaStr);
+            });
     }
 
     function navegarFecha(delta) {

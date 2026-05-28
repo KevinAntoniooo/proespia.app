@@ -1048,6 +1048,17 @@ button,
 .dark-mode .fc .fc-scrollgrid-section-header > td { background: var(--bg-card); }
 .dark-mode .fc table { background: transparent !important; }
 
+/* Autocomplete dropdowns en modales de equipos */
+#listaClientesNuevo,
+#listaClientesEdit {
+  background-color: #ffffff;
+  border-radius: 8px;
+}
+.dark-mode #listaClientesNuevo,
+.dark-mode #listaClientesEdit {
+  background-color: var(--bg-card);
+}
+
 /* Print */
 @media print {
   .no-print, .sidebar-pro, .top-bar-pro, .navbar, .btn, .toast-container, .skip-link { display: none !important; }

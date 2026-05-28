@@ -37,8 +37,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=15)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=15)
 # VAPID keys para Web Push Notifications (generadas con py-vapid)
-app.config['VAPID_PRIVATE_KEY'] = 'SJ2GgJU0XaSmj_feO4oRTpKwHzQCmo2_LgQg3nKxa-M'
-app.config['VAPID_PUBLIC_KEY'] = 'BM1IYR4ftRA9xVgME-yrTpRaXJwRI9k78Ff8UdShTaBtHJ5wS9GKza-of3ENEBhWaVJZuhgjxynpMubnYXKwOe8'
+app.config['VAPID_PRIVATE_KEY'] = 'EBTOb_kaWp7FPYpGZcV8r_fegUJENKcoI6adDZ0scAY'
+app.config['VAPID_PUBLIC_KEY'] = 'BMz3vT_Sq1q8-xozy7P6CG28HABJhJBm_eGAIWvUpSMuFz2AUVMkQ83E_rQrIZha5m2fDsDltT5c8SK8ozA_Ot0'
 app.config['VAPID_CLAIM_EMAIL'] = 'mailto:contacto@proespia.cl'
 # Configuración de cookies de sesión persistente
 app.config['SESSION_COOKIE_NAME'] = 'proespia_session'
@@ -333,6 +333,7 @@ def nuevo_cliente(user_id):
                 nombre=request.form.get('nombre'),
                 direccion=request.form.get('direccion'),
                 plan_cuadrante=request.form.get('plan_cuadrante'),
+                contacto_emergencia=request.form.get('contacto_emergencia'),
                 estado_monitoreo=request.form.get('estado_monitoreo'),
                 latitud=request.form.get('latitud', type=float),
                 longitud=request.form.get('longitud', type=float)
@@ -380,6 +381,7 @@ def editar_cliente(cliente_id, user_id):
     cliente.nombre = request.form.get('nombre')
     cliente.direccion = request.form.get('direccion')
     cliente.plan_cuadrante = request.form.get('plan_cuadrante')
+    cliente.contacto_emergencia = request.form.get('contacto_emergencia')
     cliente.estado_monitoreo = request.form.get('estado_monitoreo')
     cliente.latitud = request.form.get('latitud', type=float)
     cliente.longitud = request.form.get('longitud', type=float)
@@ -1142,6 +1144,10 @@ def agendar_visita():
         flash('Error: La fecha y hora son obligatorias', 'danger')
         return redirect(request.referrer)
 
+    if not cliente_id or int(cliente_id) == 0:
+        flash('Error: Debes seleccionar un cliente válido', 'danger')
+        return redirect(request.referrer)
+
     # 3. Construcción del objeto datetime
     fecha_str = f"{fecha_base} {hora}" 
 
@@ -1775,8 +1781,8 @@ def checklist_vehiculo_admin(vehiculo_id):
             )
             db.session.add(ck)
             db.session.commit()
-            flash('Checklist guardado exitosamente.', 'success')
-            return redirect(url_for('checklist_reporte_pdf', checklist_id=ck.id))
+            flash(f'Checklist guardado. <a href="/checklist/reporte_pdf/{ck.id}" target="_blank" class="alert-link"><i class="fa-solid fa-file-pdf me-1"></i>Descargar PDF</a>', 'success')
+            return redirect(url_for('listar_vehiculos'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al guardar: {e}', 'danger')
@@ -1940,6 +1946,7 @@ def crear_notificacion(usuario_id, titulo, mensaje, url=None, tipo='info', envia
         for s in subs:
             try:
                 from pywebpush import webpush
+                import requests
                 data = json.dumps({
                     'titulo': titulo,
                     'cuerpo': mensaje,
@@ -1951,13 +1958,15 @@ def crear_notificacion(usuario_id, titulo, mensaje, url=None, tipo='info', envia
                     data=data,
                     vapid_private_key=app.config['VAPID_PRIVATE_KEY'],
                     vapid_claims={'sub': app.config['VAPID_CLAIM_EMAIL']},
-                    ttl=86400
+                    ttl=86400,
+                    timeout=5
                 )
                 print(f"[NOTIF] Push enviado OK: {s.endpoint[:30]}... status={resp.status_code}")
+            except requests.Timeout:
+                print(f"[NOTIF] Push TIMEOUT: {s.endpoint[:30]}... pasando a la siguiente")
             except Exception as e:
-                import traceback
                 err_str = str(e)
-                print(f"[NOTIF] Push FALLÓ: {s.endpoint[:30]}... error={err_str[:120]}")
+                print(f"[NOTIF] Push FALLÓ: {s.endpoint[:30]}... error={err_str[:200]}")
                 if '410' in err_str or 'gone' in err_str.lower():
                     print(f"[NOTIF] Suscripción expirada (410), eliminando")
                     db.session.delete(s)
@@ -2026,6 +2035,49 @@ def push_unsubscribe():
     db.session.commit()
     return jsonify({'ok': True, 'msg': 'Suscripción eliminada'})
 
+@app.route('/api/push/test', methods=['POST'])
+@login_required
+def push_test():
+    """Envía un push de prueba al usuario actual. Solo admin/super_su."""
+    if current_user.rol not in ['admin', 'super_su']:
+        return jsonify({'ok': False, 'msg': 'No autorizado'}), 403
+
+    subs = PushSubscription.query.filter_by(usuario_id=current_user.id).all()
+    if not subs:
+        return jsonify({'ok': False, 'msg': 'No tienes suscripciones push. Activa las notificaciones primero.'})
+
+    try:
+        from pywebpush import webpush
+        import requests
+        results = []
+        for s in subs:
+            try:
+                data = json.dumps({
+                    'titulo': 'Test de notificación',
+                    'cuerpo': 'Si ves esto, las notificaciones push funcionan correctamente.',
+                    'url': '/dashboard/' + str(current_user.id),
+                    'icon': '/static/icons/icon-192x192.png'
+                })
+                resp = webpush(
+                    subscription_info={'endpoint': s.endpoint, 'keys': {'auth': s.auth, 'p256dh': s.p256dh}},
+                    data=data,
+                    vapid_private_key=app.config['VAPID_PRIVATE_KEY'],
+                    vapid_claims={'sub': app.config['VAPID_CLAIM_EMAIL']},
+                    ttl=86400,
+                    timeout=5
+                )
+                results.append({'endpoint': s.endpoint[:30], 'status': resp.status_code, 'ok': True})
+            except requests.Timeout:
+                results.append({'endpoint': s.endpoint[:30], 'error': 'Timeout (5s)', 'ok': False})
+            except Exception as e:
+                results.append({'endpoint': s.endpoint[:30], 'error': str(e)[:150], 'ok': False})
+                if '410' in str(e):
+                    db.session.delete(s)
+                    db.session.commit()
+        return jsonify({'ok': True, 'results': results})
+    except Exception as e:
+        return jsonify({'ok': False, 'msg': str(e)}), 500
+
 @app.route('/api/notificaciones')
 @login_required
 def listar_notificaciones():
@@ -2087,6 +2139,12 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
+    # Migrar columna contacto_emergencia en cliente si no existe
+    try:
+        db.session.execute(db.text('ALTER TABLE cliente ADD COLUMN contacto_emergencia VARCHAR(100)'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     # Crear admin por defecto si no hay usuarios
     if not Usuario.query.first():
         admin = Usuario(username='admin', nombre='Administrador', rol='admin')
@@ -2094,6 +2152,17 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
         print('Admin por defecto creado: admin / 123')
+    # Seed categorías de bodega si están vacías
+    if not CategoriaItem.query.first():
+        for nombre in ['Camaras', 'Conectividad', 'Discos Duros', 'Herramientas', 'Accesorios', 'Gabinetes', 'Fuentes de Poder', 'Cableado']:
+            db.session.add(CategoriaItem(nombre=nombre))
+        db.session.commit()
+        print('Categorías de bodega creadas por defecto.')
+    # Seed ubicación "Bodega Central" si está vacía
+    if not Ubicacion.query.first():
+        db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
+        db.session.commit()
+        print('Ubicación Bodega Central creada por defecto.')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
