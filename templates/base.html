@@ -284,6 +284,9 @@
                         <button class="dark-mode-toggle position-relative" type="button" data-bs-toggle="dropdown"
                             aria-expanded="false" id="notifBell" title="Notificaciones">
                             <i class="fa-regular fa-bell"></i>
+                            <span id="notifStatusDot"
+                                class="position-absolute top-0 start-0 translate-middle p-1 border border-light rounded-circle"
+                                style="display:none;width:8px;height:8px;background:#94a3b8;"></span>
                             <span id="notifBadge"
                                 class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                                 style="font-size:0.55rem;display:none;">0</span>
@@ -563,55 +566,80 @@
         }
 
         // Push notifications
+        var notifReg = null;
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             navigator.serviceWorker.ready.then(function (reg) {
-                    // VAPID version - incrementar si cambian las keys del servidor
-                    var VAPID_VERSION = 3;
-                    var storedVersion = parseInt(localStorage.getItem('vapidVersion') || '0');
-                    reg.pushManager.getSubscription().then(function (sub) {
-                        if (sub) {
-                            if (storedVersion < VAPID_VERSION) {
-                                // VAPID keys cambiaron, desuscribir y volver a suscribir
-                                sub.unsubscribe().then(function () {
-                                    localStorage.setItem('vapidVersion', String(VAPID_VERSION));
-                                    subscribePush(reg);
-                                });
-                                return;
-                            }
-                            fetch('/api/push/subscribe', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    endpoint: sub.endpoint,
-                                    keys: { auth: arrayToBase64(sub.getKey('auth')), p256dh: arrayToBase64(sub.getKey('p256dh')) }
-                                })
-                            });
-                            return;
-                        }
-                        localStorage.setItem('vapidVersion', String(VAPID_VERSION));
-                        var promptUI = function () {
-                            Notification.requestPermission().then(function (perm) {
-                                if (perm === 'granted') {
-                                    subscribePush(reg);
-                                }
-                            });
-                        };
-                        var clickHandler = function () {
-                            if (Notification.permission === 'default') {
-                                promptUI();
-                            } else if (Notification.permission === 'granted') {
-                                subscribePush(reg);
-                            }
-                            document.removeEventListener('click', clickHandler);
-                        };
-                        if (Notification.permission === 'default') {
-                            document.addEventListener('click', clickHandler);
-                        } else if (Notification.permission === 'granted') {
-                            subscribePush(reg);
-                        }
-                    });
-                });
+                notifReg = reg;
+                actualizarEstadoNotificaciones();
+            });
         }
+
+        function actualizarEstadoNotificaciones() {
+            if (!notifReg) return;
+            notifReg.pushManager.getSubscription().then(function (sub) {
+                var dot = document.getElementById('notifStatusDot');
+                if (!dot) return;
+                var activo = sub && Notification.permission === 'granted';
+                if (activo) {
+                    dot.style.display = 'inline';
+                    dot.style.background = '#22c55e';
+                    document.getElementById('notifBell').title = 'Notificaciones activas';
+                } else if (Notification.permission === 'denied') {
+                    dot.style.display = 'inline';
+                    dot.style.background = '#ef4444';
+                    document.getElementById('notifBell').title = 'Notificaciones bloqueadas';
+                } else {
+                    dot.style.display = 'inline';
+                    dot.style.background = '#94a3b8';
+                    document.getElementById('notifBell').title = 'Activar notificaciones';
+                }
+            });
+        }
+
+        function toggleNotificaciones() {
+            if (!notifReg) {
+                mostrarToast('error', 'Service Worker no disponible');
+                return;
+            }
+            notifReg.pushManager.getSubscription().then(function (sub) {
+                if (sub && Notification.permission === 'granted') {
+                    // Ya activas, abrir dropdown normal
+                    var dd = bootstrap.Dropdown.getInstance(document.getElementById('notifBell'));
+                    if (dd) dd.toggle();
+                    return;
+                }
+                if (Notification.permission === 'denied') {
+                    mostrarToast('error', 'Notificaciones bloqueadas. Actívalas desde Ajustes del navegador.');
+                    return;
+                }
+                // Pedir permiso
+                Notification.requestPermission().then(function (perm) {
+                    if (perm === 'granted') {
+                        subscribePush(notifReg).then(function () {
+                            mostrarToast('success', 'Notificaciones activadas');
+                            actualizarEstadoNotificaciones();
+                        }).catch(function () {
+                            mostrarToast('error', 'Error al activar notificaciones');
+                        });
+                    } else {
+                        mostrarToast('error', 'Permiso denegado');
+                        actualizarEstadoNotificaciones();
+                    }
+                });
+            });
+        }
+
+        // Click en campana: primero verifica/activa, luego abre dropdown
+        document.addEventListener('click', function (e) {
+            var bell = e.target.closest('#notifBell');
+            if (!bell) return;
+            e.preventDefault();
+            // Si no hay permiso, pedir antes de abrir dropdown
+            if (Notification.permission !== 'granted') {
+                toggleNotificaciones();
+            }
+            // Si ya hay permiso, Bootstrap maneja el dropdown
+        });
 
         // ====== NOTIFICACIONES IN-APP ======
         var notifInterval = null;
@@ -707,8 +735,11 @@
         var bellMobile = document.getElementById('notifBellMobile');
         if (bellMobile) {
             bellMobile.addEventListener('click', function () {
+                if (Notification.permission !== 'granted') {
+                    toggleNotificaciones();
+                    return;
+                }
                 var canvas = new bootstrap.Offcanvas(document.getElementById('offcanvasNotif'));
-                // Poblar con datos actualizados
                 cargarNotificacionesMovil();
                 canvas.show();
             });
@@ -784,14 +815,35 @@
             if (!document.hidden) cargarNotificaciones();
         });
 
+        function mostrarToast(tipo, mensaje) {
+            var container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                container.style.zIndex = 2000;
+                document.body.appendChild(container);
+            }
+            var bgClass = tipo === 'success' ? 'bg-success' : tipo === 'error' ? 'bg-danger' : 'bg-info';
+            var iconClass = tipo === 'success' ? 'fa-circle-check' : tipo === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+            var toast = document.createElement('div');
+            toast.className = 'toast show align-items-center text-white ' + bgClass + ' border-0 shadow-lg mb-2';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = '<div class="d-flex"><div class="toast-body"><i class="fa-solid ' + iconClass + ' me-2"></i>' + mensaje + '</div><button type="button" class="btn-close btn-close-white m-auto me-2" data-bs-dismiss="toast"></button></div>';
+            container.appendChild(toast);
+            setTimeout(function () {
+                toast.classList.remove('show');
+                setTimeout(function () { toast.remove(); }, 300);
+            }, 4000);
+        }
+
         function subscribePush(reg) {
             var key = '{{ VAPID_PUBLIC_KEY_B64 }}';
             var appKey = urlBase64ToUint8Array(key);
-            reg.pushManager.subscribe({
+            return reg.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: appKey
             }).then(function (sub) {
-                fetch('/api/push/subscribe', {
+                return fetch('/api/push/subscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -801,6 +853,7 @@
                 });
             }).catch(function (err) {
                 console.warn('Push sub error:', err);
+                throw err;
             });
         }
 

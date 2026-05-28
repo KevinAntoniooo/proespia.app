@@ -1,4 +1,4 @@
-const CACHE_NAME = 'proespia-v7';
+const CACHE_NAME = 'proespia-v8';
 const urlsToCache = [
   '/static/manifest.json',
   '/static/icons/icon-192x192.png',
@@ -40,8 +40,16 @@ self.addEventListener('activate', function(event) {
 // ====== PUSH NOTIFICATIONS ======
 self.addEventListener('push', function(event) {
   if (!event.data) {
+    var options = {
+      body: 'Nueva notificación de Proespia',
+      icon: '/static/icons/icon-192x192.png',
+      badge: '/static/icons/icon-192x192.png',
+      vibrate: [200, 100, 200],
+      requireInteraction: true,
+      tag: 'proespia-default'
+    };
     event.waitUntil(
-      self.registration.showNotification('Proespia Gestión', { icon: '/static/icons/icon-192x192.png' })
+      self.registration.showNotification('Proespia Gestión', options)
     );
     return;
   }
@@ -50,19 +58,27 @@ self.addEventListener('push', function(event) {
     var options = {
       body: data.cuerpo || '',
       icon: data.icon || '/static/icons/icon-192x192.png',
+      badge: '/static/icons/icon-192x192.png',
       vibrate: [200, 100, 200],
       requireInteraction: true,
+      tag: 'proespia-' + (data.id || Date.now()),
+      renotify: true,
+      silent: false,
       data: { url: data.url || '/' }
     };
     event.waitUntil(
       self.registration.showNotification(data.titulo || 'Proespia Gestión', options)
     );
   } catch(e) {
+    var options2 = {
+      body: event.data.text(),
+      icon: '/static/icons/icon-192x192.png',
+      badge: '/static/icons/icon-192x192.png',
+      vibrate: [200, 100, 200],
+      requireInteraction: true
+    };
     event.waitUntil(
-      self.registration.showNotification(event.data.text(), {
-        icon: '/static/icons/icon-192x192.png',
-        vibrate: [200, 100, 200]
-      })
+      self.registration.showNotification('Proespia Gestión', options2)
     );
   }
 });

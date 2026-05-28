@@ -1942,9 +1942,11 @@ def crear_notificacion(usuario_id, titulo, mensaje, url=None, tipo='info', envia
     )
     db.session.add(notif)
     db.session.commit()
+    print(f"[NOTIF] Creada: user={usuario_id} tipo={tipo} titulo={titulo[:50]}")
 
     if enviar_push:
         subs = PushSubscription.query.filter_by(usuario_id=usuario_id).all()
+        print(f"[NOTIF] Push subscriptions encontradas: {len(subs)}")
         for s in subs:
             try:
                 from pywebpush import webpush
@@ -1954,17 +1956,20 @@ def crear_notificacion(usuario_id, titulo, mensaje, url=None, tipo='info', envia
                     'url': url or '/',
                     'icon': '/static/icons/icon-192x192.png'
                 })
-                webpush(
+                resp = webpush(
                     subscription_info={'endpoint': s.endpoint, 'keys': {'auth': s.auth, 'p256dh': s.p256dh}},
                     data=data,
                     vapid_private_key=app.config['VAPID_PRIVATE_KEY'],
                     vapid_claims={'sub': app.config['VAPID_CLAIM_EMAIL']},
                     ttl=86400
                 )
+                print(f"[NOTIF] Push enviado OK: {s.endpoint[:30]}... status={resp.status_code}")
             except Exception as e:
                 import traceback
-                print(f"[PUSH ERROR] {s.endpoint[:40]}: {str(e)[:100]}")
-                if '410' in str(e):
+                err_str = str(e)
+                print(f"[NOTIF] Push FALLÓ: {s.endpoint[:30]}... error={err_str[:120]}")
+                if '410' in err_str or 'gone' in err_str.lower():
+                    print(f"[NOTIF] Suscripción expirada (410), eliminando")
                     db.session.delete(s)
                     db.session.commit()
     return notif
