@@ -577,6 +577,11 @@
     var visitasData = [];
     var detalleAbierto = null;
 
+    function parseLocalDate(isoStr) {
+        var parts = isoStr.split('-');
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+
     function initMapa() {
         if (mapa) { mapa.invalidateSize(); return; }
         mapa = L.map('mapa-ubicacion').setView([-34.17, -70.74], 13);
@@ -653,7 +658,7 @@
             countBadge.textContent = '0 visitas';
             cerrarDetalle();
             if (fechaStr) {
-                var d = new Date(fechaStr + 'T12:00:00');
+                var d = parseLocalDate(fechaStr);
                 var opciones = { weekday: 'long', day: 'numeric', month: 'long' };
                 fechaLabel.textContent = d.toLocaleDateString('es-ES', opciones);
             }
@@ -664,7 +669,7 @@
         countBadge.textContent = visitas.length + (visitas.length === 1 ? ' visita' : ' visitas');
 
         var fechaStr = visitas[0].fecha_str || visitas[0].fecha;
-        var d = new Date(visitas[0].fecha + 'T12:00:00');
+        var d = parseLocalDate(visitas[0].fecha);
         var opciones = { weekday: 'long', day: 'numeric', month: 'long' };
         fechaLabel.textContent = d.toLocaleDateString('es-ES', opciones);
 
@@ -740,7 +745,7 @@
 
     function navegarFecha(delta) {
         var input = document.getElementById('fechaSelector');
-        var d = new Date(input.value + 'T12:00:00');
+        var d = parseLocalDate(input.value);
         d.setDate(d.getDate() + delta);
         var y = d.getFullYear();
         var m = String(d.getMonth() + 1).padStart(2, '0');
@@ -900,7 +905,7 @@
     function abrirModalManual() {
         var fechaBase = document.getElementById('fechaSelector').value || new Date().toISOString().split('T')[0];
         var opciones = { day: 'numeric', month: 'long', year: 'numeric' };
-        var label = new Date(fechaBase + 'T12:00:00').toLocaleDateString('es-ES', opciones);
+        var label = parseLocalDate(fechaBase).toLocaleDateString('es-ES', opciones);
         document.getElementById('fecha_modal_label').innerText = label;
         document.getElementById('input_fecha_base').value = fechaBase;
         toggleEquipos();
