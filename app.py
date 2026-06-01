@@ -1357,7 +1357,8 @@ def ver_bodega(user_id, page=1):
         'marca': p.marca or '',
         'modelo': p.modelo or '',
         'cantidad': p.cantidad_actual,
-        'ubicacion_nombre': p.rel_ubicacion.nombre if p.rel_ubicacion else 'Sin ubicación'
+        'ubicacion_nombre': p.rel_ubicacion.nombre if p.rel_ubicacion else 'Sin ubicación',
+        'categoria_nombre': p.rel_categoria.nombre if p.rel_categoria else ''
     } for p in productos_autocomplete]
     criticos = [p for p in todos_productos_db if p.cantidad_actual < p.cantidad_minima]
     total_bodega = sum(p.cantidad_actual for p in todos_productos_db if p.rel_ubicacion and 'Central' in p.rel_ubicacion.nombre)
@@ -1554,6 +1555,10 @@ def registrar_consumo():
             return jsonify({'ok': False, 'msg': 'Cantidad inválida'}), 400
 
         prod = ProductoStock.query.get_or_404(producto_id)
+
+        if prod.rel_categoria and prod.rel_categoria.nombre == 'Herramientas':
+            return jsonify({'ok': False, 'msg': 'No puedes consumir herramientas. Usa Traspaso para moverlas.'}), 400
+
         if ubicacion_id and prod.ubicacion_id != ubicacion_id:
             return jsonify({'ok': False, 'msg': 'El producto no está en esa ubicación'}), 400
         if prod.cantidad_actual < cantidad:

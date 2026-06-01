@@ -694,10 +694,14 @@ function ejecutarConsumo(e) {
 }
 
 function abrirConsumoRapido(e, id, nombre, stock) {
+    var row = e.currentTarget;
+    if (row.dataset.categoriaNombre === 'Herramientas') {
+        alert('No puedes consumir herramientas. Usa Traspaso para moverlas.');
+        return;
+    }
     document.getElementById('rapido_producto_id').value = id;
     document.getElementById('rapido_producto_nombre').textContent = nombre;
     document.getElementById('rapido_stock_actual').textContent = stock;
-    var row = e.currentTarget;
     document.getElementById('rapido_categoria').textContent = row.dataset.categoriaNombre || '—';
     document.getElementById('rapido_estado').textContent = row.dataset.estado || '—';
     new bootstrap.Modal(document.getElementById('modalConsumoRapido')).show();
