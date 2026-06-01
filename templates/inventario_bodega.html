@@ -681,10 +681,15 @@ function ejecutarTraspaso(e) {
     e.preventDefault();
     var f = e.target;
     var desde = f.querySelector('input[name="desde_id"]') ? f.querySelector('input[name="desde_id"]').value : f.desde_id.value;
+    var hacia = f.hacia_id.value;
+    if (desde && hacia && desde === hacia) {
+        mostrarAdvertencia('Error', 'No puedes transferir a la misma ubicación');
+        return;
+    }
     var data = {
         producto_id: document.getElementById('producto_id_traspaso').value,
         desde_id: desde,
-        hacia_id: f.hacia_id.value,
+        hacia_id: hacia,
         cantidad: f.cantidad.value,
         descripcion: 'Traspaso manual'
     };
