@@ -121,7 +121,7 @@ def manifest_json():
 def login():
     # 1. Redirección automática si ya hay sesión activa
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
         usuario_ingresado = request.form.get('usuario', '').strip()
@@ -147,7 +147,7 @@ def login():
             session['rol'] = user.rol
 
             flash(f'Bienvenido de nuevo, {user.nombre}', 'success')
-            return redirect(url_for('dashboard', user_id=user.id))
+            return redirect(url_for('dashboard'))
         
         else:
             flash('Credenciales incorrectas. Por favor, verifique sus datos.', 'warning')
@@ -1151,7 +1151,7 @@ def agendar_visita():
             notificar_tecnicos(
                 'Nueva Visita Asignada',
                 f'Visita a {cliente.nombre} - {tipo} el {fecha_base}',
-                url_for('ver_agenda', user_id=tecnico_id) if 'ver_agenda' in dir() else '/',
+                url_for('ver_agenda') if 'ver_agenda' in dir() else '/',
                 tipo='visita'
             )
 
@@ -1511,7 +1511,7 @@ def registrar_consumo():
             notificar_admin(
                 'Stock Crítico en Bodega',
                 f'{prod.nombre} ({prod.marca}) bajó a {prod.cantidad_actual} uds. Mínimo: {prod.cantidad_minima}',
-                url_for('inventario_bodega', user_id=1) if 'inventario_bodega' in dir() else '/',
+                url_for('ver_bodega') if 'ver_bodega' in dir() else '/',
                 tipo='stock'
             )
         return jsonify({'ok': True, 'msg': 'Consumo registrado'})
@@ -1656,7 +1656,7 @@ def solicitar_combustible():
         notificar_admin(
             'Solicitud de Combustible',
             f'{current_user.nombre} solicita ${monto:,} para {vehiculo.placa}. KM actual: {km:,}',
-            url_for('dashboard', user_id=1),
+            url_for('dashboard'),
             tipo='combustible'
         )
         return jsonify({'ok': True, 'msg': 'Solicitud enviada al administrador'})
@@ -1688,11 +1688,11 @@ DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
 def checklist_viernes():
     if current_user.rol != 'tecnico':
         flash('Solo técnicos pueden acceder al checklist.', 'warning')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('dashboard'))
     vehiculo = Vehiculo.query.filter(Vehiculo.ubicacion_id == current_user.ubicacion_id).first()
     if not vehiculo:
         flash('No tienes un vehículo asignado. Contacta al administrador.', 'danger')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('dashboard'))
     hoy = datetime.now().weekday()
     dia_config = vehiculo.dia_checklist
     dia_habilitado = (hoy == dia_config)
@@ -1737,7 +1737,7 @@ def checklist_enviar():
 def checklist_vehiculo_admin(vehiculo_id):
     if current_user.rol not in ['admin', 'super_su']:
         flash('No autorizado', 'danger')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('dashboard'))
     vehiculo = Vehiculo.query.get_or_404(vehiculo_id)
     if request.method == 'POST':
         try:
@@ -1773,7 +1773,7 @@ def checklist_reporte_pdf(checklist_id):
     ck = ChecklistSemanal.query.get_or_404(checklist_id)
     if current_user.rol not in ['admin', 'super_su'] and ck.usuario_id != current_user.id:
         flash('No autorizado', 'danger')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('dashboard'))
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font('helvetica', 'B', 20)
