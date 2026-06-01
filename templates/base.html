@@ -578,16 +578,21 @@
         }
     </script>
     <script>
+        function swHandleUpdate(sw) {
+            if (!sw) return;
+            sw.addEventListener('statechange', function () {
+                if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                    document.getElementById('updateBanner').classList.remove('d-none');
+                }
+            });
+        }
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function (reg) {
+                    swHandleUpdate(reg.installing);
                     reg.addEventListener('updatefound', function () {
-                        var newSW = reg.installing;
-                        newSW.addEventListener('statechange', function () {
-                            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-                                document.getElementById('updateBanner').classList.remove('d-none');
-                            }
-                        });
+                        swHandleUpdate(reg.installing);
                     });
                 });
             });
@@ -598,23 +603,21 @@
                 swRefreshing = true;
                 window.location.reload();
             });
-        }
 
-        }
-
-        // Update SW click handler
-        document.getElementById('btnActualizarApp')?.addEventListener('click', function () {
-            var btn = this;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Actualizando...';
-            navigator.serviceWorker.ready.then(function (reg) {
-                if (reg.waiting) {
-                    reg.waiting.postMessage('SKIP_WAITING');
-                } else {
-                    window.location.reload();
-                }
+            // Update SW click handler
+            document.getElementById('btnActualizarApp')?.addEventListener('click', function () {
+                var btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Actualizando...';
+                navigator.serviceWorker.ready.then(function (reg) {
+                    if (reg.waiting) {
+                        reg.waiting.postMessage('SKIP_WAITING');
+                    } else {
+                        window.location.reload();
+                    }
+                });
             });
-        });
+        }
 
         // Push notifications
         var notifReg = null;
