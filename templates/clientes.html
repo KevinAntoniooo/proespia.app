@@ -101,7 +101,18 @@
                         <h6><i class="bi bi-shield-check text-primary"></i> Seguridad</h6>
                         <p><strong>Plan Cuadrante:</strong> {{ c.plan_cuadrante or 'No registrado' }}</p>
                         <p><strong>Estado:</strong> {{ c.estado_monitoreo }}</p>
-                        <p><strong>Contacto Emergencia:</strong> {{ c.contacto_emergencia or 'No registrado' }}</p>
+                        <p><strong>Contactos Emergencia:</strong></p>
+                        <div class="mb-2">
+                        {% if c.contacto_emergencia and c.contacto_emergencia != '' and c.contacto_emergencia[0] == '[' %}
+                            {% for contacto in c.contacto_emergencia|fromjson %}
+                            <span class="badge bg-light text-dark border px-2 py-1 me-1 mb-1" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-phone text-success fa-xs me-1"></i>{{ contacto.nombre }} - {{ contacto.telefono }}
+                            </span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted small">{{ c.contacto_emergencia or 'No registrado' }}</span>
+                        {% endif %}
+                        </div>
                         {% if c.latitud and c.longitud %}
                         <p><strong>Coordenadas:</strong> <span class="text-muted">{{ "%.6f"|format(c.latitud) }}, {{ "%.6f"|format(c.longitud) }}</span></p>
                         {% endif %}
@@ -170,8 +181,16 @@
                                 <input type="text" name="plan_cuadrante" class="form-control" value="{{ c.plan_cuadrante or '' }}" placeholder="Ej: Cuadrante 5">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Contacto Emergencia</label>
-                                <input type="text" name="contacto_emergencia" class="form-control" value="{{ c.contacto_emergencia or '' }}" placeholder="Nombre y teléfono">
+                                <label class="form-label fw-bold">Contactos de Emergencia</label>
+                                <div class="d-flex gap-2 mb-2">
+                                    <input type="text" id="emergenciaNombre{{ c.id }}" class="form-control" placeholder="Nombre" style="flex:2;">
+                                    <input type="text" id="emergenciaTelefono{{ c.id }}" class="form-control" placeholder="Teléfono" style="flex:1;">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('{{ c.id }}')" style="white-space:nowrap;">
+                                        <i class="fa-solid fa-plus me-1"></i>Agregar
+                                    </button>
+                                </div>
+                                <div id="listaEmergencia{{ c.id }}" class="d-flex flex-wrap gap-2 mb-1"></div>
+                                <input type="hidden" name="contacto_emergencia" id="contactoEmergencia{{ c.id }}" value="{{ c.contacto_emergencia or '' }}">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Estado</label>
@@ -263,8 +282,16 @@
                                 <input type="text" name="plan_cuadrante" class="form-control" placeholder="Ej: Cuadrante 5 - +569...">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Contacto Emergencia</label>
-                                <input type="text" name="contacto_emergencia" class="form-control" placeholder="Nombre y teléfono de contacto">
+                                <label class="form-label fw-bold">Contactos de Emergencia</label>
+                                <div class="d-flex gap-2 mb-2">
+                                    <input type="text" id="emergenciaNombreNuevo" class="form-control" placeholder="Nombre" style="flex:2;">
+                                    <input type="text" id="emergenciaTelefonoNuevo" class="form-control" placeholder="Teléfono" style="flex:1;">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('Nuevo')" style="white-space:nowrap;">
+                                        <i class="fa-solid fa-plus me-1"></i>Agregar
+                                    </button>
+                                </div>
+                                <div id="listaEmergenciaNuevo" class="d-flex flex-wrap gap-2 mb-1"></div>
+                                <input type="hidden" name="contacto_emergencia" id="contactoEmergenciaNuevo" value="">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Estado de Monitoreo</label>
@@ -422,6 +449,59 @@ document.addEventListener('DOMContentLoaded', function() {
             var lat = parseFloat(document.getElementById('latFicha' + id).value);
             var lng = parseFloat(document.getElementById('lngFicha' + id).value);
             initClienteMap('Ficha' + id, isNaN(lat) ? null : lat, isNaN(lng) ? null : lng, true);
+        });
+    });
+});
+
+// ===== Contactos de Emergencia =====
+var contactosEmergencia = {};
+
+function agregarContactoEmergencia(suffix) {
+    var nombre = document.getElementById('emergenciaNombre' + suffix).value.trim();
+    var telefono = document.getElementById('emergenciaTelefono' + suffix).value.trim();
+    if (!nombre || !telefono) return;
+    if (!contactosEmergencia[suffix]) contactosEmergencia[suffix] = [];
+    contactosEmergencia[suffix].push({nombre: nombre, telefono: telefono});
+    document.getElementById('emergenciaNombre' + suffix).value = '';
+    document.getElementById('emergenciaTelefono' + suffix).value = '';
+    renderizarContactos(suffix);
+}
+
+function renderizarContactos(suffix) {
+    var lista = document.getElementById('listaEmergencia' + suffix);
+    var hidden = document.getElementById('contactoEmergencia' + suffix);
+    var contactos = contactosEmergencia[suffix] || [];
+    lista.innerHTML = '';
+    contactos.forEach(function(c, i) {
+        var badge = document.createElement('span');
+        badge.className = 'badge bg-light text-dark d-inline-flex align-items-center gap-1 px-2 py-1';
+        badge.style.cssText = 'border:1px solid #dee2e6;font-size:0.75rem;border-radius:12px;';
+        badge.innerHTML = '<i class="fa-solid fa-phone text-success fa-xs"></i> ' + c.nombre + ' - ' + c.telefono +
+            ' <button type="button" class="btn-close btn-close-sm ms-1" style="font-size:0.4rem;" onclick="eliminarContactoEmergencia(' + i + ',\'' + suffix + '\')"></button>';
+        lista.appendChild(badge);
+    });
+    hidden.value = JSON.stringify(contactos);
+}
+
+function eliminarContactoEmergencia(index, suffix) {
+    contactosEmergencia[suffix].splice(index, 1);
+    renderizarContactos(suffix);
+}
+
+// Inicializar contactos existentes al abrir modales de edición
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[id^="modalEditarCliente"]').forEach(function(m) {
+        m.addEventListener('shown.bs.modal', function() {
+            var id = this.id.replace('modalEditarCliente', '');
+            var hidden = document.getElementById('contactoEmergencia' + id);
+            if (!hidden || !hidden.value || hidden.value === '') return;
+            try {
+                var parsed = JSON.parse(hidden.value);
+                if (Array.isArray(parsed)) {
+                    contactosEmergencia[id] = parsed;
+                    renderizarContactos(id);
+                }
+            } catch(e) {}
         });
     });
 });

@@ -27,6 +27,17 @@ for _locale in ['es_CL.UTF-8', 'es_CL', 'Spanish_Chile.1252', 'en_US.UTF-8', '']
     except locale.Error:
         continue
 app = Flask(__name__) # <--- PRIMERO CREAMOS LA APP
+
+# Filtro Jinja para parsear JSON desde string
+@app.template_filter('fromjson')
+def fromjson_filter(value):
+    if not value:
+        return []
+    try:
+        return json.loads(value)
+    except Exception:
+        return []
+
 # PostgreSQL for production (Render), SQLite for local dev
 _db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
 if _db_url.startswith('postgres://'):
@@ -2200,7 +2211,13 @@ with app.app_context():
         db.session.rollback()
     # Migrar columna contacto_emergencia en cliente si no existe
     try:
-        db.session.execute(db.text('ALTER TABLE cliente ADD COLUMN contacto_emergencia VARCHAR(100)'))
+        db.session.execute(db.text('ALTER TABLE cliente ADD COLUMN contacto_emergencia VARCHAR(500)'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Migrar tamaño contacto_emergencia a 500 si ya existe
+    try:
+        db.session.execute(db.text('ALTER TABLE cliente ALTER COLUMN contacto_emergencia TYPE VARCHAR(500)'))
         db.session.commit()
     except Exception:
         db.session.rollback()
