@@ -167,7 +167,13 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold" style="color:#334155;">Contraseña <span class="text-danger">*</span></label>
-                        <input type="password" id="regPassword" class="form-control" placeholder="Mínimo 4 caracteres" required minlength="4">
+                        <input type="password" id="regPassword" class="form-control" placeholder="Mínimo 4 caracteres" required>
+                        <div class="mt-2" id="passwordReqs" style="font-size:0.72rem;line-height:1.6;">
+                            <div id="reqMayuscula" style="color:#dc2626;transition:color 0.25s ease;"><i class="fa-solid fa-circle me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Una mayúscula</div>
+                            <div id="reqNumero" style="color:#dc2626;transition:color 0.25s ease;"><i class="fa-solid fa-circle me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Un número</div>
+                            <div id="reqEspecial" style="color:#dc2626;transition:color 0.25s ease;"><i class="fa-solid fa-circle me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Un carácter especial (@, #, $, etc.)</div>
+                            <div id="reqLargo" style="color:#dc2626;transition:color 0.25s ease;"><i class="fa-solid fa-circle me-1" style="font-size:0.45rem;vertical-align:middle;"></i>Mínimo 4 caracteres</div>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-lg w-100 fw-bold border-0" id="btnRegistrar" style="border-radius:12px;padding:10px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;">
                         <i class="fa-solid fa-paper-plane me-2"></i>Registrarse
@@ -247,8 +253,8 @@ document.getElementById('formRegistro')?.addEventListener('submit', function(e) 
         errDiv.classList.remove('d-none');
         return;
     }
-    if (password.length < 4) {
-        errDiv.textContent = 'La contraseña debe tener al menos 4 caracteres.';
+    if (password.length < 4 || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^a-zA-Z0-9]/.test(password)) {
+        errDiv.textContent = 'La contraseña debe tener: mayúscula, número, carácter especial y mínimo 4 caracteres.';
         errDiv.classList.remove('d-none');
         return;
     }
@@ -275,6 +281,20 @@ document.getElementById('formRegistro')?.addEventListener('submit', function(e) 
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-paper-plane me-2"></i>Registrarse';
     });
+});
+
+// Password requirements real-time validation
+document.getElementById('regPassword')?.addEventListener('input', function() {
+    var v = this.value;
+    function ck(id, ok) {
+        var el = document.getElementById(id);
+        if (ok) { el.style.color = '#16a34a'; el.querySelector('i').className = 'fa-solid fa-check me-1'; }
+        else { el.style.color = '#dc2626'; el.querySelector('i').className = 'fa-solid fa-circle me-1'; }
+    }
+    ck('reqMayuscula', /[A-Z]/.test(v));
+    ck('reqNumero', /[0-9]/.test(v));
+    ck('reqEspecial', /[^a-zA-Z0-9]/.test(v));
+    ck('reqLargo', v.length >= 4);
 });
 
 function abrirVerificacion(email) {

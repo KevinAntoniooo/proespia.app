@@ -1,3 +1,4 @@
+import re
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, Response, jsonify, send_file, session
 from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgramada, CategoriaItem, Ubicacion, ProductoStock, MovimientoStock, Vehiculo, Herramienta, ChecklistSemanal, PushSubscription, Notificacion, SolicitudCombustible
 from datetime import datetime, time, timedelta, date
@@ -240,8 +241,8 @@ def api_registro():
     if not nombre or not telefono or not password:
         return jsonify({'ok': False, 'msg': 'Nombre, teléfono y contraseña son obligatorios'}), 400
 
-    if len(password) < 4:
-        return jsonify({'ok': False, 'msg': 'La contraseña debe tener al menos 4 caracteres'}), 400
+        if len(password) < 4 or not re.search(r'[A-Z]', password) or not re.search(r'[0-9]', password) or not re.search(r'[^a-zA-Z0-9]', password):
+            return jsonify({'ok': False, 'msg': 'La contraseña debe tener: mayúscula, número, carácter especial y mínimo 4 caracteres'}), 400
 
     if telefono and Usuario.query.filter_by(telefono=telefono).first():
         return jsonify({'ok': False, 'msg': 'El teléfono ya está registrado'}), 400
