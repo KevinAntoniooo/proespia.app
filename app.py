@@ -1,4 +1,3 @@
-import re
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, Response, jsonify, send_file, session
 from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgramada, CategoriaItem, Ubicacion, ProductoStock, MovimientoStock, Vehiculo, Herramienta, ChecklistSemanal, PushSubscription, Notificacion, SolicitudCombustible
 from datetime import datetime, time, timedelta, date
@@ -15,11 +14,7 @@ from models import get_fernet
 import json
 import locale
 from base64 import b64encode, b64decode
-import smtplib
-import random
-import string
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+
 
 # ==========================================
 # 0. CONFIGURACIÓN E INICIALIZACIÓN DE LA APP
@@ -46,19 +41,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=15)
 app.config['VAPID_PRIVATE_KEY'] = 'EBTOb_kaWp7FPYpGZcV8r_fegUJENKcoI6adDZ0scAY'
 app.config['VAPID_PUBLIC_KEY'] = 'BMz3vT_Sq1q8-xozy7P6CG28HABJhJBm_eGAIWvUpSMuFz2AUVMkQ83E_rQrIZha5m2fDsDltT5c8SK8ozA_Ot0'
 app.config['VAPID_CLAIM_EMAIL'] = 'mailto:contacto@proespia.cl'
-# Configuración SMTP para envío de códigos de verificación
-app.config['SMTP_HOST'] = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
-app.config['SMTP_PORT'] = int(os.environ.get('SMTP_PORT', 587))
-app.config['SMTP_USER'] = os.environ.get('SMTP_USER', '')
-app.config['SMTP_PASS'] = os.environ.get('SMTP_PASS', '')
-app.config['SMTP_FROM'] = os.environ.get('SMTP_FROM', 'noreply@proespia.cl')
-# Configuración de cookies de sesión persistente
-app.config['SESSION_COOKIE_NAME'] = 'proespia_session'
-# Configuración de Fernet (cifrado simétrico para Bóveda)
-FERNET_KEY = get_fernet(app)
-# Configuración de subida de archivos
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -152,12 +135,8 @@ def login():
 
         # 3. VERIFICACIÓN DE SEGURIDAD
         if user and user.check_password(password_ingresado):
-            if not user.activo:
-                contacto = user.email or user.telefono or 'tu correo'
-                flash('Cuenta no activada. Revisa el código enviado.', 'warning')
-                return render_template('login.html', pendiente_verificacion=contacto)
-            
-            login_user(user, remember=remember) 
+            login_user(user, remember=remember)
+
 
             if remember:
                 session.permanent = True
@@ -175,173 +154,16 @@ def login():
             
     return render_template('login.html')
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    session.clear()
-    return redirect(url_for('login'))
-
-# ==========================================
-# 3b. REGISTRO Y VERIFICACIÓN POR CORREO
-# ==========================================
-def enviar_codigo_verificacion(email, codigo):
-    """Envía el código de 6 dígitos al correo del usuario."""
-    smtp_host = app.config['SMTP_HOST']
-    smtp_port = app.config['SMTP_PORT']
-    smtp_user = app.config['SMTP_USER']
-    smtp_pass = app.config['SMTP_PASS']
-    smtp_from = app.config['SMTP_FROM']
-
-    if not smtp_user or not smtp_pass:
-        print(f"[EMAIL] SMTP no configurado. Código para {email}: {codigo}")
-        return True
-
-    msg = MIMEMultipart()
-    msg['From'] = smtp_from
-    msg['To'] = email
-    msg['Subject'] = 'Código de verificación - Proespia Gestión'
-
-    body = f"""
-    <html>
-    <body style="font-family:Arial,sans-serif;padding:20px;">
-        <h2 style="color:#dc2626;">Proespia Gestión</h2>
-        <p>Tu código de verificación es:</p>
-        <h1 style="font-size:32px;letter-spacing:8px;background:#f1f5f9;padding:15px;border-radius:8px;text-align:center;">{codigo}</h1>
-        <p>Este código expira en 10 minutos.</p>
-        <p style="color:#64748b;font-size:12px;">Si no solicitaste este código, ignora este mensaje.</p>
-    </body>
-    </html>
-    """
-    msg.attach(MIMEText(body, 'html'))
-
-    try:
-        server = smtplib.SMTP(smtp_host, smtp_port)
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-        print(f"[EMAIL] Código enviado a {email}")
-        return True
-    except Exception as e:
-        print(f"[EMAIL] Error al enviar: {e}")
-        return False
-
-@app.route('/api/registro', methods=['POST'])
-def api_registro():
-    data = request.get_json()
-    if not data:
-        return jsonify({'ok': False, 'msg': 'Datos requeridos'}), 400
-
-    nombre = data.get('nombre', '').strip()
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
-
-    if not nombre or not email or not password:
-        return jsonify({'ok': False, 'msg': 'Nombre, correo y contraseña son obligatorios'}), 400
-
-    if len(password) < 4 or not re.search(r'[A-Z]', password) or not re.search(r'[0-9]', password) or not re.search(r'[^a-zA-Z0-9]', password):
-        return jsonify({'ok': False, 'msg': 'La contraseña debe tener: mayúscula, número, carácter especial y mínimo 4 caracteres'}), 400
-
-    if Usuario.query.filter_by(email=email).first():
-        return jsonify({'ok': False, 'msg': 'El correo ya está registrado'}), 400
-
-    username = email.split('@')[0]
-    base_username = username
-    contador = 1
-    while Usuario.query.filter_by(username=username).first():
-        username = f'{base_username}{contador}'
-        contador += 1
-
-    es_primer_usuario = not Usuario.query.first()
-    codigo = ''.join(random.choices(string.digits, k=6))
-
-    user = Usuario(
-        nombre=nombre,
-        email=email,
-        telefono=None,
-        username=username,
-        rol='admin' if es_primer_usuario else 'tecnico',
-        activo=False,
-        codigo_verificacion=codigo
-    )
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-
-    enviado = enviar_codigo_verificacion(email, codigo)
-
-    return jsonify({
-        'ok': True,
-        'msg': 'Registro exitoso. Revisa tu correo para el código de verificación.',
-        'email': email,
-        'es_admin': es_primer_usuario
-    })
-
-@app.route('/api/verificar_codigo', methods=['POST'])
-def api_verificar_codigo():
-    data = request.get_json()
-    if not data:
-        return jsonify({'ok': False, 'msg': 'Datos requeridos'}), 400
-
-    email = data.get('email', '').strip().lower()
-    codigo = data.get('codigo', '').strip()
-
-    user = Usuario.query.filter(
-        (Usuario.email == email) | (Usuario.telefono == email)
-    ).filter(Usuario.activo == False).order_by(Usuario.id.desc()).first()
-
-    if not user:
-        return jsonify({'ok': False, 'msg': 'No hay registros pendientes para este correo'}), 400
-
-    if user.codigo_verificacion != codigo:
-        return jsonify({'ok': False, 'msg': 'Código incorrecto'}), 400
-
-    user.activo = True
-    user.codigo_verificacion = None
-    db.session.commit()
-
-    login_user(user, remember=True)
-    session['user_id'] = user.id
-    session['rol'] = user.rol
-
-    return jsonify({
-        'ok': True,
-        'msg': 'Cuenta activada correctamente',
-        'redirect': url_for('dashboard', user_id=user.id)
-    })
-
-@app.route('/api/reenviar_codigo', methods=['POST'])
-def api_reenviar_codigo():
-    data = request.get_json()
-    email = (data.get('email', '') if data else '').strip().lower()
-    if not email:
-        return jsonify({'ok': False, 'msg': 'Correo requerido'}), 400
-
-    user = Usuario.query.filter(
-        (Usuario.email == email) | (Usuario.telefono == email)
-    ).filter(Usuario.activo == False).order_by(Usuario.id.desc()).first()
-
-    if not user:
-        return jsonify({'ok': False, 'msg': 'No hay registros pendientes para este correo'}), 400
-
-    codigo = ''.join(random.choices(string.digits, k=6))
-    user.codigo_verificacion = codigo
-    db.session.commit()
-
-    enviar_codigo_verificacion(email, codigo)
-    return jsonify({'ok': True, 'msg': 'Código reenviado'})
-
 # ==========================================
 # 4. DASHBOARD PRINCIPAL
 # ==========================================
 from datetime import datetime, time, date
 
-@app.route('/dashboard/<int:user_id>')
+@app.route('/dashboard')
 @login_required
-def dashboard(user_id):
-    # Usamos la forma moderna para obtener el usuario
-    usuario = db.session.get(Usuario, user_id)
+def dashboard():
+    usuario = current_user
+    user_id = current_user.id
     
     # Fecha de hoy y rangos para evitar fallos de SQLite
     hoy_date = date.today()
@@ -489,24 +311,22 @@ def finalizar_visita(visita_id):
         db.session.rollback()
         flash(f'Error al guardar el estado: {str(e)}', 'danger')
     
-    return redirect(url_for('dashboard', user_id=visita.usuario_id))
+    return redirect(url_for('dashboard'))
 # ==========================================
 # 4. GESTIÓN DE CLIENTES (SEDES) Y EQUIPOS
 # ==========================================
-@app.route('/clientes/<int:user_id>')
+@app.route('/clientes')
 @login_required
-def ver_clientes(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
-    # Traemos todos los clientes de la base de datos
+def ver_clientes():
+    usuario = current_user
     todos_los_clientes = Cliente.query.all()
-    # Enviamos los clientes y el usuario al template
     return render_template('clientes.html', clientes=todos_los_clientes, usuario=usuario)
 
-# --- CREAR NUEVO CLIENTE ---
-@app.route('/clientes/nuevo/<int:user_id>', methods=['GET', 'POST'])
 @login_required
-def nuevo_cliente(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
+@app.route('/clientes/nuevo', methods=['GET', 'POST'])
+@login_required
+def nuevo_cliente():
+    usuario = current_user
     
     if request.method == 'POST':
         try:
@@ -522,40 +342,33 @@ def nuevo_cliente(user_id):
             db.session.add(nuevo)
             db.session.commit()
             flash(f'Sede "{nuevo.nombre}" registrada correctamente', 'success')
-            return redirect(url_for('ver_clientes', user_id=user_id))
+            return redirect(url_for('ver_clientes'))
         except Exception as e:
             db.session.rollback()
             flash('Error al registrar la sede. Intente nuevamente.', 'danger')
-            return redirect(url_for('nuevo_cliente', user_id=user_id))
+            return redirect(url_for('nuevo_cliente'))
         
             registrar_log(current_user.id, "SISTEMA: Nuevo cliente creado", 
                   f"Se registró el cliente {nuevo.nombre}")
     return render_template('nuevo_cliente.html', usuario=usuario)
 
 # --- ELIMINAR SEDE ---
-@app.route('/clientes/eliminar/<int:cliente_id>/<int:user_id>')
+@app.route('/clientes/eliminar/<int:cliente_id>')
 @login_required
-def eliminar_cliente(cliente_id, user_id):
+def eliminar_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-    # VERIFICACIÓN TÉCNICA: 
-    # Revisamos si la lista de equipos del cliente tiene algún elemento
     if len(cliente.equipos) > 0:
-        # Si tiene equipos, lanzamos advertencia y bloqueamos el borrado
         flash(f'BLOQUEO DE SEGURIDAD: La sede "{cliente.nombre}" tiene {len(cliente.equipos)} equipos vinculados. Debes eliminarlos o reasignarlos antes de borrar la sede.', 'warning')
-        return redirect(url_for('ver_clientes', user_id=user_id))
-    
-    # Si no tiene equipos, el borrado es seguro
+        return redirect(url_for('ver_clientes'))
     nombre_borrado = cliente.nombre
     db.session.delete(cliente)
     db.session.commit()
-    
     flash(f'Sede "{nombre_borrado}" eliminada exitosamente.', 'danger')
-    return redirect(url_for('ver_clientes', user_id=user_id))
+    return redirect(url_for('ver_clientes'))
 
-# --- EDITAR SEDE (POST) ---
-@app.route('/clientes/editar/<int:cliente_id>/<int:user_id>', methods=['POST'])
+@app.route('/clientes/editar/<int:cliente_id>', methods=['POST'])
 @login_required
-def editar_cliente(cliente_id, user_id):
+def editar_cliente(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
     
     # Actualizamos los campos con lo que viene del formulario
@@ -576,21 +389,21 @@ def editar_cliente(cliente_id, user_id):
             notificar_admin(
                 'Cliente Activo en Central',
                 f'{cliente.nombre} ahora está en MONITOREO. Verificar recepción de señales.',
-                url_for('ver_clientes', user_id=user_id),
+                url_for('ver_clientes'),
                 tipo='exito'
             )
     except Exception as e:
         db.session.rollback()
         flash('Error al actualizar los datos.', 'danger')
         
-    return redirect(url_for('ver_clientes', user_id=user_id))
+    return redirect(url_for('ver_clientes'))
 
 # --- CLIENTES Y REPORTES ---
-@app.route('/clientes/reporte_pdf/<int:cliente_id>/<int:user_id>')
+@app.route('/clientes/reporte_pdf/<int:cliente_id>')
 @login_required
-def generar_pdf(cliente_id, user_id):
+def generar_pdf(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-    u_admin = Usuario.query.get_or_404(user_id)
+    u_admin = current_user
     equipos = Equipo.query.filter_by(cliente_id=cliente_id).all()
     
     # Capturamos si el usuario marcó el checkbox
@@ -657,18 +470,18 @@ def generar_pdf(cliente_id, user_id):
 # ==========================================
 # 5. GESTIÓN DE TAREAS Y FALLAS
 # ==========================================
-@app.route('/equipos/<int:user_id>')
+@app.route('/equipos')
 @login_required
-def ver_equipos(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
+def ver_equipos():
+    usuario = current_user
     equipos = Equipo.query.all()
     clientes = [{'id': c.id, 'nombre': c.nombre} for c in Cliente.query.all()]
     return render_template('equipos.html', equipos=equipos, usuario=usuario, clientes=clientes)
 
-@app.route('/equipos/nuevo/<int:user_id>', methods=['GET', 'POST'])
+@app.route('/equipos/nuevo', methods=['GET', 'POST'])
 @login_required
-def nuevo_equipo(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
+def nuevo_equipo():
+    usuario = current_user
     
     if request.method == 'POST':
         try:
@@ -683,29 +496,28 @@ def nuevo_equipo(user_id):
             db.session.add(nuevo)
             db.session.commit()
             flash('Equipo agregado al inventario', 'success')
-            return redirect(url_for('ver_equipos', user_id=user_id))
+            return redirect(url_for('ver_equipos'))
         except IntegrityError:
             db.session.rollback()
             flash('Error: El número de serie ya existe', 'danger')
-            return redirect(url_for('nuevo_equipo', user_id=user_id))
+            return redirect(url_for('nuevo_equipo'))
     
     clientes = [{'id': c.id, 'nombre': c.nombre} for c in Cliente.query.all()]
     return render_template('nuevo_equipo.html', clientes=clientes, usuario=usuario)
 
-@app.route('/equipos/borrar/<int:equipo_id>/<int:user_id>')
+@app.route('/equipos/borrar/<int:equipo_id>')
 @login_required
-def borrar_equipo(equipo_id, user_id):
+def borrar_equipo(equipo_id):
     equipo = Equipo.query.get_or_404(equipo_id)
     db.session.delete(equipo)
     db.session.commit()
     flash(f"Equipo eliminado correctamente.", "danger")
-    return redirect(url_for('ver_equipos', user_id=user_id))
+    return redirect(url_for('ver_equipos'))
 
-@app.route('/equipos/editar/<int:equipo_id>/<int:user_id>', methods=['POST'])
+@app.route('/equipos/editar/<int:equipo_id>', methods=['POST'])
 @login_required
-def editar_equipo(equipo_id, user_id):
+def editar_equipo(equipo_id):
     equipo = Equipo.query.get_or_404(equipo_id)
-    u_admin = Usuario.query.get_or_404(user_id)
     
     equipo.cliente_id = request.form.get('cliente_id')
     equipo.tipo = request.form.get('tipo')
@@ -716,16 +528,16 @@ def editar_equipo(equipo_id, user_id):
     
     db.session.commit()
     flash('Equipo actualizado', 'success')
-    return redirect(url_for('ver_equipos', user_id=user_id))
+    return redirect(url_for('ver_equipos'))
 
 # ==========================================
 # 6. GESTIÓN DE BITÁCORA (NOVEDADES, FALLAS, TAREAS)
 # ==========================================
 # 1. RUTA PARA VER EL LIBRO DE NOVEDADES
-@app.route('/bitacora/<int:user_id>')
+@app.route('/bitacora')
 @login_required
-def ver_bitacora(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
+def ver_bitacora():
+    usuario = current_user
     page = request.args.get('page', 1, type=int)
     
     query = Bitacora.query
@@ -736,7 +548,6 @@ def ver_bitacora(user_id):
         query = query.filter(Bitacora.fecha >= f"{inicio} 00:00:00", 
                              Bitacora.fecha <= f"{fin} 23:59:59")
     
-    # BITÁCORA: Orden cronológico puro (lo más nuevo arriba)
     paginado = query.order_by(Bitacora.fecha.desc(), Bitacora.id.desc()).paginate(page=page, per_page=20)
     
     return render_template('bitacora.html', 
@@ -745,10 +556,9 @@ def ver_bitacora(user_id):
                            paginacion=paginado,
                            clientes=Cliente.query.all())
     
-# 2. RUTA PARA GUARDAR UN SUCESO (CON PRIORIDAD)
-@app.route('/bitacora/nueva/<int:user_id>', methods=['POST'])
+@app.route('/bitacora/nueva', methods=['POST'])
 @login_required
-def nueva_entrada(user_id):
+def nueva_entrada():
     c_id = request.form.get('cliente_id')
     suceso = request.form.get('tipo_suceso')
     desc = request.form.get('descripcion')
@@ -779,7 +589,7 @@ def nueva_entrada(user_id):
             cliente_id=int(c_id),
             tipo_visita=suceso, 
             descripcion=desc,
-            usuario_id=user_id,
+            usuario_id=current_user.id,
             fecha=fecha_final,
             prioridad=prioridad_final
         )
@@ -791,18 +601,17 @@ def nueva_entrada(user_id):
         # --- DISPARADOR: Nueva falla en bitácora ---
         if 'falla' in suceso.lower():
             cliente = Cliente.query.get(int(c_id))
-            autor = Usuario.query.get(user_id)
             nom_cliente = cliente.nombre if cliente else 'Desconocido'
             notificar_admin(
                 f'Falla Registrada - {nom_cliente}',
-                f'{autor.nombre} registró una falla en {nom_cliente}',
-                url_for('ver_bitacora', user_id=1),
+                f'{current_user.nombre} registró una falla en {nom_cliente}',
+                url_for('ver_bitacora'),
                 tipo='falla'
             )
             notificar_tecnicos(
                 f'Falla Pendiente - {nom_cliente}',
                 f'Falla reportada en {nom_cliente}. Revisar terreno.',
-                url_for('ver_todas_las_tareas', user_id=1) if 'ver_todas_las_tareas' in dir() else '/',
+                url_for('tareas_pendientes') if 'tareas_pendientes' in dir() else '/',
                 tipo='falla'
             )
 
@@ -812,13 +621,13 @@ def nueva_entrada(user_id):
         print(f"DEBUG ERROR: {str(e)}") 
         flash(f'Error al registrar: {str(e)}', 'danger')
         
-    return redirect(url_for('ver_bitacora', user_id=user_id))
+    return redirect(url_for('ver_bitacora'))
 
 # 3. RUTA PARA GENERAR PDF DE LA BITÁCORA
-@app.route('/bitacora/reporte_pdf/<int:user_id>')
+@app.route('/bitacora/reporte_pdf')
 @login_required
-def reporte_bitacora_pdf(user_id):
-    solicitante = Usuario.query.get_or_404(user_id)
+def reporte_bitacora_pdf():
+    solicitante = current_user
     inicio = request.args.get('inicio')
     fin = request.args.get('fin')
     
@@ -899,10 +708,10 @@ def api_consulta_bitacora():
 # ==========================================
 # 6. GESTIÓN DE BÓVEDA DE CONTRASEÑAS (APPS, SERVICIOS, ETC)
 # ==========================================
-@app.route('/boveda/<int:user_id>', methods=['GET', 'POST'])
+@app.route('/boveda', methods=['GET', 'POST'])
 @login_required
-def ver_boveda(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
+def ver_boveda():
+    usuario = current_user
 
     if request.method == 'POST':
         nombre = request.form.get('nombre_app')
@@ -914,55 +723,44 @@ def ver_boveda(user_id):
             url_acceso="",
             usuario_app=user_app,
             password_app=encrypted_pass,
-            usuario_id=user_id
+            usuario_id=current_user.id
         )
         db.session.add(nueva_credencial)
         db.session.commit()
         flash('Credencial guardada con éxito', 'success')
-        return redirect(url_for('ver_boveda', user_id=user_id))
+        return redirect(url_for('ver_boveda'))
 
-    # Obtenemos las credenciales guardadas para este usuario
-    aplicaciones = Boveda.query.filter_by(usuario_id=user_id).all()
-    # Desencriptamos cada password para que el template pueda usarlo en modales de edicion
+    aplicaciones = Boveda.query.filter_by(usuario_id=current_user.id).all()
     for app in aplicaciones:
         app.password_app = app.decrypt_password()
     return render_template('boveda.html', usuario=usuario, aplicaciones=aplicaciones)
 
-# RUTA PARA ELIMINAR UNA CREDENCIAL DE LA BÓVEDA
-@app.route('/boveda/eliminar/<int:creden_id>/<int:user_id>')
+@app.route('/boveda/eliminar/<int:creden_id>')
 @login_required
-def eliminar_credencial(creden_id, user_id):
+def eliminar_credencial(creden_id):
     credencial = Boveda.query.get_or_404(creden_id)
-    
-    # Seguridad: Solo el dueño puede borrarla
-    if credencial.usuario_id == user_id:
+    if credencial.usuario_id == current_user.id:
         db.session.delete(credencial)
         db.session.commit()
         flash('Credencial eliminada correctamente', 'warning')
     else:
         flash('No tienes permiso para eliminar esta credencial', 'danger')
-        
-    return redirect(url_for('ver_boveda', user_id=user_id))
+    return redirect(url_for('ver_boveda'))
 
-# RUTA PARA EDITAR UNA CREDENCIAL DE LA BÓVEDA (PROCESAR EL FORMULARIO)
-@app.route('/boveda/editar/<int:creden_id>/<int:user_id>', methods=['POST'])
+@app.route('/boveda/editar/<int:creden_id>', methods=['POST'])
 @login_required
-def editar_credencial(creden_id, user_id):
+def editar_credencial(creden_id):
     credencial = Boveda.query.get_or_404(creden_id)
-    
-    # Seguridad: Solo el dueño puede editar
-    if credencial.usuario_id == user_id:
+    if credencial.usuario_id == current_user.id:
         credencial.nombre_app = request.form.get('nombre_app')
         credencial.usuario_app = request.form.get('usuario_app')
         plain_pass = request.form.get('password_app')
         credencial.password_app = Boveda.encrypt_password(plain_pass)
-        
         db.session.commit()
         flash('Credencial actualizada con éxito', 'success')
     else:
         flash('No tienes permiso para editar esto', 'danger')
-        
-    return redirect(url_for('ver_boveda', user_id=user_id))
+    return redirect(url_for('ver_boveda'))
 
 # RUTA AJAX PARA VERIFICAR CONTRASEÑA ADMIN Y DESENCRIPTAR CREDENCIAL
 @app.route('/boveda/verificar_clave_admin', methods=['POST'])
@@ -995,11 +793,10 @@ def verificar_clave_admin():
 # ==========================================
 # 7. GESTIÓN DE USUARIOS (SOLO PARA ADMINISTRADORES)
 # ==========================================
-@app.route('/usuarios/<int:user_id>', methods=['GET', 'POST'])
+@app.route('/usuarios', methods=['GET', 'POST'])
 @login_required
-def gestionar_usuarios(user_id):
-    # Obtener el usuario administrador para el contexto de la página
-    usuario_admin = db.session.get(Usuario, user_id)
+def gestionar_usuarios():
+    usuario_admin = current_user
     
     if request.method == 'POST':
         nombre = request.form.get('nombre')
@@ -1018,12 +815,11 @@ def gestionar_usuarios(user_id):
                 tipo_asignacion=tipo_asignacion
             )
             
-            # Si la clave existe (no es None), la encriptamos
             if password_plana:
                 nuevo.set_password(password_plana)
             else:
                 flash("La contraseña es obligatoria para nuevos usuarios.", "danger")
-                return redirect(url_for('gestionar_usuarios', user_id=user_id))
+                return redirect(url_for('gestionar_usuarios'))
 
             db.session.add(nuevo)
             db.session.commit()
@@ -1034,19 +830,22 @@ def gestionar_usuarios(user_id):
             print(f"Error técnico al registrar: {e}")
             flash('Error: No se pudo completar el registro. El usuario podría ya existir.', 'danger')
             
-        return redirect(url_for('gestionar_usuarios', user_id=user_id))
+        return redirect(url_for('gestionar_usuarios'))
 
-    # Lógica para mostrar la tabla (GET)
     usuarios = Usuario.query.all()
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre.asc()).all()
     return render_template('usuarios.html', usuarios=usuarios, usuario=usuario_admin, ubicaciones=ubicaciones)
 
-@app.route('/usuarios/actualizar_completo/<int:target_id>/<int:admin_id>', methods=['POST'])
+@app.route('/usuarios/actualizar_completo/<int:target_id>', methods=['POST'])
 @login_required
-def actualizar_usuario_completo(target_id, admin_id):
+def actualizar_usuario_completo(target_id):
     u_target = Usuario.query.get_or_404(target_id)
     
-    # 1. Capturamos los datos
+    # Proteger super_su de modificaciones por admins comunes
+    if u_target.rol == 'super_su' and current_user.rol != 'super_su':
+        flash('No puedes modificar al Super Usuario.', 'danger')
+        return redirect(url_for('gestionar_usuarios'))
+    
     nuevo_nombre = request.form.get('nombre')
     nuevo_username = request.form.get('username').strip().lower()
     nuevo_rol = request.form.get('rol')
@@ -1054,7 +853,6 @@ def actualizar_usuario_completo(target_id, admin_id):
     nueva_ubicacion_id = request.form.get('ubicacion_id') or None
     nuevo_tipo = request.form.get('tipo_asignacion', 'acompanante')
 
-    # 2. VALIDACIÓN DE DUPLICADOS
     conflicto = Usuario.query.filter(
         Usuario.username == nuevo_username, 
         Usuario.id != target_id
@@ -1062,9 +860,8 @@ def actualizar_usuario_completo(target_id, admin_id):
 
     if conflicto:
         flash(f'Error: El nombre de usuario "@{nuevo_username}" ya está asignado.', 'danger')
-        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+        return redirect(url_for('gestionar_usuarios'))
 
-    # 3. Intentamos guardar
     try:
         u_target.nombre = nuevo_nombre
         u_target.username = nuevo_username
@@ -1072,39 +869,39 @@ def actualizar_usuario_completo(target_id, admin_id):
         u_target.ubicacion_id = int(nueva_ubicacion_id) if nueva_ubicacion_id else None
         u_target.tipo_asignacion = nuevo_tipo
         
-        # CAMBIO DE SEGURIDAD AQUÍ:
-        # Solo actualizamos la contraseña si el admin escribió algo en el campo
         if nueva_pass and nueva_pass.strip() != "":
-            u_target.set_password(nueva_pass) # <--- USAMOS EL MÉTODO DE HASHING
+            u_target.set_password(nueva_pass)
             
         db.session.commit()
         flash(f"Datos de {u_target.nombre} actualizados con éxito", 'success')
-        
     except Exception as e:
         db.session.rollback()
         print(f"Error en actualización: {e}")
         flash("Ocurrió un error técnico al intentar guardar los cambios.", "danger")
 
-    return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+    return redirect(url_for('gestionar_usuarios'))
 
-@app.route('/usuarios/borrar/<int:target_id>/<int:admin_id>')
+@app.route('/usuarios/borrar/<int:target_id>')
 @login_required
-def borrar_usuario(target_id, admin_id):
-    if target_id == admin_id:
+def borrar_usuario(target_id):
+    if target_id == current_user.id:
         flash('No puedes borrar tu propia cuenta', 'danger')
     else:
         u_target = Usuario.query.get_or_404(target_id)
+        if u_target.rol == 'super_su' and current_user.rol != 'super_su':
+            flash('No puedes eliminar al Super Usuario.', 'danger')
+            return redirect(url_for('gestionar_usuarios'))
         db.session.delete(u_target)
         db.session.commit()
         flash('Usuario eliminado', 'danger')
-    return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+    return redirect(url_for('gestionar_usuarios'))
 # ==========================================
 # 8. GESTIÓN DE TAREAS PENDIENTES Y RESUELTAS
 # ==========================================
-@app.route('/tareas/<int:user_id>')
+@app.route('/tareas')
 @login_required
-def ver_todas_las_tareas(user_id):
-    usuario = Usuario.query.get_or_404(user_id)
+def ver_todas_las_tareas():
+    usuario = current_user
     page = request.args.get('page', 1, type=int)
     
     tipo_fecha = request.args.get('tipo_fecha', 'reporte')
@@ -1151,11 +948,11 @@ def api_tarea_detalle(log_id):
         "fecha_resolucion": t.fecha_resolucion.strftime('%d/%m/%Y %H:%M') if t.fecha_resolucion else "",
         "usuario_id": t.usuario_id  # <--- AGREGAR ESTA LÍNEA
     })
-@app.route('/completar_tarea/<int:log_id>/<int:user_id>', methods=['GET', 'POST'])
+@app.route('/completar_tarea/<int:log_id>', methods=['GET', 'POST'])
 @login_required
-def completar_tarea(log_id, user_id):
+def completar_tarea(log_id):
     tarea = Bitacora.query.get_or_404(log_id)
-    usuario = Usuario.query.get_or_404(user_id)
+    usuario = current_user
     
     if request.method == 'POST':
         informe = request.form.get('informe') 
@@ -1178,7 +975,7 @@ def completar_tarea(log_id, user_id):
         notificar_admin(
             'Falla Solucionada',
             f'{usuario.nombre} resolvió la falla en {nom_cliente}',
-            url_for('ver_bitacora', user_id=1) if 'ver_bitacora' in dir() else '/',
+            url_for('ver_bitacora'),
             tipo='exito'
         )
         notificar_operadores(
@@ -1187,15 +984,15 @@ def completar_tarea(log_id, user_id):
             '/',
             tipo='exito'
         )
-        return redirect(url_for('ver_todas_las_tareas', user_id=user_id))
+        return redirect(url_for('ver_todas_las_tareas'))
     
     return render_template('completar_tarea.html', log=tarea, usuario=usuario)
-# RUTA PARA GENERAR PDF DE REPORTE DE FALLA (TAREA)
-@app.route('/reporte_falla_pdf/<int:log_id>/<int:user_id>')
+
+@app.route('/reporte_falla_pdf/<int:log_id>')
 @login_required
-def reporte_falla_pdf(log_id, user_id):
+def reporte_falla_pdf(log_id):
     log = Bitacora.query.get_or_404(log_id)
-    u = Usuario.query.get_or_404(user_id)
+    u = current_user
     
     # Configuramos el PDF con la sintaxis moderna de fpdf2
     pdf = FPDF()
@@ -1290,11 +1087,10 @@ def reporte_falla_pdf(log_id, user_id):
 # ==========================================
 # 9. GESTIÓN DE VISITAS PROGRAMADAS (AGENDA DE TÉCNICOS)
 # ==========================================
-@app.route('/admin/agenda/<int:user_id>')
+@app.route('/admin/agenda')
 @login_required
-def ver_agenda(user_id):
-    # Ya no necesitamos buscar en session.get, usamos el user_id de la URL
-    usuario = Usuario.query.get_or_404(user_id)
+def ver_agenda():
+    usuario = current_user
     
     visitas = VisitaProgramada.query.order_by(VisitaProgramada.fecha_programada.asc()).all()
     clientes = Cliente.query.all()
@@ -1511,11 +1307,11 @@ def completar_visita(visita_id):
 # ==========================================
 # 11. MÓDULO DE BODEGA Y STOCK TÉCNICO
 # ==========================================
-@app.route('/inventario/bodega/<int:user_id>')
-@app.route('/inventario/bodega/<int:user_id>/<int:page>')
+@app.route('/inventario/bodega')
+@app.route('/inventario/bodega/<int:page>')
 @login_required
-def ver_bodega(user_id, page=1):
-    usuario = Usuario.query.get_or_404(user_id)
+def ver_bodega(page=1):
+    usuario = current_user
 
     if usuario.rol == 'tecnico' and usuario.ubicacion_id:
         base_query = ProductoStock.query.filter_by(ubicacion_id=usuario.ubicacion_id)
@@ -2328,31 +2124,31 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
-    # Migrar columnas de verificación en usuario si no existen
-    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', 'BOOLEAN DEFAULT 1'), ('codigo_verificacion', 'VARCHAR(6)')]:
+    # Migrar columnas si no existen
+    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', 'BOOLEAN DEFAULT 1')]:
         try:
             db.session.execute(db.text(f'ALTER TABLE usuario ADD COLUMN {col} {dtype}'))
             db.session.commit()
         except Exception:
             db.session.rollback()
-    # Asegurar que usuarios existentes queden activos (no recién registrados)
+    # Eliminar columna codigo_verificacion si existe (ya no se usa)
     try:
-        db.session.execute(db.text("UPDATE usuario SET activo=1 WHERE activo IS NULL"))
+        db.session.execute(db.text("ALTER TABLE usuario DROP COLUMN codigo_verificacion"))
         db.session.commit()
     except Exception:
         db.session.rollback()
-    # Asignar email placeholder a usuarios existentes que no tengan email
-    try:
-        db.session.execute(db.text("UPDATE usuario SET email='usuario' || id || '@proespia.cl' WHERE email IS NULL OR email=''"))
+    # Seed super_su si no hay usuarios (primera ejecución)
+    if not Usuario.query.first():
+        super_pass = os.environ.get('SUPER_SU_PASS')
+        if not super_pass:
+            import secrets
+            super_pass = secrets.token_urlsafe(12)
+            print(f'[SUPER_SU] No se encontró SUPER_SU_PASS. Se usará: {super_pass}')
+        super_user = Usuario(nombre='Super Usuario', username='superadmin', rol='super_su', activo=True)
+        super_user.set_password(super_pass)
+        db.session.add(super_user)
         db.session.commit()
-    except Exception:
-        db.session.rollback()
-    # Crear índice único en email si no existe
-    try:
-        db.session.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_usuario_email ON usuario(email)"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
+        print(f'[SUPER_SU] Super usuario creado: superadmin / {super_pass[:4]}***')
     # Seed categorías de bodega si están vacías
     if not CategoriaItem.query.first():
         for nombre in ['Camaras', 'Conectividad', 'Discos Duros', 'Herramientas', 'Accesorios', 'Gabinetes', 'Fuentes de Poder', 'Cableado']:

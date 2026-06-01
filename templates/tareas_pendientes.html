@@ -12,7 +12,7 @@
 
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-2 p-md-3">
-            <form method="GET" action="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="row g-2 g-md-3 align-items-end">
+            <form method="GET" action="{{ url_for('ver_todas_las_tareas') }}" class="row g-2 g-md-3 align-items-end">
                 <div class="col-12 col-md-3">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Filtrar por:</label>
                     <select name="tipo_fecha" class="form-select form-select-sm rounded-3 border-primary">
@@ -32,7 +32,7 @@
                     <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm">
                         <i class="fa-solid fa-filter me-1"></i>Filtrar
                     </button>
-                    <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="btn btn-light btn-sm rounded-3 border w-100 shadow-sm">
+                    <a href="{{ url_for('ver_todas_las_tareas') }}" class="btn btn-light btn-sm rounded-3 border w-100 shadow-sm">
                         <i class="fa-solid fa-eraser me-1"></i>Limpiar
                     </a>
                 </div>
@@ -118,7 +118,7 @@
                             </td>
                             <td class="d-none d-md-table-cell text-center pe-4">
                                 {% if not t.fecha_resolucion %}
-                                    <a href="{{ url_for('completar_tarea', log_id=t.id, user_id=usuario.id) }}" 
+                                    <a href="{{ url_for('completar_tarea', log_id=t.id)}}" 
                                         class="btn btn-sm {% if t.prioridad == 1 %}btn-danger animate__animated animate__pulse animate__infinite{% else %}btn-primary{% endif %} shadow-sm fw-bold"
                                         style="font-size:0.85rem;"
                                         onclick="event.stopPropagation();">
@@ -147,7 +147,7 @@
             {# Botón Anterior #}
             <li class="page-item {{ 'disabled' if not paginacion.has_prev }}">
                 <a class="page-link rounded-start-pill px-3" 
-                   href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id, page=paginacion.prev_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) if paginacion.has_prev else '#' }}">
+                   href="{{ url_for('ver_todas_las_tareas' page=paginacion.prev_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) if paginacion.has_prev else '#' }}">
                     <i class="fa-solid fa-chevron-left me-1"></i>Anterior
                 </a>
             </li>
@@ -156,7 +156,7 @@
             {% for p in paginacion.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
                 {% if p %}
                     <li class="page-item {{ 'active' if p == paginacion.page }}">
-                        <a class="page-link" href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id, page=p, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) }}">{{ p }}</a>
+                        <a class="page-link" href="{{ url_for('ver_todas_las_tareas' page=p, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) }}">{{ p }}</a>
                     </li>
                 {% else %}
                     <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -166,7 +166,7 @@
             {# Botón Siguiente #}
             <li class="page-item {{ 'disabled' if not paginacion.has_next }}">
                 <a class="page-link rounded-end-pill px-3" 
-                   href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id, page=paginacion.next_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) if paginacion.has_next else '#' }}">
+                   href="{{ url_for('ver_todas_las_tareas' page=paginacion.next_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin'), tipo_fecha=request.args.get('tipo_fecha')) if paginacion.has_next else '#' }}">
                     Siguiente<i class="fa-solid fa-chevron-right ms-1"></i>
                 </a>
             </li>

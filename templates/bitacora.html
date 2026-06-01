@@ -34,7 +34,7 @@
                 request.args.get('fecha_fin') }}</strong>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ url_for('reporte_bitacora_pdf', user_id=usuario.id, inicio=request.args.get('fecha_inicio'), fin=request.args.get('fecha_fin')) }}"
+            <a href="{{ url_for('reporte_bitacora_pdf' inicio=request.args.get('fecha_inicio'), fin=request.args.get('fecha_fin')) }}"
                 target="_blank" class="btn btn-danger btn-sm fw-bold">
                 <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar PDF
             </a>
@@ -112,7 +112,7 @@
                                 <span class="text-dark text-truncate d-inline-block" style="max-width:200px;">{{ r.descripcion }}</span>
                                 {% if 'RESUELTA' in r.tipo_visita %}
                                 <div class="mt-1">
-                                    <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}#informe-{{ r.id }}"
+                                    <a href="{{ url_for('ver_todas_las_tareas') }}#informe-{{ r.id }}"
                                         class="text-success text-decoration-none fw-bold"
                                         style="font-size: 0.7rem; letter-spacing: 0.3px;">
                                         <i class="fa-solid fa-eye me-1"></i>VER DETALLE EN GESTOR
@@ -137,7 +137,7 @@
         <ul class="pagination justify-content-center shadow-sm">
             <li class="page-item {{ 'disabled' if not paginacion.has_prev }}">
                 <a class="page-link rounded-start-pill px-3"
-                    href="{{ url_for('ver_bitacora', user_id=usuario.id, page=paginacion.prev_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) if paginacion.has_prev else '#' }}">
+                    href="{{ url_for('ver_bitacora' page=paginacion.prev_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) if paginacion.has_prev else '#' }}">
                     <i class="bi bi-chevron-left me-1"></i>Anterior
                 </a>
             </li>
@@ -146,7 +146,7 @@
             {% if p %}
             <li class="page-item {{ 'active' if p == paginacion.page }}">
                 <a class="page-link"
-                    href="{{ url_for('ver_bitacora', user_id=usuario.id, page=p, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) }}">{{
+                    href="{{ url_for('ver_bitacora' page=p, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) }}">{{
                     p }}</a>
             </li>
             {% else %}
@@ -156,7 +156,7 @@
 
             <li class="page-item {{ 'disabled' if not paginacion.has_next }}">
                 <a class="page-link rounded-end-pill px-3"
-                    href="{{ url_for('ver_bitacora', user_id=usuario.id, page=paginacion.next_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) if paginacion.has_next else '#' }}">
+                    href="{{ url_for('ver_bitacora' page=paginacion.next_num, fecha_inicio=request.args.get('fecha_inicio'), fecha_fin=request.args.get('fecha_fin')) if paginacion.has_next else '#' }}">
                     Siguiente<i class="bi bi-chevron-right ms-1"></i>
                 </a>
             </li>
