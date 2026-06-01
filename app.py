@@ -147,7 +147,7 @@ def login():
 
         # 2. Buscamos al usuario (por username o teléfono)
         user = Usuario.query.filter(
-            (Usuario.username == usuario_ingresado) | (Usuario.telefono == usuario_ingresado)
+            (Usuario.username == usuario_ingresado) | (Usuario.telefono == usuario_ingresado) | (Usuario.email == usuario_ingresado)
         ).first()
 
         # 3. VERIFICACIÓN DE SEGURIDAD
@@ -235,29 +235,31 @@ def api_registro():
 
     nombre = data.get('nombre', '').strip()
     email = data.get('email', '').strip().lower()
-    telefono = data.get('telefono', '').strip()
     password = data.get('password', '')
 
-    if not nombre or not telefono or not password:
-        return jsonify({'ok': False, 'msg': 'Nombre, teléfono y contraseña son obligatorios'}), 400
+    if not nombre or not email or not password:
+        return jsonify({'ok': False, 'msg': 'Nombre, correo y contraseña son obligatorios'}), 400
 
-        if len(password) < 4 or not re.search(r'[A-Z]', password) or not re.search(r'[0-9]', password) or not re.search(r'[^a-zA-Z0-9]', password):
-            return jsonify({'ok': False, 'msg': 'La contraseña debe tener: mayúscula, número, carácter especial y mínimo 4 caracteres'}), 400
+    if len(password) < 4 or not re.search(r'[A-Z]', password) or not re.search(r'[0-9]', password) or not re.search(r'[^a-zA-Z0-9]', password):
+        return jsonify({'ok': False, 'msg': 'La contraseña debe tener: mayúscula, número, carácter especial y mínimo 4 caracteres'}), 400
 
-    if telefono and Usuario.query.filter_by(telefono=telefono).first():
-        return jsonify({'ok': False, 'msg': 'El teléfono ya está registrado'}), 400
+    if Usuario.query.filter_by(email=email).first():
+        return jsonify({'ok': False, 'msg': 'El correo ya está registrado'}), 400
 
-    username = telefono if telefono else f'user_{random.randint(1000,9999)}'
-    if Usuario.query.filter_by(username=username).first():
-        return jsonify({'ok': False, 'msg': 'El usuario ya existe'}), 400
+    username = email.split('@')[0]
+    base_username = username
+    contador = 1
+    while Usuario.query.filter_by(username=username).first():
+        username = f'{base_username}{contador}'
+        contador += 1
 
     es_primer_usuario = not Usuario.query.first()
     codigo = ''.join(random.choices(string.digits, k=6))
 
     user = Usuario(
         nombre=nombre,
-        email=email or None,
-        telefono=telefono,
+        email=email,
+        telefono=None,
         username=username,
         rol='admin' if es_primer_usuario else 'tecnico',
         activo=False,
@@ -267,12 +269,12 @@ def api_registro():
     db.session.add(user)
     db.session.commit()
 
-    enviado = enviar_codigo_verificacion(email or telefono, codigo)
+    enviado = enviar_codigo_verificacion(email, codigo)
 
     return jsonify({
         'ok': True,
         'msg': 'Registro exitoso. Revisa tu correo para el código de verificación.',
-        'email': email or telefono,
+        'email': email,
         'es_admin': es_primer_usuario
     })
 
@@ -2336,6 +2338,18 @@ with app.app_context():
     # Asegurar que usuarios existentes queden activos (no recién registrados)
     try:
         db.session.execute(db.text("UPDATE usuario SET activo=1 WHERE activo IS NULL"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Asignar email placeholder a usuarios existentes que no tengan email
+    try:
+        db.session.execute(db.text("UPDATE usuario SET email='usuario' || id || '@proespia.cl' WHERE email IS NULL OR email=''"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Crear índice único en email si no existe
+    try:
+        db.session.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_usuario_email ON usuario(email)"))
         db.session.commit()
     except Exception:
         db.session.rollback()

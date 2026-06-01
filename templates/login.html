@@ -156,14 +156,9 @@
                         <input type="text" id="regNombre" class="form-control" placeholder="Ej: Juan Pérez" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold" style="color:#334155;">Correo Electrónico</label>
-                        <input type="email" id="regEmail" class="form-control" placeholder="correo@ejemplo.cl">
-                        <small class="text-muted">Opcional, pero necesario para recibir el código de verificación</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold" style="color:#334155;">Teléfono <span class="text-danger">*</span></label>
-                        <input type="text" id="regTelefono" class="form-control" placeholder="+56912345678" required>
-                        <small class="text-muted">Será tu identificador único para iniciar sesión</small>
+                        <label class="form-label small fw-semibold" style="color:#334155;">Correo Electrónico <span class="text-danger">*</span></label>
+                        <input type="email" id="regEmail" class="form-control" placeholder="correo@ejemplo.cl" required>
+                        <small class="text-muted">Recibirás un código de verificación para activar tu cuenta</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold" style="color:#334155;">Contraseña <span class="text-danger">*</span></label>
@@ -245,11 +240,15 @@ document.getElementById('formRegistro')?.addEventListener('submit', function(e) 
 
     var nombre = document.getElementById('regNombre').value.trim();
     var email = document.getElementById('regEmail').value.trim();
-    var telefono = document.getElementById('regTelefono').value.trim();
     var password = document.getElementById('regPassword').value;
 
-    if (!nombre || !telefono || !password) {
-        errDiv.textContent = 'Nombre, teléfono y contraseña son obligatorios.';
+    if (!nombre || !email || !password) {
+        errDiv.textContent = 'Nombre, correo y contraseña son obligatorios.';
+        errDiv.classList.remove('d-none');
+        return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errDiv.textContent = 'Ingresa un correo electrónico válido.';
         errDiv.classList.remove('d-none');
         return;
     }
@@ -265,7 +264,7 @@ document.getElementById('formRegistro')?.addEventListener('submit', function(e) 
     fetch('/api/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre: nombre, email: email, telefono: telefono, password: password })
+        body: JSON.stringify({ nombre: nombre, email: email, password: password })
     }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.ok) {
             bootstrap.Modal.getInstance(document.getElementById('modalRegistro')).hide();
