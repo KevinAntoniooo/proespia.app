@@ -615,8 +615,8 @@ function guardarProducto(e) {
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { location.reload(); }
-        else { alert('Error: ' + resp.msg); }
-    }).catch(function() { alert('Error de conexión'); });
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
 }
 
@@ -634,8 +634,8 @@ function guardarHerramienta(e) {
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { location.reload(); }
-        else { alert('Error: ' + resp.msg); }
-    }).catch(function() { alert('Error de conexión'); });
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
 }
 
@@ -658,8 +658,8 @@ function editarProducto(e, id) {
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { location.reload(); }
-        else { alert('Error: ' + resp.msg); }
-    }).catch(function() { alert('Error de conexión'); });
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
 }
 
@@ -673,8 +673,8 @@ document.getElementById('btnConfirmarEliminarProducto')?.addEventListener('click
     fetch('/api/bodega/eliminar_producto/' + productoAEliminar, { method: 'DELETE' })
     .then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { location.reload(); }
-        else { alert('Error: ' + resp.msg); }
-    }).catch(function() { alert('Error de conexión'); });
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
 });
 
 function ejecutarTraspaso(e) {
@@ -694,8 +694,8 @@ function ejecutarTraspaso(e) {
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalTraspaso')).hide(); location.reload(); }
-        else { alert('Error: ' + resp.msg); }
-    }).catch(function() { alert('Error de conexión'); });
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
 }
 
@@ -714,7 +714,7 @@ function ejecutarConsumo(e) {
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumo')).hide(); location.reload(); }
         else { mostrarAdvertencia('Error', resp.msg); }
-    }).catch(function() { alert('Error de conexión'); });
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
 }
 
@@ -749,7 +749,7 @@ function ejecutarConsumoRapido(e) {
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumoRapido')).hide(); location.reload(); }
         else { mostrarAdvertencia('Error', resp.msg); }
-    }).catch(function() { alert('Error de conexión'); });
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
 }
 
