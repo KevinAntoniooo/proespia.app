@@ -55,20 +55,28 @@
     </div>
 </div>
 
-<div class="d-flex gap-2 mb-3 d-flex d-sm-none">
-    <button class="btn btn-outline-primary shadow-sm btn-sm flex-fill fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalTraspaso">
-        <i class="fa-solid fa-arrow-right-arrow-left me-1"></i>Traspaso
-    </button>
-    <button class="btn btn-outline-danger shadow-sm btn-sm flex-fill fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalConsumo">
-        <i class="fa-solid fa-minus-circle me-1"></i>Consumo
-    </button>
+<div class="row g-2 mb-3 d-sm-none">
+    <div class="col-6">
+        <button class="btn btn-outline-primary shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalTraspaso">
+            <i class="fa-solid fa-arrow-right-arrow-left me-1"></i>Traspaso
+        </button>
+    </div>
+    <div class="col-6">
+        <button class="btn btn-outline-danger shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalConsumo">
+            <i class="fa-solid fa-minus-circle me-1"></i>Consumo
+        </button>
+    </div>
     {% if usuario.rol in ['admin', 'super_su'] %}
-    <button class="btn btn-primary shadow-sm btn-sm flex-fill fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
-        <i class="fa-solid fa-plus me-1"></i>Ítem
-    </button>
-    <button class="btn btn-success shadow-sm btn-sm flex-fill fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevaHerramienta">
-        <i class="fa-solid fa-wrench me-1"></i>Herram.
-    </button>
+    <div class="col-6">
+        <button class="btn btn-primary shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
+            <i class="fa-solid fa-plus me-1"></i>Ítem
+        </button>
+    </div>
+    <div class="col-6">
+        <button class="btn btn-success shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevaHerramienta">
+            <i class="fa-solid fa-wrench me-1"></i>Herram.
+        </button>
+    </div>
     {% endif %}
 </div>
 
