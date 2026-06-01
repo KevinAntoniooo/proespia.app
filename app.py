@@ -2326,7 +2326,7 @@ with app.app_context():
     except Exception:
         db.session.rollback()
     # Migrar columnas de verificación en usuario si no existen
-    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', 'BOOLEAN DEFAULT 1'), ('codigo_verificacion', 'VARCHAR(6)')]:
+    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', "BOOLEAN DEFAULT true"), ('codigo_verificacion', 'VARCHAR(6)')]:
         try:
             db.session.execute(db.text(f'ALTER TABLE usuario ADD COLUMN {col} {dtype}'))
             db.session.commit()
@@ -2334,7 +2334,7 @@ with app.app_context():
             db.session.rollback()
     # Asegurar que usuarios existentes queden activos (no recién registrados)
     try:
-        db.session.execute(db.text("UPDATE usuario SET activo=1 WHERE activo IS NULL"))
+        db.session.execute(db.text("UPDATE usuario SET activo=true WHERE activo IS NULL"))
         db.session.commit()
     except Exception:
         db.session.rollback()
