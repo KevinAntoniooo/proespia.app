@@ -426,11 +426,7 @@
         <div class="offcanvas-header border-bottom border-opacity-10" style="border-color:var(--text-muted);">
             <small class="fw-bold" style="color:var(--text-heading);"><i
                     class="fa-regular fa-bell me-1"></i>Notificaciones</small>
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidasMobile"
-                    style="font-size:0.75rem;color:var(--bs-info);">Marcar todas leídas</button>
-                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" style="filter:invert(.5);"></button>
-            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" style="filter:invert(.5);"></button>
         </div>
         <div class="offcanvas-body" id="notifListMobile" style="padding:0.75rem 1.5rem !important;">
             <div class="text-center py-4"><small class="text-muted">Cargando...</small></div>
@@ -781,18 +777,6 @@
         if (btnMarcar) {
             btnMarcar.addEventListener('click', function (e) {
                 e.stopPropagation();
-                fetch('/api/notificaciones/marcar-leida', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: 'todas' })
-                }).then(function () { cargarNotificaciones(); });
-            });
-        }
-
-        // Marcar todas leídas (mobile)
-        var btnMarcarMobile = document.getElementById('marcarTodasLeidasMobile');
-        if (btnMarcarMobile) {
-            btnMarcarMobile.addEventListener('click', function (e) {
                 fetch('/api/notificaciones/marcar-leida', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
