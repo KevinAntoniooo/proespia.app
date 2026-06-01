@@ -1159,14 +1159,10 @@ def agendar_visita():
         flash('Error: La fecha y hora son obligatorias', 'danger')
         return redirect(request.referrer)
 
-    # Si es cliente nuevo, crearlo automáticamente
+    # Si es cliente nuevo, crearlo automáticamente con nombre genérico
     if cliente_id == 'nuevo':
-        nombre_nuevo = request.form.get('cliente_nuevo_nombre', '').strip()
-        if not nombre_nuevo:
-            flash('Error: Ingresa el nombre del nuevo cliente', 'danger')
-            return redirect(request.referrer)
-        telefono = request.form.get('cliente_nuevo_telefono', '').strip()
-        nuevo = Cliente(nombre=nombre_nuevo, contacto_emergencia=telefono)
+        hoy = datetime.now().strftime('%d-%m-%Y')
+        nuevo = Cliente(nombre=f'Prospecto Cotización {hoy}')
         db.session.add(nuevo)
         db.session.flush()
         cliente_id = str(nuevo.id)

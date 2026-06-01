@@ -171,17 +171,13 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Cliente</label>
-                            <select name="cliente_id" id="selectCliente" class="form-select border rounded-3" style="border-color:#6366f1!important;" required onchange="cargarUbicacionCliente(this);toggleClienteNuevo()">
+                            <select name="cliente_id" id="selectCliente" class="form-select border rounded-3" style="border-color:#6366f1!important;" required onchange="cargarUbicacionCliente(this)">
                                 <option value="">Seleccione sede</option>
                                 <option value="nuevo">-- CLIENTE NUEVO --</option>
                                 {% for c in clientes %}
                                 <option value="{{ c.id }}" data-lat="{{ c.latitud or '' }}" data-lng="{{ c.longitud or '' }}">{{ c.nombre }}</option>
                                 {% endfor %}
                             </select>
-                            <div id="camposClienteNuevo" class="mt-2 p-2 rounded-3 border" style="display:none;background:#f8fafc;">
-                                <input type="text" name="cliente_nuevo_nombre" id="inputClienteNuevoNombre" class="form-control form-control-sm mb-1" placeholder="Nombre del cliente">
-                                <input type="text" name="cliente_nuevo_telefono" class="form-control form-control-sm" placeholder="Teléfono (opcional)">
-                            </div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Asignar Técnico</label>
@@ -620,14 +616,6 @@
             }).catch(function() { alert('Error al buscar la dirección.'); });
     }
 
-    function toggleClienteNuevo() {
-        var sel = document.getElementById('selectCliente');
-        var div = document.getElementById('camposClienteNuevo');
-        if (!sel || !div) return;
-        div.style.display = sel.value === 'nuevo' ? '' : 'none';
-        var input = document.getElementById('inputClienteNuevoNombre');
-        if (input) input.required = sel.value === 'nuevo';
-    }
     function cargarUbicacionCliente(select) {
         var opt = select.options[select.selectedIndex];
         var lat = opt.getAttribute('data-lat');
