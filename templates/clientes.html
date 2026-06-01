@@ -101,6 +101,7 @@
                         <h6><i class="bi bi-shield-check text-primary"></i> Seguridad</h6>
                         <p><strong>Plan Cuadrante:</strong> {{ c.plan_cuadrante or 'No registrado' }}</p>
                         <p><strong>Estado:</strong> {{ c.estado_monitoreo }}</p>
+                        <p><strong>Contacto Emergencia:</strong> {{ c.contacto_emergencia or 'No registrado' }}</p>
                         {% if c.latitud and c.longitud %}
                         <p><strong>Coordenadas:</strong> <span class="text-muted">{{ "%.6f"|format(c.latitud) }}, {{ "%.6f"|format(c.longitud) }}</span></p>
                         {% endif %}
