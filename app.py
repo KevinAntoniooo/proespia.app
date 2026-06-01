@@ -1515,6 +1515,9 @@ def traspaso_bodega():
         if cantidad < 1:
             return jsonify({'ok': False, 'msg': 'Cantidad inválida'}), 400
 
+        if desde_id and hacia_id and desde_id == hacia_id:
+            return jsonify({'ok': False, 'msg': 'No puedes transferir a la misma ubicación'}), 400
+
         prod = ProductoStock.query.get_or_404(producto_id)
 
         if desde_id:
