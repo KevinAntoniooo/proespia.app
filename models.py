@@ -22,16 +22,18 @@ class Usuario(db.Model, UserMixin):
         return check_password_hash(self.password, password)
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    telefono = db.Column(db.String(30), unique=True, nullable=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     rol = db.Column(db.String(20), default='tecnico')
+    activo = db.Column(db.Boolean, default=False)
+    codigo_verificacion = db.Column(db.String(6), nullable=True)
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion_bodega.id'), nullable=True)
-    tipo_asignacion = db.Column(db.String(20), default='acompanante')  # 'a_cargo' o 'acompanante'
+    tipo_asignacion = db.Column(db.String(20), default='acompanante')
 
     rel_ubicacion = db.relationship('Ubicacion', backref='usuarios_asignados') 
     
-    # RELACIÓN DE USUARIO A BITÁCORA
-    # Cambiamos el backref a 'rel_usuario' para que coincida con tu HTML
     entradas_bitacora = db.relationship('Bitacora', backref='rel_usuario', lazy=True) 
 
 class Cliente(db.Model):
