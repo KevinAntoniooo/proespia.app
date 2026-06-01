@@ -627,7 +627,8 @@ def nueva_entrada(user_id):
                 f'Falla Registrada - {nom_cliente}',
                 f'{autor.nombre} registró una falla en {nom_cliente}',
                 url_for('ver_bitacora', user_id=1),
-                tipo='falla'
+                tipo='falla',
+                exclude_id=current_user.id
             )
             notificar_tecnicos(
                 f'Falla Pendiente - {nom_cliente}',
@@ -2055,10 +2056,12 @@ def notificar_admin(titulo, mensaje, url=None, tipo='info', exclude_id=None):
             continue
         crear_notificacion(a.id, titulo, mensaje, url, tipo)
 
-def notificar_tecnicos(titulo, mensaje, url=None, tipo='info'):
+def notificar_tecnicos(titulo, mensaje, url=None, tipo='info', exclude_id=None):
     """Envía notificación a todos los técnicos."""
     tecnicos = Usuario.query.filter_by(rol='tecnico').all()
     for t in tecnicos:
+        if exclude_id and t.id == exclude_id:
+            continue
         crear_notificacion(t.id, titulo, mensaje, url, tipo)
 
 def notificar_operadores(titulo, mensaje, url=None, tipo='info', exclude_id=None):
