@@ -240,7 +240,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
-            <form action="{{ url_for('nuevo_cliente') }}" method="POST">
+            <form action="{{ url_for('nuevo_cliente', user_id=usuario.id) }}" method="POST">
                 <div class="modal-body p-4">
                     <div class="row">
                         <div class="col-md-6">

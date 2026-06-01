@@ -196,7 +196,7 @@
                 <img src="{{ url_for('static', filename='img/logo-proespia.png') }}" class="img-fluid side-logo">
             </div>
             <nav class="nav flex-column px-2 mt-2 flex-grow-1" aria-label="Navegación principal">
-                <a href="{{ url_for('dashboard') }}"
+                <a href="{{ url_for('dashboard', user_id=usuario.id) }}"
                     class="nav-link-pro {{ 'active' if 'dashboard' in request.endpoint }}">
                     <i class="fa-solid fa-house"></i> <span>Inicio</span>
                 </a>
@@ -216,14 +216,14 @@
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="{{ url_for('ver_agenda') }}"
+                <a href="{{ url_for('ver_agenda', user_id=usuario.id) }}"
                     class="nav-link-pro {{ 'active' if 'agenda' in request.path }}">
                     <i class="fa-solid fa-calendar-check"></i> <span>Agenda Terreno</span>
                 </a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
-                <a href="{{ url_for('ver_todas_las_tareas') }}"
+                <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}"
                     class="nav-link-pro {{ 'active' if 'tareas' in request.path }}">
                     <i class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
                 </a>
@@ -369,7 +369,7 @@
         </div>
         <div class="offcanvas-body p-0 d-flex flex-column">
             <nav class="nav flex-column p-3 flex-grow-1" aria-label="Navegación móvil">
-                <a href="{{ url_for('dashboard') }}" class="nav-link-pro"><i
+                <a href="{{ url_for('dashboard', user_id=usuario.id) }}" class="nav-link-pro"><i
                         class="fa-solid fa-house"></i> <span>Inicio</span></a>
                 <a href="/equipos/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-camera"></i>
                     <span>Inventario</span></a>
@@ -382,12 +382,12 @@
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="{{ url_for('ver_agenda') }}" class="nav-link-pro"><i
+                <a href="{{ url_for('ver_agenda', user_id=usuario.id) }}" class="nav-link-pro"><i
                         class="fa-solid fa-calendar-check"></i> <span>Agenda Terreno</span></a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
-                <a href="{{ url_for('ver_todas_las_tareas') }}" class="nav-link-pro"><i
+                <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="nav-link-pro"><i
                         class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span></a>
                 {% endif %}
 

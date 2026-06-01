@@ -100,7 +100,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ url_for('editar_equipo', equipo_id=e.id)}}" method="POST">
+            <form action="{{ url_for('editar_equipo', equipo_id=e.id, user_id=usuario.id) }}" method="POST">
                 <div class="modal-body p-4">
                     <div class="mb-3 position-relative">
                         <label class="form-label fw-bold">Sede / Cliente Asignado</label>
@@ -125,7 +125,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Dirección IP</label>
-                            <input type="text" name="ip" class="form-control" value="{{ e.ip or ') }}" placeholder="192.168.1.100">
+                            <input type="text" name="ip" class="form-control" value="{{ e.ip or '' }}" placeholder="192.168.1.100">
                         </div>
                     </div>
                     <div class="mb-3">
@@ -179,7 +179,7 @@
             </div>
             <div class="modal-footer border-0 justify-content-center pb-4">
                 <div class="d-grid gap-2 w-75">
-                    <a href="{{ url_for('borrar_equipo', equipo_id=e.id)}}" class="btn btn-danger shadow-sm">Confirmar y Eliminar</a>
+                    <a href="{{ url_for('borrar_equipo', equipo_id=e.id, user_id=usuario.id) }}" class="btn btn-danger shadow-sm">Confirmar y Eliminar</a>
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">No, cancelar</button>
                 </div>
             </div>
@@ -197,7 +197,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ url_for('nuevo_equipo') }}" method="POST" id="formNuevoEquipo">
+            <form action="{{ url_for('nuevo_equipo', user_id=usuario.id) }}" method="POST" id="formNuevoEquipo">
                 <div class="modal-body p-4">
                     <div class="mb-3 position-relative">
                         <label class="form-label fw-bold">Sede / Cliente</label>

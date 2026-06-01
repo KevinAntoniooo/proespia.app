@@ -26,17 +26,17 @@
 
             <form method="POST" aria-label="Formulario de inicio de sesión">
                 <div class="mb-3">
-                    <label for="login-usuario" class="form-label small fw-semibold" style="color:#334155;">Usuario o Teléfono</label>
+                    <label for="login-usuario" class="form-label small fw-semibold" style="color:#334155;">Usuario</label>
                     <div class="input-group">
                         <span class="input-group-text border-end-0" aria-hidden="true" style="background:#f8fafc;"><i class="fa-solid fa-user text-muted"></i></span>
-                        <input type="text" id="login-usuario" name="usuario" class="form-control border-start-0 ps-0" placeholder="Tu usuario o teléfono" required autocomplete="username" style="border-left:none;background:#f8fafc;">
+                        <input type="text" id="login-usuario" name="usuario" class="form-control border-start-0 ps-0" placeholder="Tu usuario" required autocomplete="username" style="border-left:none;background:#f8fafc;">
                     </div>
                 </div>
                 <div class="mb-3">
                     <label for="login-password" class="form-label small fw-semibold" style="color:#334155;">Contraseña</label>
                     <div class="input-group">
                         <span class="input-group-text border-end-0" aria-hidden="true" style="background:#f8fafc;"><i class="fa-solid fa-lock text-muted"></i></span>
-                        <input type="password" id="login-password" name="password" class="form-control border-start-0 ps-0" placeholder="********" required autocomplete="current-password" style="border-left:none;background:#f8fafc;">
+                        <input type="password" id="login-password" name="password" class="form-control border-start-0 ps-0" placeholder="••••••••" required autocomplete="current-password" style="border-left:none;background:#f8fafc;">
                     </div>
                 </div>
                 <div class="mb-3 d-flex align-items-center">
@@ -61,80 +61,11 @@
                 <small class="d-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.65rem;">
                     <i class="fa-solid fa-shield" style="font-size:0.5rem;"></i> Datos cifrados
                 </small>
-            </div>
-
-            <div class="text-center mt-3">
-                <button id="btnInstalarPWA" class="btn btn-sm d-none" style="color:#64748b;border:1px solid #e2e8f0;border-radius:20px;padding:6px 18px;font-size:0.8rem;transition:all 0.3s ease;">
-                    <i class="fa-solid fa-download me-1"></i>Descargar Aplicación
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
-<!-- Tutorial PWA Overlay -->
-<div id="tutorialOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:rgba(2,6,23,0.92);backdrop-filter:blur(8px);align-items:center;justify-content:center;flex-direction:column;padding:20px;">
-    <div id="tutorialCard" style="max-width:380px;width:100%;border-radius:24px;padding:32px 24px;text-align:center;position:relative;animation:tutorialIn 0.35s ease-out;backdrop-filter:blur(20px);background:rgba(255,255,255,0.96);box-shadow:0 25px 60px rgba(0,0,0,0.5);">
-        <div id="tutorialArrowContainer" style="position:absolute;width:100%;left:0;pointer-events:none;display:flex;justify-content:center;">
-            <div id="tutorialArrow" style="width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:22px solid rgba(255,255,255,0.96);position:absolute;top:-22px;filter:drop-shadow(0 -3px 6px rgba(0,0,0,0.2));"></div>
-        </div>
-        <div class="mb-3">
-            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2 position-relative" style="width:60px;height:60px;background:linear-gradient(135deg,#dc2626,#991b1b);box-shadow:0 0 20px rgba(220,38,38,0.2);">
-                <i class="fa-solid fa-mobile-screen-button text-white fa-xl"></i>
-            </div>
-        </div>
-        <h5 class="fw-bold heading-font mb-1" style="color:#0f172a;letter-spacing:-0.3px;">Instala la App</h5>
-        <p class="small mb-3" style="color:#64748b;line-height:1.5;" id="tutorialTexto">Accede más rápido desde tu pantalla de inicio</p>
-        <div id="tutorialPasos" style="text-align:left;background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #e2e8f0;">
-            <div id="tutorialPaso1" class="d-flex align-items-start gap-2 mb-2">
-                <span class="badge rounded-pill mt-0 fw-bold" style="background:#dc2626;min-width:22px;font-size:0.7rem;">1</span>
-                <span class="small" id="tutorialPaso1Texto" style="color:#334155;">Abre el menú de 3 puntos <strong>⋮</strong> en la barra superior de Chrome</span>
-            </div>
-            <div id="tutorialPaso2" class="d-flex align-items-start gap-2">
-                <span class="badge rounded-pill mt-0 fw-bold" style="background:#dc2626;min-width:22px;font-size:0.7rem;">2</span>
-                <span class="small" style="color:#334155;">Selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
-            </div>
-        </div>
-        <div id="tutorialIosHint" class="d-none" style="text-align:left;background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid #e2e8f0;">
-            <div class="d-flex align-items-start gap-2 mb-2">
-                <span class="badge rounded-pill mt-0 fw-bold" style="background:#dc2626;min-width:22px;font-size:0.7rem;">1</span>
-                <span class="small" style="color:#334155;">Toca el botón <strong>Compartir</strong> <i class="fa-solid fa-square-arrow-up-right"></i> en la barra inferior de Safari</span>
-            </div>
-            <div class="d-flex align-items-start gap-2">
-                <span class="badge rounded-pill mt-0 fw-bold" style="background:#dc2626;min-width:22px;font-size:0.7rem;">2</span>
-                <span class="small" style="color:#334155;">Desplázate y selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
-            </div>
-        </div>
-        <div class="d-flex gap-2">
-            <button id="btnTutorialCerrar" class="btn btn-sm flex-fill" style="border:1px solid #e2e8f0;border-radius:12px;padding:10px;color:#64748b;background:#fff;transition:all 0.3s ease;">Cancelar</button>
-            <button id="btnTutorialInstalar" class="btn btn-sm flex-fill fw-semibold border-0 d-none" style="border-radius:12px;padding:10px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;box-shadow:0 4px 15px rgba(220,38,38,0.3);transition:all 0.3s ease;">
-                <i class="fa-solid fa-download me-1"></i>Instalar App
-            </button>
-        </div>
-    </div>
-</div>
-
-<style>
-    @keyframes tutorialIn {
-        from { opacity:0; transform:translateY(30px) scale(0.95); }
-        to { opacity:1; transform:translateY(0) scale(1); }
-    }
-    @keyframes tutorialArrowBob {
-        0%,100% { transform:translateY(0); }
-        50% { transform:translateY(-8px); }
-    }
-    #tutorialArrowContainer {
-        animation: tutorialArrowBob 1.5s ease-in-out infinite;
-    }
-    #tutorialOverlay {
-        display:none;
-    }
-    #tutorialOverlay.tutorial-visible {
-        display:flex;
-    }
-</style>
-
-<!-- Modal Problemas de acceso -->
+<!-- Modal -->
 <div class="modal fade" id="resetModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow rounded-4">
@@ -152,136 +83,9 @@
         </div>
     </div>
 </div>
-
 <script>
-// ===== PWA INSTALL + TUTORIAL =====
-(function(){
-    var btnPWA = document.getElementById('btnInstalarPWA');
-    var overlay = document.getElementById('tutorialOverlay');
-    var card = document.getElementById('tutorialCard');
-    var tutorialTexto = document.getElementById('tutorialTexto');
-    var tutorialPasos = document.getElementById('tutorialPasos');
-    var tutorialIosHint = document.getElementById('tutorialIosHint');
-    var tutorialPaso1Texto = document.getElementById('tutorialPaso1Texto');
-    var btnInstalar = document.getElementById('btnTutorialInstalar');
-    var btnCerrar = document.getElementById('btnTutorialCerrar');
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isAndroid = navigator.userAgent.includes('Android');
-    var deferredPrompt = null;
-
-    // Check if already installed (standalone mode)
-    function isInstalled() {
-        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    }
-
-    // Use getInstalledRelatedApps if available
-    function checkInstalledRelated() {
-        if (!navigator.getInstalledRelatedApps) return Promise.resolve(false);
-        return navigator.getInstalledRelatedApps().then(function(apps) {
-            return apps.length > 0;
-        }).catch(function() {
-            return false;
-        });
-    }
-
-    // Show/hide download button
-    function actualizarBtnPWA() {
-        if (isInstalled()) {
-            btnPWA.classList.add('d-none');
-            return;
-        }
-        checkInstalledRelated().then(function(related) {
-            if (related) {
-                btnPWA.classList.add('d-none');
-            } else if (deferredPrompt) {
-                btnPWA.classList.remove('d-none');
-            }
-        });
-    }
-
-    // Capture beforeinstallprompt
-    window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (!isInstalled()) {
-            checkInstalledRelated().then(function(related) {
-                if (!related) btnPWA.classList.remove('d-none');
-            });
-        }
-    });
-
-    // App installed event
-    window.addEventListener('appinstalled', function() {
-        deferredPrompt = null;
-        btnPWA.classList.add('d-none');
-        ocultarOverlay();
-    });
-
-    function mostrarOverlay() {
-        overlay.classList.add('tutorial-visible');
-        overlay.style.opacity = '0';
-        requestAnimationFrame(function() {
-            overlay.style.transition = 'opacity 0.25s ease';
-            overlay.style.opacity = '1';
-        });
-    }
-
-    function ocultarOverlay() {
-        overlay.style.opacity = '0';
-        setTimeout(function() {
-            overlay.style.transition = '';
-            overlay.classList.remove('tutorial-visible');
-        }, 250);
-    }
-
-    // Click download button
-    btnPWA.addEventListener('click', function() {
-        if (isIOS) {
-            tutorialTexto.textContent = 'Sigue estos pasos para instalar la app en tu iPhone/iPad:';
-            tutorialPasos.classList.add('d-none');
-            tutorialIosHint.classList.remove('d-none');
-            btnInstalar.classList.add('d-none');
-        } else if (isAndroid) {
-            tutorialTexto.textContent = 'Sigue estos pasos para instalar la app en tu Android:';
-            tutorialPasos.classList.remove('d-none');
-            tutorialIosHint.classList.add('d-none');
-            btnInstalar.classList.remove('d-none');
-        } else {
-            tutorialTexto.textContent = 'Haz clic en "Instalar App" para agregar PRO ESPÍA a tu escritorio:';
-            tutorialPasos.classList.add('d-none');
-            tutorialIosHint.classList.add('d-none');
-            btnInstalar.classList.remove('d-none');
-        }
-        mostrarOverlay();
-    });
-
-    // Close overlay
-    function cerrarTutorial() {
-        ocultarOverlay();
-    }
-    btnCerrar.addEventListener('click', cerrarTutorial);
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) cerrarTutorial();
-    });
-
-    // Install button
-    btnInstalar.addEventListener('click', function() {
-        if (!deferredPrompt) {
-            cerrarTutorial();
-            return;
-        }
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function(choiceResult) {
-            deferredPrompt = null;
-            cerrarTutorial();
-            if (choiceResult.outcome === 'accepted') {
-                btnPWA.classList.add('d-none');
-            }
-        });
-    });
-
-    // Initial check
-    actualizarBtnPWA();
-})();
-</script>
+if (!(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true)) {
+    var loginDeferredPrompt = null;
+    var loginContainer = document.getElementById('installLoginContainer');
+    if (loginContainer) loginContainer.classList.remove('d-none');
 {% endblock %}
