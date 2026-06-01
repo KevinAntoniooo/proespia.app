@@ -17,6 +17,9 @@
         <button class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
             <i class="fa-solid fa-plus me-1"></i>Nuevo Ítem
         </button>
+        <button class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevaHerramienta">
+            <i class="fa-solid fa-wrench me-1"></i>Agregar Herramienta
+        </button>
         {% endif %}
     </div>
 </div>
@@ -232,10 +235,10 @@
                         </div>
                         <div class="col-12 col-sm-4">
                             <label class="form-label small fw-bold">Categoría</label>
-                            <select name="categoria_id" class="form-select">
-                                <option value="">Sin categoría</option>
+                            <select name="categoria_id" class="form-select" required>
+                                <option value="">Selecciona una categoría</option>
                                 {% for c in categorias %}
-                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                <option value="{{ c.id }}" {% if loop.first %}selected{% endif %}>{{ c.nombre }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -244,7 +247,7 @@
                             <select name="ubicacion_id" class="form-select">
                                 <option value="">Sin ubicación</option>
                                 {% for u in ubicaciones %}
-                                <option value="{{ u.id }}">{{ u.nombre }}</option>
+                                <option value="{{ u.id }}" {% if u.nombre == 'Bodega Central' %}selected{% endif %}>{{ u.nombre }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -261,6 +264,45 @@
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Herramienta -->
+<div class="modal fade" id="modalNuevaHerramienta" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-wrench me-2"></i>Nueva Herramienta</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formNuevaHerramienta" onsubmit="return guardarHerramienta(event)">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Nombre de la Herramienta</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Taladro Inalámbrico" required>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label small fw-bold">Cantidad</label>
+                            <input type="number" name="cantidad" class="form-control" value="1" min="1" required>
+                        </div>
+                        <div class="col-12 col-sm-8">
+                            <label class="form-label small fw-bold">Ubicación</label>
+                            <select name="ubicacion_id" class="form-select">
+                                <option value="">Sin ubicación</option>
+                                {% for u in ubicaciones %}
+                                <option value="{{ u.id }}" {% if u.nombre == 'Bodega Central' %}selected{% endif %}>{{ u.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar Herramienta</button>
                 </div>
             </form>
         </div>
@@ -546,6 +588,25 @@ function guardarProducto(e) {
         ubicacion_id: f.ubicacion_id.value
     };
     fetch('/api/bodega/crear_producto', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { location.reload(); }
+        else { alert('Error: ' + resp.msg); }
+    }).catch(function() { alert('Error de conexión'); });
+    return false;
+}
+
+function guardarHerramienta(e) {
+    e.preventDefault();
+    var f = e.target;
+    var data = {
+        nombre: f.nombre.value,
+        cantidad: f.cantidad.value,
+        ubicacion_id: f.ubicacion_id.value
+    };
+    fetch('/api/bodega/crear_herramienta', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)

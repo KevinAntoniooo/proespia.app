@@ -1412,6 +1412,46 @@ def crear_producto():
         db.session.rollback()
         return jsonify({'ok': False, 'msg': str(e)}), 400
 
+@app.route('/api/bodega/crear_herramienta', methods=['POST'])
+@login_required
+def crear_herramienta():
+    if current_user.rol not in ['admin', 'super_su']:
+        return jsonify({'ok': False, 'msg': 'Permiso denegado'}), 403
+    try:
+        data = request.get_json()
+        nombre = data['nombre']
+        cantidad = int(data.get('cantidad', 1))
+        ubicacion_id = int(data['ubicacion_id']) if data.get('ubicacion_id') else None
+
+        cat_herramientas = CategoriaItem.query.filter_by(nombre='Herramientas').first()
+        if not cat_herramientas:
+            cat_herramientas = CategoriaItem(nombre='Herramientas')
+            db.session.add(cat_herramientas)
+            db.session.flush()
+
+        existente = ProductoStock.query.filter_by(
+            nombre=nombre, marca='', modelo='',
+            categoria_id=cat_herramientas.id,
+            ubicacion_id=ubicacion_id, estado='Nuevo'
+        ).first()
+        if existente:
+            existente.cantidad_actual += cantidad
+            db.session.commit()
+            return jsonify({'ok': True, 'msg': f'Stock actualizado: {existente.cantidad_actual} unidades'})
+        else:
+            prod = ProductoStock(
+                nombre=nombre, marca='', modelo='',
+                cantidad_actual=cantidad, cantidad_minima=1,
+                valor_estimado=0, estado='Nuevo',
+                categoria_id=cat_herramientas.id, ubicacion_id=ubicacion_id
+            )
+            db.session.add(prod)
+            db.session.commit()
+            return jsonify({'ok': True, 'msg': 'Herramienta creada'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': str(e)}), 400
+
 @app.route('/api/bodega/editar_producto/<int:producto_id>', methods=['POST'])
 @login_required
 def editar_producto(producto_id):
@@ -1719,7 +1759,10 @@ def checklist_viernes():
     hoy = datetime.now().weekday()
     dia_config = vehiculo.dia_checklist
     dia_habilitado = (hoy == dia_config)
-    herramientas = Herramienta.query.filter_by(vehiculo_id=vehiculo.id).order_by(Herramienta.nombre).all()
+    herramientas = ProductoStock.query.join(CategoriaItem).filter(
+        CategoriaItem.nombre == 'Herramientas',
+        ProductoStock.ubicacion_id == vehiculo.ubicacion_id
+    ).order_by(ProductoStock.nombre).all()
     if not herramientas:
         flash('Tu vehículo no tiene herramientas registradas. Contacta al administrador.', 'warning')
     return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=dia_habilitado, dia_nombre=DIAS_SEMANA[dia_config])
@@ -1738,7 +1781,10 @@ def checklist_enviar():
             return jsonify({'ok': False, 'msg': 'Hoy no es día de checklist para tu vehículo'}), 400
         herramientas_ok = request.form.getlist('herramientas_ok')
         obs = request.form.get('observaciones', '').strip()
-        total = Herramienta.query.filter_by(vehiculo_id=vehiculo.id).count()
+        total = ProductoStock.query.join(CategoriaItem).filter(
+            CategoriaItem.nombre == 'Herramientas',
+            ProductoStock.ubicacion_id == vehiculo.ubicacion_id
+        ).count()
         ok_count = len(herramientas_ok)
         estado = (ok_count == total)
         ck = ChecklistSemanal(
@@ -1766,7 +1812,10 @@ def checklist_vehiculo_admin(vehiculo_id):
         try:
             herramientas_ok = request.form.getlist('herramientas_ok')
             obs = request.form.get('observaciones', '').strip()
-            total = Herramienta.query.filter_by(vehiculo_id=vehiculo.id).count()
+            total = ProductoStock.query.join(CategoriaItem).filter(
+                CategoriaItem.nombre == 'Herramientas',
+                ProductoStock.ubicacion_id == vehiculo.ubicacion_id
+            ).count()
             ok_count = len(herramientas_ok)
             estado = (ok_count == total)
             tecnico_asignado = Usuario.query.filter_by(ubicacion_id=vehiculo.ubicacion_id, rol='tecnico', tipo_asignacion='a_cargo').first()
@@ -1787,7 +1836,10 @@ def checklist_vehiculo_admin(vehiculo_id):
             db.session.rollback()
             flash(f'Error al guardar: {e}', 'danger')
             return redirect(url_for('checklist_vehiculo_admin', vehiculo_id=vehiculo.id))
-    herramientas = Herramienta.query.filter_by(vehiculo_id=vehiculo.id).order_by(Herramienta.nombre).all()
+    herramientas = ProductoStock.query.join(CategoriaItem).filter(
+        CategoriaItem.nombre == 'Herramientas',
+        ProductoStock.ubicacion_id == vehiculo.ubicacion_id
+    ).order_by(ProductoStock.nombre).all()
     return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=True, dia_nombre='Hoy')
 
 @app.route('/checklist/reporte_pdf/<int:checklist_id>')

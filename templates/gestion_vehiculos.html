@@ -56,9 +56,6 @@
                                 <a href="/checklist/vehiculo/{{ v.id }}" class="btn btn-outline-success" title="Hacer Checklist">
                                     <i class="fa-solid fa-clipboard-check"></i>
                                 </a>
-                                <button class="btn btn-outline-primary" onclick="gestionarHerramientas({{ v.id }})" title="Herramientas">
-                                    <i class="fa-solid fa-toolbox"></i>
-                                </button>
                                 <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarVehiculo{{ v.id }}" title="Editar">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
@@ -263,61 +260,6 @@ function eliminarVehiculo(id) {
     </div>
 </div>
 
-<div class="modal fade" id="modalHerramientas" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-success text-white border-0">
-                <h6 class="modal-title fw-bold"><i class="fa-solid fa-toolbox me-2"></i>Herramientas del Vehículo</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="mb-3" id="herramientasVehiculoInfo"></div>
-                <div class="table-responsive mb-3">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Herramienta</th>
-                                <th class="text-center">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="herramientasBody"></tbody>
-                    </table>
-                </div>
-                <hr>
-                <h6 class="fw-bold mb-2"><i class="fa-solid fa-plus me-1"></i>Agregar Herramienta</h6>
-                <form onsubmit="return agregarHerramienta(event)">
-                    <input type="hidden" name="vehiculo_id" id="herramientaVehiculoId">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-8">
-                            <label class="form-label small fw-bold">Nombre</label>
-                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Taladro Inalámbrico" required>
-                        </div>
-                        <div class="col-md-4 d-grid">
-                            <button type="submit" class="btn btn-success shadow-sm btn-sm fw-bold mt-md-2" style="font-size:0.75rem;"><i class="fa-solid fa-plus me-1"></i>Agregar</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalConfirmarEliminarHerramienta" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg rounded-4 border-danger">
-            <div class="modal-body text-center p-4">
-                <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
-                <h5 class="fw-bold mb-2">¿Eliminar herramienta?</h5>
-                <p class="text-muted small mb-3">Esta acción no se puede deshacer.</p>
-                <div class="d-flex gap-2 justify-content-center">
-                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" id="btnConfirmarEliminarHerramienta"><i class="fa-solid fa-trash-can me-1"></i>Eliminar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="modalDetalleVehiculo" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -332,9 +274,6 @@ function eliminarVehiculo(id) {
 </div>
 
 <script>
-var herramientasVehiculoId = null;
-var herramientaEliminarId = null;
-
 function verDetalleVehiculo(row) {
     if (window.innerWidth >= 768) return;
     var cells = row.querySelectorAll('td');
@@ -357,7 +296,7 @@ function verDetalleVehiculo(row) {
     var footerHtml = '<div class="btn-group btn-group-sm shadow-sm w-100">';
     footerHtml += '<button class="btn btn-outline-secondary" onclick="cerrarModalDetalle();verHistorial(' + id + ')"><i class="fa-solid fa-clock-rotate-left"></i></button>';
     footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" onclick="cerrarModalDetalle()"><i class="fa-solid fa-clipboard-check"></i></a>';
-    footerHtml += '<button class="btn btn-outline-primary" onclick="cerrarModalDetalle();gestionarHerramientas(' + id + ')"><i class="fa-solid fa-toolbox"></i></button>';
+    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success"><i class="fa-solid fa-clipboard-check"></i></a>';
     footerHtml += '<button class="btn btn-outline-warning" onclick="cerrarModalDetalle();abrirModalEditar(' + id + ')"><i class="fa-solid fa-pen"></i></button>';
     footerHtml += '<button class="btn btn-outline-danger" onclick="cerrarModalDetalle();eliminarVehiculo(' + id + ')"><i class="fa-solid fa-trash-can"></i></button>';
     footerHtml += '</div>';
@@ -387,85 +326,6 @@ document.addEventListener('hidden.bs.modal', function(e) {
     }
 });
 
-function gestionarHerramientas(id) {
-    herramientasVehiculoId = id;
-    document.getElementById('herramientaVehiculoId').value = id;
-    document.getElementById('herramientasVehiculoInfo').innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-success"></div> Cargando...</div>';
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalHerramientas')).show();
-    cargarHerramientas(id);
-}
-
-function cargarHerramientas(id) {
-    fetch('/api/vehiculos/' + id + '/herramientas?_=' + Date.now())
-    .then(function(r) { return r.json(); })
-    .then(function(resp) {
-        if (!resp.ok) {
-            document.getElementById('herramientasVehiculoInfo').innerHTML = '<div class="alert alert-danger py-2 mb-0">Error al cargar herramientas.</div>';
-            return;
-        }
-        document.getElementById('herramientasVehiculoInfo').innerHTML = '<span class="badge bg-success bg-opacity-10 text-success rounded-pill"><i class="fa-solid fa-tools me-1"></i>' + resp.total + ' herramienta(s) registrada(s)</span>';
-        var tbody = document.getElementById('herramientasBody');
-        var html = '';
-        resp.herramientas.forEach(function(h) {
-            html += '<tr>';
-            html += '<td class="fw-medium text-dark">' + h.nombre + '</td>';
-            html += '<td class="text-center"><button class="btn btn-outline-danger btn-sm rounded-pill px-2" onclick="eliminarHerramienta(' + h.id + ')"><i class="fa-solid fa-trash-can fa-sm"></i></button></td>';
-            html += '</tr>';
-        });
-        if (!resp.herramientas.length) {
-            html = '<tr><td colspan="2" class="text-center py-3 text-muted"><small>Sin herramientas registradas.</small></td></tr>';
-        }
-        tbody.innerHTML = html;
-    })
-    .catch(function() {
-        document.getElementById('herramientasVehiculoInfo').innerHTML = '<div class="alert alert-danger py-2 mb-0">Error de conexión.</div>';
-    });
-}
-
-function agregarHerramienta(e) {
-    e.preventDefault();
-    var f = e.target;
-    fetch('/api/vehiculos/' + herramientasVehiculoId + '/herramientas', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({nombre: f.nombre.value})
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(resp) {
-        if (resp.ok) {
-            f.reset();
-            f.nombre.focus();
-            cargarHerramientas(herramientasVehiculoId);
-        } else {
-            alert('Error: ' + resp.msg);
-        }
-    })
-    .catch(function() { alert('Error de conexión'); });
-    return false;
-}
-
-function eliminarHerramienta(id) {
-    herramientaEliminarId = id;
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminarHerramienta')).show();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('btnConfirmarEliminarHerramienta')?.addEventListener('click', function() {
-        if (!herramientaEliminarId) return;
-        fetch('/api/herramientas/eliminar/' + herramientaEliminarId, { method: 'DELETE' })
-        .then(function(r) { return r.json(); })
-        .then(function(resp) {
-            if (resp.ok) {
-                var confirmModal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarHerramienta'));
-                if (confirmModal) confirmModal.hide();
-                cargarHerramientas(herramientasVehiculoId);
-            } else {
-                alert('Error: ' + resp.msg);
-            }
-        })
-        .catch(function() { alert('Error de conexión'); });
-    });
-});
 </script>
 <style>
 @media (max-width: 767px) {
