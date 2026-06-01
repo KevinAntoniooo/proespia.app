@@ -2124,8 +2124,8 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
-    # Migrar columnas si no existen
-    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', 'BOOLEAN DEFAULT 1')]:
+    # Migrar columnas si no existen (PostgreSQL no acepta DEFAULT 1 para boolean, usar true)
+    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', "BOOLEAN DEFAULT true")]:
         try:
             db.session.execute(db.text(f'ALTER TABLE usuario ADD COLUMN {col} {dtype}'))
             db.session.commit()
@@ -2138,17 +2138,21 @@ with app.app_context():
     except Exception:
         db.session.rollback()
     # Seed super_su si no hay usuarios (primera ejecución)
-    if not Usuario.query.first():
-        super_pass = os.environ.get('SUPER_SU_PASS')
-        if not super_pass:
-            import secrets
-            super_pass = secrets.token_urlsafe(12)
-            print(f'[SUPER_SU] No se encontró SUPER_SU_PASS. Se usará: {super_pass}')
-        super_user = Usuario(nombre='Super Usuario', username='superadmin', rol='super_su', activo=True)
-        super_user.set_password(super_pass)
-        db.session.add(super_user)
-        db.session.commit()
-        print(f'[SUPER_SU] Super usuario creado: superadmin / {super_pass[:4]}***')
+    try:
+        if not Usuario.query.first():
+            super_pass = os.environ.get('SUPER_SU_PASS')
+            if not super_pass:
+                import secrets
+                super_pass = secrets.token_urlsafe(12)
+                print(f'[SUPER_SU] No se encontró SUPER_SU_PASS. Se usará: {super_pass}')
+            super_user = Usuario(nombre='Super Usuario', username='superadmin', rol='super_su', activo=True)
+            super_user.set_password(super_pass)
+            db.session.add(super_user)
+            db.session.commit()
+            print(f'[SUPER_SU] Super usuario creado: superadmin / {super_pass[:4]}***')
+    except Exception as e:
+        print(f'[SUPER_SU] Error en seed: {e}')
+        db.session.rollback()
     # Seed categorías de bodega si están vacías
     if not CategoriaItem.query.first():
         for nombre in ['Camaras', 'Conectividad', 'Discos Duros', 'Herramientas', 'Accesorios', 'Gabinetes', 'Fuentes de Poder', 'Cableado']:
