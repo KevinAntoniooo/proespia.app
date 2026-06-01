@@ -492,6 +492,20 @@
     </div>
 </div>
 
+<!-- Modal Advertencia -->
+<div class="modal fade" id="modalAdvertencia" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-warning">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-circle-exclamation text-warning fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2" id="modalAdvertenciaTitulo">Aviso</h5>
+                <p class="text-muted small mb-3" id="modalAdvertenciaTexto"></p>
+                <button type="button" class="btn btn-warning shadow-sm btn-sm fw-bold px-4" style="font-size:0.85rem;" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 var productosData = {{ todos_productos|tojson }};
 productosData.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
@@ -688,7 +702,7 @@ function ejecutarConsumo(e) {
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumo')).hide(); location.reload(); }
-        else { alert('Error: ' + resp.msg); }
+        else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { alert('Error de conexión'); });
     return false;
 }
@@ -696,7 +710,9 @@ function ejecutarConsumo(e) {
 function abrirConsumoRapido(e, id, nombre, stock) {
     var row = e.currentTarget;
     if (row.dataset.categoriaNombre === 'Herramientas') {
-        alert('No puedes consumir herramientas. Usa Traspaso para moverlas.');
+        document.getElementById('modalAdvertenciaTitulo').textContent = 'Herramienta no consumible';
+        document.getElementById('modalAdvertenciaTexto').textContent = 'Las herramientas no se pueden consumir. Usa Traspaso para moverlas a un vehículo.';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAdvertencia')).show();
         return;
     }
     document.getElementById('rapido_producto_id').value = id;
@@ -721,9 +737,15 @@ function ejecutarConsumoRapido(e) {
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
         if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumoRapido')).hide(); location.reload(); }
-        else { alert('Error: ' + resp.msg); }
+        else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { alert('Error de conexión'); });
     return false;
+}
+
+function mostrarAdvertencia(titulo, texto) {
+    document.getElementById('modalAdvertenciaTitulo').textContent = titulo;
+    document.getElementById('modalAdvertenciaTexto').textContent = texto;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAdvertencia')).show();
 }
 </script>
 <style>
