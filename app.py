@@ -14,11 +14,6 @@ from models import get_fernet
 import json
 import locale
 from base64 import b64encode, b64decode
-import smtplib
-import random
-import string
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 # ==========================================
 # 0. CONFIGURACIÓN E INICIALIZACIÓN DE LA APP
@@ -45,12 +40,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=15)
 app.config['VAPID_PRIVATE_KEY'] = 'EBTOb_kaWp7FPYpGZcV8r_fegUJENKcoI6adDZ0scAY'
 app.config['VAPID_PUBLIC_KEY'] = 'BMz3vT_Sq1q8-xozy7P6CG28HABJhJBm_eGAIWvUpSMuFz2AUVMkQ83E_rQrIZha5m2fDsDltT5c8SK8ozA_Ot0'
 app.config['VAPID_CLAIM_EMAIL'] = 'mailto:contacto@proespia.cl'
-# Configuración SMTP para envío de códigos de verificación
-app.config['SMTP_HOST'] = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
-app.config['SMTP_PORT'] = int(os.environ.get('SMTP_PORT', 587))
-app.config['SMTP_USER'] = os.environ.get('SMTP_USER', '')
-app.config['SMTP_PASS'] = os.environ.get('SMTP_PASS', '')
-app.config['SMTP_FROM'] = os.environ.get('SMTP_FROM', 'noreply@proespia.cl')
 # Configuración de cookies de sesión persistente
 app.config['SESSION_COOKIE_NAME'] = 'proespia_session'
 # Configuración de Fernet (cifrado simétrico para Bóveda)
@@ -114,18 +103,8 @@ def service_worker():
 
 @app.route('/manifest.json')
 def manifest_json():
-    import json as _json
-    manifest_path = os.path.join(app.static_folder, 'manifest.json')
-    with open(manifest_path, 'r', encoding='utf-8') as f:
-        manifest = _json.load(f)
-    manifest['related_applications'] = [{
-        'platform': 'webapp',
-        'url': url_for('manifest_json', _external=True)
-    }]
-    response = app.response_class(
-        _json.dumps(manifest, ensure_ascii=False),
-        mimetype='application/manifest+json'
-    )
+    response = app.send_static_file('manifest.json')
+    response.headers['Content-Type'] = 'application/manifest+json'
     response.headers['Cache-Control'] = 'no-cache'
     return response
 
@@ -144,17 +123,12 @@ def login():
         password_ingresado = request.form.get('password', '')
         remember = True if request.form.get('remember') else False
 
-        # 2. Buscamos al usuario (por username o teléfono)
-        user = Usuario.query.filter(
-            (Usuario.username == usuario_ingresado) | (Usuario.telefono == usuario_ingresado)
-        ).first()
+        # 2. Buscamos al usuario
+        user = Usuario.query.filter_by(username=usuario_ingresado).first()
 
         # 3. VERIFICACIÓN DE SEGURIDAD
+        # Usamos el método del modelo que internamente usa check_password_hash
         if user and user.check_password(password_ingresado):
-            if not user.activo:
-                contacto = user.email or user.telefono or 'tu correo'
-                flash('Cuenta no activada. Revisa el código enviado.', 'warning')
-                return render_template('login.html', pendiente_verificacion=contacto)
             
             login_user(user, remember=remember) 
 
@@ -163,172 +137,20 @@ def login():
             else:
                 session.permanent = False
 
-            session['user_id'] = user.id
-            session['rol'] = user.rol
-
             flash(f'Bienvenido de nuevo, {user.nombre}', 'success')
             return redirect(url_for('dashboard', user_id=user.id))
         
         else:
-            flash('Credenciales incorrectas. Por favor, verifique sus datos.', 'warning')
+            # Por seguridad, es mejor no decir si falló el usuario o la clave específicamente
+            flash('Crendenciales incorrectas. Por favor, verifique sus datos.', 'warning')
             
     return render_template('login.html')
 
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    session.clear()
-    return redirect(url_for('login'))
-
-# ==========================================
-# 3b. REGISTRO Y VERIFICACIÓN POR CORREO
-# ==========================================
-def enviar_codigo_verificacion(email, codigo):
-    """Envía el código de 6 dígitos al correo del usuario."""
-    smtp_host = app.config['SMTP_HOST']
-    smtp_port = app.config['SMTP_PORT']
-    smtp_user = app.config['SMTP_USER']
-    smtp_pass = app.config['SMTP_PASS']
-    smtp_from = app.config['SMTP_FROM']
-
-    if not smtp_user or not smtp_pass:
-        print(f"[EMAIL] SMTP no configurado. Código para {email}: {codigo}")
-        return True
-
-    msg = MIMEMultipart()
-    msg['From'] = smtp_from
-    msg['To'] = email
-    msg['Subject'] = 'Código de verificación - Proespia Gestión'
-
-    body = f"""
-    <html>
-    <body style="font-family:Arial,sans-serif;padding:20px;">
-        <h2 style="color:#dc2626;">Proespia Gestión</h2>
-        <p>Tu código de verificación es:</p>
-        <h1 style="font-size:32px;letter-spacing:8px;background:#f1f5f9;padding:15px;border-radius:8px;text-align:center;">{codigo}</h1>
-        <p>Este código expira en 10 minutos.</p>
-        <p style="color:#64748b;font-size:12px;">Si no solicitaste este código, ignora este mensaje.</p>
-    </body>
-    </html>
-    """
-    msg.attach(MIMEText(body, 'html'))
-
-    try:
-        server = smtplib.SMTP(smtp_host, smtp_port)
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-        print(f"[EMAIL] Código enviado a {email}")
-        return True
-    except Exception as e:
-        print(f"[EMAIL] Error al enviar: {e}")
-        return False
-
-@app.route('/api/registro', methods=['POST'])
-def api_registro():
-    data = request.get_json()
-    if not data:
-        return jsonify({'ok': False, 'msg': 'Datos requeridos'}), 400
-
-    nombre = data.get('nombre', '').strip()
-    email = data.get('email', '').strip().lower()
-    telefono = data.get('telefono', '').strip()
-    password = data.get('password', '')
-
-    if not nombre or not telefono or not password:
-        return jsonify({'ok': False, 'msg': 'Nombre, teléfono y contraseña son obligatorios'}), 400
-
-    if len(password) < 4:
-        return jsonify({'ok': False, 'msg': 'La contraseña debe tener al menos 4 caracteres'}), 400
-
-    if telefono and Usuario.query.filter_by(telefono=telefono).first():
-        return jsonify({'ok': False, 'msg': 'El teléfono ya está registrado'}), 400
-
-    username = telefono if telefono else f'user_{random.randint(1000,9999)}'
-    if Usuario.query.filter_by(username=username).first():
-        return jsonify({'ok': False, 'msg': 'El usuario ya existe'}), 400
-
-    es_primer_usuario = not Usuario.query.first()
-    codigo = ''.join(random.choices(string.digits, k=6))
-
-    user = Usuario(
-        nombre=nombre,
-        email=email or None,
-        telefono=telefono,
-        username=username,
-        rol='admin' if es_primer_usuario else 'tecnico',
-        activo=False,
-        codigo_verificacion=codigo
-    )
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-
-    enviado = enviar_codigo_verificacion(email or telefono, codigo)
-
-    return jsonify({
-        'ok': True,
-        'msg': 'Registro exitoso. Revisa tu correo para el código de verificación.',
-        'email': email or telefono,
-        'es_admin': es_primer_usuario
-    })
-
-@app.route('/api/verificar_codigo', methods=['POST'])
-def api_verificar_codigo():
-    data = request.get_json()
-    if not data:
-        return jsonify({'ok': False, 'msg': 'Datos requeridos'}), 400
-
-    email = data.get('email', '').strip().lower()
-    codigo = data.get('codigo', '').strip()
-
-    user = Usuario.query.filter(
-        (Usuario.email == email) | (Usuario.telefono == email)
-    ).filter(Usuario.activo == False).order_by(Usuario.id.desc()).first()
-
-    if not user:
-        return jsonify({'ok': False, 'msg': 'No hay registros pendientes para este correo'}), 400
-
-    if user.codigo_verificacion != codigo:
-        return jsonify({'ok': False, 'msg': 'Código incorrecto'}), 400
-
-    user.activo = True
-    user.codigo_verificacion = None
-    db.session.commit()
-
-    login_user(user, remember=True)
-    session['user_id'] = user.id
-    session['rol'] = user.rol
-
-    return jsonify({
-        'ok': True,
-        'msg': 'Cuenta activada correctamente',
-        'redirect': url_for('dashboard', user_id=user.id)
-    })
-
-@app.route('/api/reenviar_codigo', methods=['POST'])
-def api_reenviar_codigo():
-    data = request.get_json()
-    email = (data.get('email', '') if data else '').strip().lower()
-    if not email:
-        return jsonify({'ok': False, 'msg': 'Correo requerido'}), 400
-
-    user = Usuario.query.filter(
-        (Usuario.email == email) | (Usuario.telefono == email)
-    ).filter(Usuario.activo == False).order_by(Usuario.id.desc()).first()
-
-    if not user:
-        return jsonify({'ok': False, 'msg': 'No hay registros pendientes para este correo'}), 400
-
-    codigo = ''.join(random.choices(string.digits, k=6))
-    user.codigo_verificacion = codigo
-    db.session.commit()
-
-    enviar_codigo_verificacion(email, codigo)
-    return jsonify({'ok': True, 'msg': 'Código reenviado'})
-
+    logout_user() # Esto destruye la sesión y la cookie de "Recordarme"
+    return redirect(url_for('login')) # Ahora sí te mandará al formulario vacío
 # ==========================================
 # 4. DASHBOARD PRINCIPAL
 # ==========================================
@@ -2325,19 +2147,13 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
-    # Migrar columnas de verificación en usuario si no existen
-    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', "BOOLEAN DEFAULT true"), ('codigo_verificacion', 'VARCHAR(6)')]:
-        try:
-            db.session.execute(db.text(f'ALTER TABLE usuario ADD COLUMN {col} {dtype}'))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-    # Asegurar que usuarios existentes queden activos (no recién registrados)
-    try:
-        db.session.execute(db.text("UPDATE usuario SET activo=true WHERE activo IS NULL"))
+    # Crear admin por defecto si no hay usuarios
+    if not Usuario.query.first():
+        admin = Usuario(username='admin', nombre='Administrador', rol='admin')
+        admin.set_password('123')
+        db.session.add(admin)
         db.session.commit()
-    except Exception:
-        db.session.rollback()
+        print('Admin por defecto creado: admin / 123')
     # Seed categorías de bodega si están vacías
     if not CategoriaItem.query.first():
         for nombre in ['Camaras', 'Conectividad', 'Discos Duros', 'Herramientas', 'Accesorios', 'Gabinetes', 'Fuentes de Poder', 'Cableado']:
