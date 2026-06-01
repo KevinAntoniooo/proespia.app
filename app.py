@@ -1009,13 +1009,15 @@ def completar_tarea(log_id, user_id):
             'Falla Solucionada',
             f'{usuario.nombre} resolvió la falla en {nom_cliente}',
             url_for('ver_bitacora', user_id=1) if 'ver_bitacora' in dir() else '/',
-            tipo='exito'
+            tipo='exito',
+            exclude_id=current_user.id
         )
         notificar_operadores(
             'Falla Resuelta - Volver a Normalidad',
             f'El técnico {usuario.nombre} solucionó la falla en {nom_cliente}. Central ya recibe señales.',
             '/',
-            tipo='exito'
+            tipo='exito',
+            exclude_id=current_user.id
         )
         return redirect(url_for('ver_todas_las_tareas', user_id=user_id))
     
@@ -2045,10 +2047,12 @@ def crear_notificacion(usuario_id, titulo, mensaje, url=None, tipo='info', envia
                     db.session.commit()
     return notif
 
-def notificar_admin(titulo, mensaje, url=None, tipo='info'):
+def notificar_admin(titulo, mensaje, url=None, tipo='info', exclude_id=None):
     """Envía notificación a todos los admins y super_su."""
     admins = Usuario.query.filter(Usuario.rol.in_(['admin', 'super_su'])).all()
     for a in admins:
+        if exclude_id and a.id == exclude_id:
+            continue
         crear_notificacion(a.id, titulo, mensaje, url, tipo)
 
 def notificar_tecnicos(titulo, mensaje, url=None, tipo='info'):
@@ -2057,10 +2061,12 @@ def notificar_tecnicos(titulo, mensaje, url=None, tipo='info'):
     for t in tecnicos:
         crear_notificacion(t.id, titulo, mensaje, url, tipo)
 
-def notificar_operadores(titulo, mensaje, url=None, tipo='info'):
+def notificar_operadores(titulo, mensaje, url=None, tipo='info', exclude_id=None):
     """Envía notificación a todos los operadores."""
     ops = Usuario.query.filter_by(rol='operador').all()
     for o in ops:
+        if exclude_id and o.id == exclude_id:
+            continue
         crear_notificacion(o.id, titulo, mensaje, url, tipo)
 
 @app.route('/api/push/subscribe', methods=['POST'])
