@@ -150,7 +150,7 @@
 
                     {% elif usuario.rol == 'tecnico' %}
                         <div class="row g-2">
-                            <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size: 0.7rem;"><i class="fa-solid fa-calendar-day me-1"></i>Agenda de Hoy</h6>
+                            <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size: 0.7rem;"><i class="fa-solid fa-calendar-day me-1"></i>Agenda de Hoy <span class="badge bg-warning text-dark rounded-pill ms-1">{{ visitas_hoy|length }}</span></h6>
                             {% if visitas_hoy %}
                                 {% for v in visitas_hoy %}
                                 <div class="col-12">
@@ -166,7 +166,7 @@
                                                 <div class="col-8 text-start">
                                                     <div class="d-flex align-items-center mb-1">
                                                         <span class="fw-bold text-primary me-2" style="font-size: 0.8rem;">{{ v.fecha_programada.strftime('%H:%M') }}</span>
-                                                        <h6 class="fw-bold mb-0 text-dark small text-truncate">{{ v.rel_cliente.nombre }}</h6>
+                                                        <h6 class="fw-bold mb-0 text-dark small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</h6>
                                                     </div>
                                                     <div class="d-flex align-items-center">
                                                         <span class="badge bg-secondary-subtle text-secondary py-0 px-1 me-2" style="font-size: 0.6rem; border: 1px solid rgba(0,0,0,0.05);">{{ v.tipo_trabajo|upper }}</span>
