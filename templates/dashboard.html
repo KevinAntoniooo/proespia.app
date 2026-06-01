@@ -86,7 +86,7 @@
                     <li class="nav-item">
                         <button class="nav-link fw-bold small{% if usuario.rol != 'tecnico' %} active{% endif %}" id="tareas-tab" data-bs-toggle="tab" data-bs-target="#tareas">
                             {% if usuario.rol == 'tecnico' %}
-                                <i class="fa-solid fa-route me-1 text-primary"></i>Hoja de Ruta
+                                <i class="fa-solid fa-route me-1 text-primary"></i>Hoja de Ruta <span class="badge bg-primary ms-1">{{ visitas_hoy|length }}</span>
                             {% elif usuario.rol == 'operador' %}
                                 <i class="fa-solid fa-headset me-1 text-primary"></i>Reportes
                             {% else %}
