@@ -2111,59 +2111,46 @@ def eliminar_notificacion():
 # 12. EJECUCIÓN DE LA APLICACIÓN
 # ==========================================
 with app.app_context():
-    db.create_all()
-    # Migrar columna password a 255 chars si es necesario
     try:
-        db.session.execute(db.text('ALTER TABLE usuario ALTER COLUMN password TYPE VARCHAR(255)'))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-    # Migrar columna contacto_emergencia en cliente si no existe
-    try:
-        db.session.execute(db.text('ALTER TABLE cliente ADD COLUMN contacto_emergencia VARCHAR(100)'))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-    # Migrar columnas si no existen (PostgreSQL no acepta DEFAULT 1 para boolean, usar true)
-    for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', "BOOLEAN DEFAULT true")]:
+        db.create_all()
+        for col, dtype in [('email', 'VARCHAR(120)'), ('telefono', 'VARCHAR(30)'), ('activo', "BOOLEAN DEFAULT true")]:
+            try:
+                db.session.execute(db.text(f'ALTER TABLE usuario ADD COLUMN {col} {dtype}'))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
         try:
-            db.session.execute(db.text(f'ALTER TABLE usuario ADD COLUMN {col} {dtype}'))
+            db.session.execute(db.text("ALTER TABLE usuario DROP COLUMN codigo_verificacion"))
             db.session.commit()
         except Exception:
             db.session.rollback()
-    # Eliminar columna codigo_verificacion si existe (ya no se usa)
-    try:
-        db.session.execute(db.text("ALTER TABLE usuario DROP COLUMN codigo_verificacion"))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-    # Seed super_su si no hay usuarios (primera ejecución)
-    try:
-        if not Usuario.query.first():
-            super_pass = os.environ.get('SUPER_SU_PASS')
-            if not super_pass:
-                import secrets
-                super_pass = secrets.token_urlsafe(12)
-                print(f'[SUPER_SU] No se encontró SUPER_SU_PASS. Se usará: {super_pass}')
-            super_user = Usuario(nombre='Super Usuario', username='superadmin', rol='super_su', activo=True)
-            super_user.set_password(super_pass)
-            db.session.add(super_user)
+        try:
+            if not Usuario.query.first():
+                super_pass = os.environ.get('SUPER_SU_PASS')
+                if not super_pass:
+                    import secrets
+                    super_pass = secrets.token_urlsafe(12)
+                    print(f'[SUPER_SU] No se encontró SUPER_SU_PASS. Se usará: {super_pass}')
+                super_user = Usuario(nombre='Super Usuario', username='superadmin', rol='super_su', activo=True)
+                super_user.set_password(super_pass)
+                db.session.add(super_user)
+                db.session.commit()
+                print(f'[SUPER_SU] Super usuario creado: superadmin / {super_pass[:4]}***')
+        except Exception as e:
+            print(f'[SUPER_SU] Error en seed: {e}')
+            db.session.rollback()
+        if not CategoriaItem.query.first():
+            for nombre in ['Camaras', 'Conectividad', 'Discos Duros', 'Herramientas', 'Accesorios', 'Gabinetes', 'Fuentes de Poder', 'Cableado']:
+                db.session.add(CategoriaItem(nombre=nombre))
             db.session.commit()
-            print(f'[SUPER_SU] Super usuario creado: superadmin / {super_pass[:4]}***')
+            print('Categorías de bodega creadas por defecto.')
+        if not Ubicacion.query.first():
+            db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
+            db.session.commit()
+            print('Ubicación Bodega Central creada por defecto.')
     except Exception as e:
-        print(f'[SUPER_SU] Error en seed: {e}')
+        print(f'[STARTUP] Error en inicialización: {e}')
         db.session.rollback()
-    # Seed categorías de bodega si están vacías
-    if not CategoriaItem.query.first():
-        for nombre in ['Camaras', 'Conectividad', 'Discos Duros', 'Herramientas', 'Accesorios', 'Gabinetes', 'Fuentes de Poder', 'Cableado']:
-            db.session.add(CategoriaItem(nombre=nombre))
-        db.session.commit()
-        print('Categorías de bodega creadas por defecto.')
-    # Seed ubicación "Bodega Central" si está vacía
-    if not Ubicacion.query.first():
-        db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
-        db.session.commit()
-        print('Ubicación Bodega Central creada por defecto.')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
