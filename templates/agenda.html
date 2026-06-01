@@ -172,7 +172,8 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Cliente</label>
                             <select name="cliente_id" id="selectCliente" class="form-select border rounded-3" style="border-color:#6366f1!important;" required onchange="cargarUbicacionCliente(this);toggleClienteNuevo()">
-                                <option value="0">-- CLIENTE NUEVO --</option>
+                                <option value="">Seleccione sede</option>
+                                <option value="nuevo">-- CLIENTE NUEVO --</option>
                                 {% for c in clientes %}
                                 <option value="{{ c.id }}" data-lat="{{ c.latitud or '' }}" data-lng="{{ c.longitud or '' }}">{{ c.nombre }}</option>
                                 {% endfor %}
@@ -623,9 +624,9 @@
         var sel = document.getElementById('selectCliente');
         var div = document.getElementById('camposClienteNuevo');
         if (!sel || !div) return;
-        div.style.display = sel.value === '0' ? '' : 'none';
+        div.style.display = sel.value === 'nuevo' ? '' : 'none';
         var input = document.getElementById('inputClienteNuevoNombre');
-        if (input) input.required = sel.value === '0';
+        if (input) input.required = sel.value === 'nuevo';
     }
     function cargarUbicacionCliente(select) {
         var opt = select.options[select.selectedIndex];
