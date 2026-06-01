@@ -407,7 +407,8 @@ def editar_cliente(cliente_id, user_id):
                 'Cliente Activo en Central',
                 f'{cliente.nombre} ahora está en MONITOREO. Verificar recepción de señales.',
                 url_for('ver_clientes', user_id=user_id),
-                tipo='exito'
+                tipo='exito',
+                exclude_id=current_user.id
             )
     except Exception as e:
         db.session.rollback()
@@ -1597,7 +1598,8 @@ def registrar_consumo():
                 'Stock Crítico en Bodega',
                 f'{prod.nombre} ({prod.marca}) bajó a {prod.cantidad_actual} uds. Mínimo: {prod.cantidad_minima}',
                 url_for('inventario_bodega', user_id=1) if 'inventario_bodega' in dir() else '/',
-                tipo='stock'
+                tipo='stock',
+                exclude_id=current_user.id
             )
         return jsonify({'ok': True, 'msg': 'Consumo registrado'})
     except Exception as e:
