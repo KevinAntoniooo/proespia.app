@@ -1159,9 +1159,17 @@ def agendar_visita():
         flash('Error: La fecha y hora son obligatorias', 'danger')
         return redirect(request.referrer)
 
+    # Si es cliente nuevo, crearlo automáticamente
     if not cliente_id or int(cliente_id) == 0:
-        flash('Error: Debes seleccionar un cliente válido', 'danger')
-        return redirect(request.referrer)
+        nombre_nuevo = request.form.get('cliente_nuevo_nombre', '').strip()
+        if not nombre_nuevo:
+            flash('Error: Ingresa el nombre del nuevo cliente', 'danger')
+            return redirect(request.referrer)
+        telefono = request.form.get('cliente_nuevo_telefono', '').strip()
+        nuevo = Cliente(nombre=nombre_nuevo, contacto_emergencia=telefono)
+        db.session.add(nuevo)
+        db.session.flush()
+        cliente_id = str(nuevo.id)
 
     # 3. Construcción del objeto datetime
     fecha_str = f"{fecha_base} {hora}" 
