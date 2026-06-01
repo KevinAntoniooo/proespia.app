@@ -245,7 +245,6 @@
                         <div class="col-12 col-sm-6">
                             <label class="form-label small fw-bold">Ubicación</label>
                             <select name="ubicacion_id" class="form-select">
-                                <option value="">Sin ubicación</option>
                                 {% for u in ubicaciones %}
                                 <option value="{{ u.id }}" {% if u.nombre == 'Bodega Central' %}selected{% endif %}>{{ u.nombre }}</option>
                                 {% endfor %}
@@ -292,7 +291,6 @@
                         <div class="col-12 col-sm-8">
                             <label class="form-label small fw-bold">Ubicación</label>
                             <select name="ubicacion_id" class="form-select">
-                                <option value="">Sin ubicación</option>
                                 {% for u in ubicaciones %}
                                 <option value="{{ u.id }}" {% if u.nombre == 'Bodega Central' %}selected{% endif %}>{{ u.nombre }}</option>
                                 {% endfor %}
@@ -352,7 +350,6 @@
                         <div class="col-12 col-sm-6">
                             <label class="form-label small fw-bold">Ubicación</label>
                             <select name="ubicacion_id" class="form-select">
-                                <option value="">Sin ubicación</option>
                                 {% for u in ubicaciones %}
                                 <option value="{{ u.id }}" {% if p.ubicacion_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
                                 {% endfor %}
