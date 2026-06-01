@@ -2213,7 +2213,7 @@ with app.app_context():
         db.session.commit()
         print('Categorías de bodega creadas por defecto.')
     # Seed ubicación "Bodega Central" si está vacía
-    if not Ubicacion.query.first():
+    if not Ubicacion.query.filter_by(nombre='Bodega Central').first():
         db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
         db.session.commit()
         print('Ubicación Bodega Central creada por defecto.')
