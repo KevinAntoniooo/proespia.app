@@ -238,7 +238,7 @@
                             <select name="categoria_id" class="form-select" required>
                                 <option value="">Selecciona una categoría</option>
                                 {% for c in categorias %}
-                                <option value="{{ c.id }}" {% if loop.first %}selected{% endif %}>{{ c.nombre }}</option>
+                                <option value="{{ c.id }}">{{ c.nombre }}</option>
                                 {% endfor %}
                             </select>
                         </div>
