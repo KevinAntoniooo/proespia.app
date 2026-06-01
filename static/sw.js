@@ -1,4 +1,4 @@
-const CACHE_NAME = 'proespia-v9';
+const CACHE_NAME = 'proespia-v10';
 const urlsToCache = [
   '/static/manifest.json',
   '/static/icons/icon-192x192.png',
@@ -13,7 +13,6 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', function(event) {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.addAll(urlsToCache);
@@ -35,6 +34,13 @@ self.addEventListener('activate', function(event) {
       return self.clients.claim();
     })
   );
+});
+
+// ====== VERSION CHECK / UPDATE ======
+self.addEventListener('message', function(event) {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // ====== PUSH NOTIFICATIONS ======
