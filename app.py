@@ -1159,24 +1159,21 @@ def agendar_visita():
         flash('Error: La fecha y hora son obligatorias', 'danger')
         return redirect(request.referrer)
 
-    # Si es cliente nuevo, crearlo automáticamente con nombre genérico
+    # Si es cliente nuevo, no asociar a ningún cliente aún
     if cliente_id == 'nuevo':
-        hoy = datetime.now().strftime('%d-%m-%Y')
-        nuevo = Cliente(nombre=f'Prospecto Cotización {hoy}')
-        db.session.add(nuevo)
-        db.session.flush()
-        cliente_id = str(nuevo.id)
-
-    if not cliente_id or cliente_id == 'nuevo':
+        cliente_id = None
+    elif not cliente_id:
         flash('Error: Debes seleccionar un cliente', 'danger')
         return redirect(request.referrer)
+    else:
+        cliente_id = int(cliente_id)
 
     # 3. Construcción del objeto datetime
     fecha_str = f"{fecha_base} {hora}" 
 
     try:
         nueva_visita = VisitaProgramada(
-            cliente_id=int(cliente_id),
+            cliente_id=cliente_id,
             usuario_id=int(tecnico_id),
             fecha_programada=datetime.strptime(fecha_str, '%Y-%m-%d %H:%M'),
             tipo_trabajo=tipo,
@@ -1192,11 +1189,11 @@ def agendar_visita():
 
         # --- DISPARADOR: Nueva visita asignada a técnico ---
         tecnico = Usuario.query.get(int(tecnico_id))
-        cliente = Cliente.query.get(int(cliente_id))
-        if tecnico and cliente:
+        nom_cliente = 'Cliente Nuevo (Cotización)' if not cliente_id else Cliente.query.get(cliente_id).nombre
+        if tecnico:
             notificar_tecnicos(
                 'Nueva Visita Asignada',
-                f'Visita a {cliente.nombre} - {tipo} el {fecha_base}',
+                f'Visita a {nom_cliente} - {tipo} el {fecha_base}',
                 url_for('ver_agenda', user_id=tecnico_id) if 'ver_agenda' in dir() else '/',
                 tipo='visita'
             )
@@ -2240,6 +2237,12 @@ with app.app_context():
     # Migrar tamaño contacto_emergencia a 500 si ya existe
     try:
         db.session.execute(db.text('ALTER TABLE cliente ALTER COLUMN contacto_emergencia TYPE VARCHAR(500)'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Migrar visita_programada.cliente_id a nullable
+    try:
+        db.session.execute(db.text('ALTER TABLE visita_programada ALTER COLUMN cliente_id DROP NOT NULL'))
         db.session.commit()
     except Exception:
         db.session.rollback()

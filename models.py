@@ -113,7 +113,7 @@ class Boveda(db.Model):
     
 class VisitaProgramada(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
     fecha_programada = db.Column(db.DateTime, nullable=False)
     tipo_trabajo = db.Column(db.String(100), nullable=False)
