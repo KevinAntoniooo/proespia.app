@@ -343,7 +343,7 @@
                         </div>
                         <div class="col-12 col-sm-4">
                             <label class="form-label small fw-bold">Categoría</label>
-                            <select name="categoria_id" class="form-select">
+                            <select name="categoria_id" class="form-select" required>
                                 <option value="">Sin categoría</option>
                                 {% for c in categorias %}
                                 <option value="{{ c.id }}" {% if p.categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
