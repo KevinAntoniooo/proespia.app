@@ -186,7 +186,7 @@
                                     <input type="text" id="emergenciaNombre{{ c.id }}" class="form-control" placeholder="Nombre" style="flex:2;">
                                     <input type="text" id="emergenciaTelefono{{ c.id }}" class="form-control" placeholder="Teléfono" style="flex:1;">
                                     <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('{{ c.id }}')" style="white-space:nowrap;">
-                                        <i class="fa-solid fa-plus me-1"></i>Agregar
+                                        <i class="fa-solid fa-plus"></i><span class="d-none d-md-inline ms-1">Agregar</span>
                                     </button>
                                 </div>
                                 <div id="listaEmergencia{{ c.id }}" class="d-flex flex-wrap gap-2 mb-1"></div>
@@ -287,7 +287,7 @@
                                     <input type="text" id="emergenciaNombreNuevo" class="form-control" placeholder="Nombre" style="flex:2;">
                                     <input type="text" id="emergenciaTelefonoNuevo" class="form-control" placeholder="Teléfono" style="flex:1;">
                                     <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('Nuevo')" style="white-space:nowrap;">
-                                        <i class="fa-solid fa-plus me-1"></i>Agregar
+                                        <i class="fa-solid fa-plus"></i><span class="d-none d-md-inline ms-1">Agregar</span>
                                     </button>
                                 </div>
                                 <div id="listaEmergenciaNuevo" class="d-flex flex-wrap gap-2 mb-1"></div>
