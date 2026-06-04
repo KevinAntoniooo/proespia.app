@@ -311,6 +311,21 @@
     </div>
 </div>
 
+<!-- Modal Alerta genérico -->
+<div class="modal fade" id="modalAlerta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-3">
+            <div class="modal-body">
+                <i class="fa-solid fa-circle-info text-warning fs-1 mb-2"></i>
+                <p id="modal-alert-msg" class="fw-bold mb-0"></p>
+            </div>
+            <div class="d-flex justify-content-center border-0 pb-2">
+                <button type="button" class="btn btn-primary btn-sm px-4 rounded-3 shadow-sm" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Lógica de Prioridad Dinámica
     function verificarGravedad() {
@@ -366,7 +381,6 @@
             params.push('inicio=' + inicio, 'fin=' + fin);
         }
         if (sede) params.push('sede_id=' + sede);
-        if (params.length === 0) { alert("Selecciona al menos una sede o un rango de fechas."); return; }
         url += params.join('&');
 
         fetch(url)
@@ -382,7 +396,8 @@
                     document.getElementById('btn-descargar-pdf').href = pdfUrl;
                     document.getElementById('zona-previa').style.display = "block";
                 } else {
-                    alert("Sin registros en este rango.");
+                    document.getElementById('modal-alert-msg').textContent = "Sin registros en este rango.";
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAlerta')).show();
                     document.getElementById('zona-previa').style.display = "none";
                 }
             });
