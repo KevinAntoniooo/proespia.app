@@ -1,4 +1,4 @@
-const CACHE_NAME = 'proespia-v10';
+const CACHE_NAME = 'proespia-v11';
 const urlsToCache = [
   '/static/manifest.json',
   '/static/icons/icon-192x192.png',
@@ -127,7 +127,7 @@ self.addEventListener('fetch', function(event) {
       })
     );
   } else {
-    if (event.request.url.includes('/api/')) {
+    if (event.request.url.includes('/api/') || event.request.url.includes('/checklist/reporte_pdf/')) {
       event.respondWith(fetch(event.request));
       return;
     }
