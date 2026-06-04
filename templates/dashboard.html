@@ -177,7 +177,7 @@
                                                 </div>
                                                 <div class="col-4 text-end">
                                                     {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
-                                                    <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}" class="btn btn-success btn-sm fw-bold shadow-sm" style="font-size:0.85rem;">
+                                                    <a href="/gestor_visitas/{{ usuario.id }}" class="btn btn-success btn-sm fw-bold shadow-sm" style="font-size:0.85rem;">
                                                         <i class="fa-solid fa-wrench me-1"></i> Gestionar
                                                     </a>
                                                     {% else %}
