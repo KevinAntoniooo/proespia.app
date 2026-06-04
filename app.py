@@ -396,7 +396,10 @@ def reporte_visita_pdf(visita_id, user_id):
             pdf.set_font('helvetica', 'B', 11)
             pdf.cell(35, 8, 'FECHA CIERRE:')
             pdf.set_font('helvetica', '', 11)
-            pdf.cell(0, 8, visita.fecha_completada.strftime('%d/%m/%Y %H:%M'), new_x="LMARGIN", new_y="NEXT")
+            fc = visita.fecha_completada
+            if isinstance(fc, str):
+                fc = datetime.strptime(fc, '%Y-%m-%d %H:%M:%S.%f')
+            pdf.cell(0, 8, fc.strftime('%d/%m/%Y %H:%M'), new_x="LMARGIN", new_y="NEXT")
         
         pdf.ln(10)
         
@@ -2405,9 +2408,19 @@ with app.app_context():
     except Exception:
         db.session.rollback()
     # Migrar columnas nuevas de visita_programada
-    for col in ['informe_tecnico', 'fecha_completada', 'foto_visita']:
+    for col in ['informe_tecnico', 'foto_visita']:
         try:
             db.session.execute(db.text(f'ALTER TABLE visita_programada ADD COLUMN {col} TEXT'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    try:
+        db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN fecha_completada TIMESTAMP'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        try:
+            db.session.execute(db.text('ALTER TABLE visita_programada ALTER COLUMN fecha_completada TYPE TIMESTAMP USING fecha_completada::timestamp'))
             db.session.commit()
         except Exception:
             db.session.rollback()
