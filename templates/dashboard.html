@@ -175,7 +175,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-4 text-end">
-                                                    {% if v.tipo_trabajo in ['Instalación', 'Mantención', 'Reparación', 'Emergencia'] %}
+                                                    {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
                                                     <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}" class="btn btn-success btn-sm fw-bold shadow-sm" style="font-size:0.85rem;">
                                                         <i class="fa-solid fa-wrench me-1"></i> Gestionar
                                                     </a>
@@ -687,7 +687,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             var btnGestionar = document.getElementById('modal-btn-gestionar');
             var btnListo = document.getElementById('modal-btn-listo');
-            var esOT = ['Instalación', 'Mantención', 'Reparación', 'Emergencia'].indexOf(tipo) !== -1;
+            var esOT = ['Instalación', 'Reparación', 'Emergencia'].indexOf(tipo) !== -1 || tipo.indexOf('Mantención') !== -1;
             if (esOT) {
                 btnGestionar.href = '/completar_visita/' + id + '/' + {{ usuario.id }};
                 btnGestionar.classList.remove('d-none');

@@ -78,7 +78,7 @@
                         <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
                         <td class="text-center pe-4">
                             {% if v.estado == 'Pendiente' %}
-                                {% if v.tipo_trabajo in ['Instalación', 'Mantención', 'Reparación', 'Emergencia'] %}
+                                    {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
                                 <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
                                     class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;"
                                     onclick="event.stopPropagation();">
@@ -246,7 +246,7 @@ function verDetalleVisita(row) {
     var btnGestionar = document.getElementById('modal-gv-btn-gestionar');
     var btnListo = document.getElementById('modal-gv-btn-listo');
     if (row.dataset.estado === 'Pendiente') {
-        var esOT = ['Instalación', 'Mantención', 'Reparación', 'Emergencia'].indexOf(row.dataset.tipo) !== -1;
+        var esOT = ['Instalación', 'Reparación', 'Emergencia'].indexOf(row.dataset.tipo) !== -1 || row.dataset.tipo.indexOf('Mantención') !== -1;
         if (esOT) {
             btnGestionar.href = '/completar_visita/' + row.dataset.id + '/' + {{ usuario.id }};
             btnGestionar.classList.remove('d-none');
