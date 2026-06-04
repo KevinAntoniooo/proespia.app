@@ -114,7 +114,7 @@ class Boveda(db.Model):
 class VisitaProgramada(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey('cliente.id'), nullable=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=True)
     fecha_programada = db.Column(db.DateTime, nullable=False)
     tipo_trabajo = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text, nullable=True)
@@ -124,6 +124,7 @@ class VisitaProgramada(db.Model):
     fecha_completada = db.Column(db.DateTime, nullable=True)
     foto_visita = db.Column(db.String(255), nullable=True)
     falla_id = db.Column(db.Integer, db.ForeignKey('bitacora.id'), nullable=True)
+    prioridad = db.Column(db.Integer, default=3)
     
     # Relaciones
     rel_cliente = db.relationship('Cliente', backref='visitas_programadas')

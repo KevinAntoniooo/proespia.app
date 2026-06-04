@@ -3,7 +3,7 @@ from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgram
 from datetime import datetime, time, timedelta, date
 from sqlalchemy.exc import IntegrityError
 from fpdf import FPDF  
-from sqlalchemy import func, case
+from sqlalchemy import func, case, or_, and_
 import io
 import unicodedata
 import os
@@ -510,7 +510,17 @@ def gestor_visitas(user_id):
         if tecnico_id:
             query = query.filter_by(usuario_id=tecnico_id)
     else:
-        query = VisitaProgramada.query.filter_by(usuario_id=user_id)
+        # Técnico ve sus visitas asignadas + fallas sin técnico pendientes
+        query = VisitaProgramada.query.filter(
+            or_(
+                VisitaProgramada.usuario_id == user_id,
+                and_(
+                    VisitaProgramada.usuario_id.is_(None),
+                    VisitaProgramada.falla_id.isnot(None),
+                    VisitaProgramada.estado == 'Pendiente'
+                )
+            )
+        )
 
     tipo_filtro = request.args.get('tipo_filtro', 'todas')
     if tipo_filtro == 'pendientes':
@@ -525,10 +535,18 @@ def gestor_visitas(user_id):
     if fin:
         query = query.filter(VisitaProgramada.fecha_programada <= f"{fin} 23:59:59")
 
-    query = query.order_by(VisitaProgramada.fecha_programada.desc())
+    query = query.order_by(VisitaProgramada.prioridad.asc(), VisitaProgramada.fecha_programada.desc())
     paginado = query.paginate(page=page, per_page=15, error_out=False)
 
-    total_pendientes = VisitaProgramada.query.filter_by(estado='Pendiente').count()
+    total_pendientes = VisitaProgramada.query.filter(
+        or_(
+            VisitaProgramada.usuario_id == current_user.id,
+            and_(
+                VisitaProgramada.usuario_id.is_(None),
+                VisitaProgramada.falla_id.isnot(None),
+                VisitaProgramada.estado == 'Pendiente')
+        )
+    ).count() if current_user.rol == 'tecnico' else VisitaProgramada.query.filter_by(estado='Pendiente').count()
     tecnicos = Usuario.query.filter_by(rol='tecnico').all() if usuario.rol in ['admin', 'super_su'] else []
 
     return render_template('gestor_visitas.html', usuario=usuario,
@@ -837,10 +855,26 @@ def nueva_entrada(user_id):
         flash('Suceso registrado correctamente', 'success')
 
         # --- DISPARADOR: Nueva falla en bitácora ---
-        if 'falla' in suceso.lower():
+        if 'falla' in suceso.lower() or 'emergencia' in suceso.lower() or 'critico' in suceso.lower() or 'alarma' in suceso.lower() or 'incidente' in suceso.lower():
             cliente = Cliente.query.get(int(c_id))
             autor = Usuario.query.get(user_id)
             nom_cliente = cliente.nombre if cliente else 'Desconocido'
+
+            # Auto-crear VisitaProgramada para la agenda de terreno
+            tipo_trabajo = 'Emergencia' if any(p in suceso.lower() for p in ['critico', 'alarma', 'emergencia']) else 'Reparación'
+            visita = VisitaProgramada(
+                cliente_id=int(c_id),
+                usuario_id=None,
+                tipo_trabajo=tipo_trabajo,
+                descripcion=f"[Falla desde Bitácora] {desc}",
+                estado='Pendiente',
+                prioridad=prioridad_final,
+                falla_id=nueva.id,
+                fecha_programada=datetime.now()
+            )
+            db.session.add(visita)
+            db.session.commit()
+
             notificar_admin(
                 f'Falla Registrada - {nom_cliente}',
                 f'{autor.nombre} registró una falla en {nom_cliente}',
@@ -851,7 +885,7 @@ def nueva_entrada(user_id):
             notificar_tecnicos(
                 f'Falla Pendiente - {nom_cliente}',
                 f'Falla reportada en {nom_cliente}. Revisar terreno.',
-                url_for('ver_todas_las_tareas', user_id=1) if 'ver_todas_las_tareas' in dir() else '/',
+                url_for('gestor_visitas', user_id=user_id) if 'gestor_visitas' in dir() else '/',
                 tipo='falla'
             )
 
@@ -1448,11 +1482,21 @@ def api_eventos_agenda():
         eventos = []
         
         for v in visitas:
-            # Definimos un color según el tipo de trabajo
-            color = '#8e24aa' # Morado por defecto
-            if 'Cotización' in v.tipo_trabajo: color = '#ffc107' # Amarillo
-            if 'Emergencia' in v.tipo_trabajo: color = '#dc3545' # Rojo
-            if v.estado == 'Vencida': color = '#6c757d' # Gris para vencidas
+            # Definimos un color según prioridad y origen
+            if v.prioridad == 1:
+                color = '#dc3545'  # Rojo para críticas
+            elif v.falla_id and v.prioridad == 2:
+                color = '#fd7e14'  # Naranja para fallas alta
+            elif v.falla_id:
+                color = '#ffc107'  # Amarillo para fallas normales
+            elif 'Cotización' in v.tipo_trabajo:
+                color = '#ffc107'  # Amarillo
+            elif 'Emergencia' in v.tipo_trabajo:
+                color = '#dc3545'  # Rojo
+            elif v.estado == 'Vencida':
+                color = '#6c757d'  # Gris
+            else:
+                color = '#8e24aa'  # Morado por defecto
 
             nom_cliente = v.rel_cliente.nombre if v.rel_cliente else 'SIN CLIENTE'
             nom_tecnico = v.rel_usuario.nombre if v.rel_usuario else 'SIN TÉCNICO'
@@ -1471,7 +1515,9 @@ def api_eventos_agenda():
                     'ubicacion': v.ubicacion or '',
                     'fecha': v.fecha_programada.strftime('%Y-%m-%d'),
                     'cliente_id': v.cliente_id,
-                    'usuario_id': v.usuario_id
+                    'usuario_id': v.usuario_id,
+                    'prioridad': v.prioridad or 3,
+                    'falla_id': v.falla_id
                 }
             })
         resp = make_response(jsonify(eventos))
@@ -2517,6 +2563,21 @@ with app.app_context():
     # Migrar falla_id en visita_programada (unificación Fallas + Agenda)
     try:
         db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN falla_id INTEGER'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Migrar usuario_id nullable en visita_programada
+    try:
+        db.session.execute(db.text('ALTER TABLE visita_programada RENAME COLUMN usuario_id TO usuario_id_old'))
+        db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN usuario_id INTEGER REFERENCES usuario(id)'))
+        db.session.execute(db.text('UPDATE visita_programada SET usuario_id = usuario_id_old'))
+        db.session.execute(db.text('ALTER TABLE visita_programada DROP COLUMN usuario_id_old'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Migrar prioridad en visita_programada
+    try:
+        db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN prioridad INTEGER DEFAULT 3'))
         db.session.commit()
     except Exception:
         db.session.rollback()

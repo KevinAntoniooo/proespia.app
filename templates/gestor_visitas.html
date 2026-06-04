@@ -56,7 +56,7 @@
                 </thead>
                 <tbody>
                     {% for v in visitas %}
-                    <tr class="{% if v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisita(this)"
+                    <tr class="{% if v.prioridad == 1 %}table-danger-subtle{% elif v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisita(this)"
                         data-id="{{ v.id }}"
                         data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
                         data-tipo="{{ v.tipo_trabajo }}"
@@ -64,9 +64,18 @@
                         data-estado="{{ v.estado }}"
                         data-descripcion="{{ v.descripcion|e if v.descripcion else '' }}"
                         data-ubicacion="{{ v.ubicacion or '' }}"
-                        data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}">
+                        data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}"
+                        data-prioridad="{{ v.prioridad or 3 }}"
+                        data-falla-id="{{ v.falla_id or '' }}">
                         <td class="ps-2 ps-sm-4">
-                            {% if v.estado == 'Pendiente' %}
+                            {% if v.prioridad == 1 %}
+                            <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-danger rounded-circle shadow-sm" style="width:30px;height:30px;">
+                                <i class="fa-solid fa-bolt text-white" style="font-size:0.8rem;"></i>
+                            </span>
+                            <span class="badge bg-danger shadow-sm d-none d-sm-inline-block px-3">
+                                <i class="fa-solid fa-bolt me-1"></i>Crítica
+                            </span>
+                            {% elif v.estado == 'Pendiente' %}
                             <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-warning rounded-circle shadow-sm" style="width:30px;height:30px;">
                                 <i class="fa-solid fa-clock text-dark" style="font-size:0.8rem;"></i>
                             </span>
@@ -83,7 +92,10 @@
                             {% endif %}
                         </td>
                         <td class="fw-bold small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
-                        <td><span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span></td>
+                        <td>
+                            <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span>
+                            {% if v.falla_id %}&nbsp;<span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:0.6rem;">Falla</span>{% endif %}
+                        </td>
                         <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
                         <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
                         <td class="text-center pe-4 d-none d-sm-table-cell">
@@ -236,11 +248,26 @@ var mapaVisita = null;
 var marcadorVisita = null;
 
 function verDetalleVisita(row) {
+    var prioridad = parseInt(row.dataset.prioridad) || 3;
+    var estadoHTML = '';
+    if (row.dataset.estado === 'Pendiente') {
+        if (prioridad === 1) {
+            estadoHTML = '<span class="badge bg-danger"><i class="fa-solid fa-bolt me-1"></i>Crítica</span>';
+        } else {
+            estadoHTML = '<span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>';
+        }
+    } else {
+        estadoHTML = '<span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Realizada</span>';
+    }
+
+    if (row.dataset.fallaId) {
+        estadoHTML += ' <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-bug me-1"></i>Falla</span>';
+    }
+
+    estadoHTML += ' — ' + row.dataset.tipo;
+
     document.getElementById('visita-cliente').innerText = row.dataset.cliente || '---';
-    document.getElementById('visita-estado').innerHTML = (row.dataset.estado === 'Pendiente'
-        ? '<span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>'
-        : '<span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Realizada</span>')
-        + ' — ' + row.dataset.tipo;
+    document.getElementById('visita-estado').innerHTML = estadoHTML;
     document.getElementById('visita-fecha').innerText = row.dataset.fecha || '---';
     document.getElementById('visita-descripcion').innerText = row.dataset.descripcion || 'Sin descripción';
     var ubiEl = document.getElementById('visita-ubicacion');
