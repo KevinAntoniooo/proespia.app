@@ -220,7 +220,7 @@
                 </a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                {% if usuario.rol in ['super_su', 'admin'] %}
                 <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}"
                     class="nav-link-pro {{ 'active' if 'tareas' in request.path }}">
                     <i class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
@@ -396,7 +396,7 @@
                     <span>Bitácora Digital</span></a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                {% if usuario.rol in ['super_su', 'admin'] %}
                 <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="nav-link-pro"><i
                         class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
                     {% if pendientes_fallas and pendientes_fallas > 0 %}<span class="badge bg-danger rounded-pill ms-auto">{{ pendientes_fallas }}</span>{% endif %}</a>
