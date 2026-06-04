@@ -1257,7 +1257,7 @@ def agendar_visita():
             notificar_tecnicos(
                 'Nueva Visita Asignada',
                 f'Visita a {nom_cliente} - {tipo} el {fecha_base}',
-                url_for('ver_agenda', user_id=tecnico_id) if 'ver_agenda' in dir() else '/',
+                url_for('gestor_visitas', user_id=tecnico_id) if 'gestor_visitas' in dir() else '/',
                 tipo='visita'
             )
 
