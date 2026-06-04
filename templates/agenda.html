@@ -126,13 +126,13 @@
             </div>
 
             <div class="d-flex flex-column gap-2 mt-2">
+                <button id="btnAccionVisita" class="btn w-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2 d-none" style="font-size:0.8rem;padding:0.45rem;background:#22c55e;color:#fff;border:none;transition:all 0.2s;">
+                    <i class="fa-solid fa-check"></i>
+                    <span id="btnAccionTexto">Acción</span>
+                </button>
                 <button id="btnEditarVisita" class="btn w-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" style="font-size:0.8rem;padding:0.45rem;background:#fef3c7;color:#d97706;border:none;transition:all 0.2s;">
                     <i class="fa-solid fa-pen"></i>
                     <span>Editar Visita</span>
-                </button>
-                <button id="btnReportarVisita" class="btn w-100 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" style="font-size:0.8rem;padding:0.45rem;background:transparent;color:#ef4444;border:1.5px solid #fecaca;transition:all 0.2s;">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>Reportar Incidencia / Cancelar</span>
                 </button>
             </div>
         </div>
@@ -237,58 +237,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalVerDetalle" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered text-dark">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0" style="background:#1e293b;">
-                <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-circle-info me-2" style="color:#fbbf24;"></i>Detalle de la Visita</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="mb-3">
-                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Cliente / Sede</label>
-                    <h5 id="det_cliente" class="fw-bold" style="color:#6366f1;"></h5>
-                </div>
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Técnico</label>
-                        <span id="det_tecnico" class="badge shadow-sm agenda-badge-indigo"></span>
-                    </div>
-                    <div class="col-6">
-                        <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Servicio</label>
-                        <span id="det_tipo" class="badge shadow-sm agenda-subtle-bg" style="color:#475569;"></span>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Estado</label>
-                    <span id="det_estado" class="badge shadow-sm"></span>
-                </div>
-                <hr>
-                <div class="mb-0">
-                    <label class="small text-uppercase fw-bold text-muted d-block" style="font-size:0.6rem;">Notas y Requerimientos</label>
-                    <div class="p-3 rounded-3 border agenda-subtle-bg">
-                        <p id="det_descripcion" class="mb-0 small" style="white-space:pre-line;"></p>
-                    </div>
-                </div>
-                <div id="det_ubicacion_container" class="mt-3 d-none">
-                    <label class="small text-uppercase fw-bold text-muted d-block mb-1" style="font-size:0.6rem;">Ubicación</label>
-                    <a id="det_ubicacion_link" href="#" target="_blank" class="btn shadow-sm w-100 rounded-3 agenda-bg-indigo" style="font-size:0.85rem;color:#6366f1;border:none;">
-                        <i class="fa-solid fa-location-dot me-1"></i>Ver Ruta
-                    </a>
-                </div>
-            </div>
-            <div class="modal-footer border-0 d-flex gap-2">
-                <button type="button" class="btn shadow-sm btn-sm fw-bold rounded-3 agenda-btn-light" style="font-size:0.85rem;" onclick="eliminarVisita()">
-                    <i class="fa-solid fa-trash-can me-1"></i>Eliminar
-                </button>
-                <button type="button" class="btn shadow-sm btn-sm fw-bold rounded-3" style="font-size:0.85rem;background:#fef3c7;color:#d97706;border:none;" onclick="editarVisita()">
-                    <i class="fa-solid fa-pen me-1"></i>Editar
-                </button>
-                <button type="button" class="btn shadow-sm btn-sm fw-bold px-3 rounded-3 agenda-btn-light" style="font-size:0.85rem;" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <div class="modal fade" id="modalEditarVisita" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered text-dark">
@@ -720,9 +669,40 @@
             ubContainer.style.display = 'none';
         }
 
-        var btnReportar = document.getElementById('btnReportarVisita');
+        var btnAccion = document.getElementById('btnAccionVisita');
+        var btnAccionTexto = document.getElementById('btnAccionTexto');
+        var tipo = (v.tipo || '').toLowerCase();
 
-        btnReportar.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i><span>' + (v.estado === 'Realizada' ? 'Eliminar visita' : 'Eliminar / Cancelar') + '</span>';
+        if (v.estado === 'Realizada') {
+            btnAccion.classList.add('d-none');
+        } else if (tipo === 'cotización' || tipo === 'otra') {
+            btnAccion.classList.remove('d-none');
+            btnAccion.innerHTML = '<i class="fa-solid fa-check-circle"></i><span id="btnAccionTexto">Marcar como Asistido (Cierre Rápido)</span>';
+            btnAccion.style.background = '#22c55e';
+            btnAccion.style.color = '#fff';
+            btnAccion.onclick = function() {
+                fetch('/agenda/finalizar_cotizacion/' + v.id, { method: 'POST' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.ok) {
+                            cerrarDetalle();
+                            mostrarToast('success', data.msg);
+                            cargarVisitas(document.getElementById('fechaSelector').value);
+                        } else {
+                            mostrarToast('error', data.msg);
+                        }
+                    })
+                    .catch(function() { mostrarToast('error', 'Error de conexión'); });
+            };
+        } else {
+            btnAccion.classList.remove('d-none');
+            btnAccion.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span id="btnAccionTexto">Registrar Reporte Técnico (Requiere Fotos)</span>';
+            btnAccion.style.background = '#ef4444';
+            btnAccion.style.color = '#fff';
+            btnAccion.onclick = function() {
+                window.location.href = '/completar_visita/' + v.id + '/' + {{ usuario.id }};
+            };
+        }
 
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -766,11 +746,6 @@
         }
     });
 
-    document.getElementById('btnReportarVisita')?.addEventListener('click', function() {
-        if (!currentVisitaId) return;
-        eliminarVisita();
-    });
-
     document.getElementById('btnEditarVisita')?.addEventListener('click', function() {
         cerrarDetalle();
         setTimeout(function() { editarVisita(); }, 300);
@@ -784,26 +759,6 @@
 
     var calendar;
 
-    function verDetalleVisita(evento) {
-        currentVisitaId = evento.extendedProps.id;
-        document.getElementById('det_cliente').innerText = evento.title;
-        document.getElementById('det_tecnico').innerText = evento.extendedProps.tecnico || 'No asignado';
-        document.getElementById('det_tipo').innerText = evento.extendedProps.tipo || 'General';
-        var est = evento.extendedProps.estado || 'Pendiente';
-        var badge = document.getElementById('det_estado');
-        badge.innerText = est;
-        badge.className = 'badge shadow-sm ' + (est === 'Vencida' ? 'bg-secondary' : est === 'Realizada' ? 'bg-success' : 'bg-warning text-dark');
-        document.getElementById('det_descripcion').innerText = evento.extendedProps.descripcion || "Sin notas adicionales.";
-
-        var ubicacion = evento.extendedProps.ubicacion || '';
-        var container = document.getElementById('det_ubicacion_container');
-        var rutaLink = document.getElementById('det_ubicacion_link');
-        if (ubicacion) { container.classList.remove('d-none'); rutaLink.href = ubicacion; }
-        else { container.classList.add('d-none'); }
-
-        new bootstrap.Modal(document.getElementById('modalVerDetalle')).show();
-    }
-
     function eliminarVisita() {
         if (!currentVisitaId) return;
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminarVisita')).show();
@@ -815,8 +770,6 @@
             .then(function(data) {
                 if (data.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVisita')).hide();
-                    var modalDetalle = bootstrap.Modal.getInstance(document.getElementById('modalVerDetalle'));
-                    if (modalDetalle) modalDetalle.hide();
                     cerrarDetalle();
                     if (calendar) calendar.refetchEvents();
                     var fecha = document.getElementById('fechaSelector').value;

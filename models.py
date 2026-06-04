@@ -123,10 +123,12 @@ class VisitaProgramada(db.Model):
     informe_tecnico = db.Column(db.Text, nullable=True)
     fecha_completada = db.Column(db.DateTime, nullable=True)
     foto_visita = db.Column(db.String(255), nullable=True)
+    falla_id = db.Column(db.Integer, db.ForeignKey('bitacora.id'), nullable=True)
     
     # Relaciones
     rel_cliente = db.relationship('Cliente', backref='visitas_programadas')
     rel_usuario = db.relationship('Usuario', backref='visitas_asignadas')
+    rel_falla = db.relationship('Bitacora', backref='visitas_asociadas')
 
 # ==========================================
 # MÓDULO DE BODEGA Y STOCK TÉCNICO

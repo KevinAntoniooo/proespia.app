@@ -94,10 +94,15 @@ def inject_globals():
                 Bitacora.tipo_visita.ilike('%Falla%'),
                 ~Bitacora.tipo_visita.ilike('%RESUELTA%')
             ).count()
-            ctx['pendientes_visitas'] = VisitaProgramada.query.filter(
-                VisitaProgramada.estado == 'Pendiente',
-                VisitaProgramada.usuario_id == current_user.id
-            ).count()
+            if current_user.rol in ['admin', 'super_su']:
+                ctx['pendientes_visitas'] = VisitaProgramada.query.filter(
+                    VisitaProgramada.estado == 'Pendiente'
+                ).count()
+            else:
+                ctx['pendientes_visitas'] = VisitaProgramada.query.filter(
+                    VisitaProgramada.estado == 'Pendiente',
+                    VisitaProgramada.usuario_id == current_user.id
+                ).count()
     except Exception:
         pass
     return ctx
@@ -350,6 +355,19 @@ def finalizar_visita(visita_id):
     
     return redirect(url_for('dashboard', user_id=visita.usuario_id))
 
+@app.route('/agenda/finalizar_cotizacion/<int:visita_id>', methods=['POST'])
+@login_required
+def finalizar_cotizacion(visita_id):
+    visita = VisitaProgramada.query.get_or_404(visita_id)
+    visita.estado = 'Realizada'
+    visita.fecha_completada = datetime.now()
+    try:
+        db.session.commit()
+        return jsonify({'ok': True, 'msg': 'Visita marcada como realizada'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': str(e)}), 400
+
 # RUTA PARA COMPLETAR VISITA CON INFORME (Instalación, Mantención, Reparación, Emergencia)
 @app.route('/completar_visita/<int:visita_id>/<int:user_id>', methods=['GET', 'POST'])
 @login_required
@@ -486,7 +504,13 @@ def gestor_visitas(user_id):
     usuario = Usuario.query.get_or_404(user_id)
     page = request.args.get('page', 1, type=int)
 
-    query = VisitaProgramada.query.filter_by(usuario_id=user_id)
+    if usuario.rol in ['admin', 'super_su']:
+        query = VisitaProgramada.query
+        tecnico_id = request.args.get('tecnico_id', type=int)
+        if tecnico_id:
+            query = query.filter_by(usuario_id=tecnico_id)
+    else:
+        query = VisitaProgramada.query.filter_by(usuario_id=user_id)
 
     tipo_filtro = request.args.get('tipo_filtro', 'todas')
     if tipo_filtro == 'pendientes':
@@ -504,11 +528,13 @@ def gestor_visitas(user_id):
     query = query.order_by(VisitaProgramada.fecha_programada.desc())
     paginado = query.paginate(page=page, per_page=15, error_out=False)
 
-    total_pendientes = VisitaProgramada.query.filter_by(usuario_id=user_id, estado='Pendiente').count()
+    total_pendientes = VisitaProgramada.query.filter_by(estado='Pendiente').count()
+    tecnicos = Usuario.query.filter_by(rol='tecnico').all() if usuario.rol in ['admin', 'super_su'] else []
 
     return render_template('gestor_visitas.html', usuario=usuario,
                            visitas=paginado.items, paginacion=paginado,
                            total_pendientes=total_pendientes,
+                           tecnicos=tecnicos,
                            hoy_iso=date.today().isoformat())
 
 # ==========================================
