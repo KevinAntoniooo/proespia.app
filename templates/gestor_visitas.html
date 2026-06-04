@@ -178,7 +178,7 @@
                     <div id="mapa-visita" style="height:200px;border-radius:12px;border:2px solid #e2e8f0;display:none;"></div>
                 </div>
                 <hr class="opacity-10">
-                <div class="mb-3">
+                <div class="mb-3" id="visita-informe-container">
                     <label class="small text-muted fw-bold text-uppercase">Informe Técnico</label>
                     <p id="visita-informe" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light"></p>
                 </div>
@@ -256,7 +256,15 @@ function verDetalleVisita(row) {
         ubiEl.style.display = '';
         ubiEl.innerText = row.dataset.ubicacion || 'No registrada';
     }
-    document.getElementById('visita-informe').innerText = row.dataset.informe || 'Pendiente de informe';
+    var infoContainer = document.getElementById('visita-informe-container');
+    var infoText = document.getElementById('visita-informe');
+    var esCotizacion = row.dataset.tipo === 'Cotización' || row.dataset.tipo === 'Otra';
+    if (esCotizacion) {
+        infoContainer.style.display = 'none';
+    } else {
+        infoContainer.style.display = '';
+        infoText.innerText = row.dataset.informe || 'Pendiente de informe';
+    }
 
     var btnPDF = document.getElementById('modal-gv-btn-pdf');
     if (row.dataset.informe) {
