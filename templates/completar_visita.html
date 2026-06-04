@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid px-2 px-md-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-primary text-white p-3 p-md-4 border-0"
+                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                    <h4 class="fw-bold mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Cierre de Visita #{{ visita.id }}</h4>
+                    <p class="mb-0 small opacity-75">{{ visita.tipo_trabajo }} - {{ visita.fecha_programada.strftime('%d/%m/%Y') }}</p>
+                </div>
+
+                <div class="card-body p-3 p-md-4">
+                    <div class="mb-4 py-2 border-top border-bottom border-light">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Cliente</span>
+                            <span class="text-secondary fw-bold">{{ visita.rel_cliente.nombre if visita.rel_cliente else 'Cliente Nuevo (Cotización)' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center py-2 border-top border-light">
+                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Tipo</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2">{{ visita.tipo_trabajo }}</span>
+                        </div>
+                        {% if visita.descripcion %}
+                        <div class="d-flex justify-content-between align-items-center py-2 border-top border-light">
+                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Descripción</span>
+                            <span class="small text-end text-muted" style="max-width:70%;">{{ visita.descripcion }}</span>
+                        </div>
+                        {% endif %}
+                        {% if visita.ubicacion %}
+                        <div class="d-flex justify-content-between align-items-center py-2 border-top border-light">
+                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Ubicación</span>
+                            <span class="small text-end text-muted" style="max-width:70%;">{{ visita.ubicacion }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark"><i class="fa-solid fa-pen-to-square me-2"></i>Informe de Servicio</label>
+                            <textarea name="informe" class="form-control rounded-3 shadow-sm" rows="5" 
+                                      placeholder="Describe el trabajo realizado, observaciones y resultados..." required></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark"><i class="fa-solid fa-camera me-2"></i>Evidencia del Trabajo</label>
+                            <input type="file" name="foto" class="form-control rounded-3 shadow-sm" accept="image/*" capture="environment">
+                            <div class="form-text small mt-2">Sube una foto del trabajo realizado (opcional).</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg rounded-3 fw-bold shadow-sm">
+                                <i class="fa-solid fa-check-double me-2"></i>Finalizar Visita
+                            </button>
+                            <a href="{{ url_for('dashboard', user_id=usuario.id) }}" class="btn btn-link text-muted btn-sm text-decoration-none">
+                                <i class="fa-solid fa-arrow-left me-1"></i>Volver sin cambios
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 576px) {
+        .info-label { font-size: 0.72rem; }
+        .info-value { font-size: 0.88rem; }
+    }
+</style>
+{% endblock %}

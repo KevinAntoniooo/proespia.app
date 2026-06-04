@@ -320,6 +320,37 @@ def finalizar_visita(visita_id):
         flash(f'Error al guardar el estado: {str(e)}', 'danger')
     
     return redirect(url_for('dashboard', user_id=visita.usuario_id))
+
+# RUTA PARA COMPLETAR VISITA CON INFORME (Instalación, Mantención, Reparación, Emergencia)
+@app.route('/completar_visita/<int:visita_id>/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def completar_visita_form(visita_id, user_id):
+    visita = VisitaProgramada.query.get_or_404(visita_id)
+    usuario = Usuario.query.get_or_404(user_id)
+    
+    if request.method == 'POST':
+        informe = request.form.get('informe')
+        foto = request.files.get('foto')
+        
+        visita.informe_tecnico = informe
+        visita.fecha_completada = datetime.now()
+        visita.estado = 'Realizada'
+        
+        if foto and allowed_file(foto.filename):
+            filename = f"visita_{visita_id}_{foto.filename}"
+            foto.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            visita.foto_visita = filename
+        
+        try:
+            db.session.commit()
+            flash('Visita completada con éxito', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al guardar: {str(e)}', 'danger')
+        
+        return redirect(url_for('dashboard', user_id=user_id))
+    
+    return render_template('completar_visita.html', visita=visita, usuario=usuario)
 # ==========================================
 # 4. GESTIÓN DE CLIENTES (SEDES) Y EQUIPOS
 # ==========================================
@@ -2246,6 +2277,13 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
+    # Migrar columnas nuevas de visita_programada
+    for col in ['informe_tecnico', 'fecha_completada', 'foto_visita']:
+        try:
+            db.session.execute(db.text(f'ALTER TABLE visita_programada ADD COLUMN {col} TEXT'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     # Crear admin por defecto si no hay usuarios
     if not Usuario.query.first():
         admin = Usuario(username='admin', nombre='Administrador', rol='admin')

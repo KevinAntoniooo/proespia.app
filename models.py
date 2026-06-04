@@ -120,6 +120,9 @@ class VisitaProgramada(db.Model):
     descripcion = db.Column(db.Text, nullable=True)
     ubicacion = db.Column(db.String(500), nullable=True)
     estado = db.Column(db.String(20), default='Pendiente')
+    informe_tecnico = db.Column(db.Text, nullable=True)
+    fecha_completada = db.Column(db.DateTime, nullable=True)
+    foto_visita = db.Column(db.String(255), nullable=True)
     
     # Relaciones
     rel_cliente = db.relationship('Cliente', backref='visitas_programadas')
