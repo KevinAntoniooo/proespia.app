@@ -510,12 +510,11 @@ def gestor_visitas(user_id):
         if tecnico_id:
             query = query.filter_by(usuario_id=tecnico_id)
     else:
-        # Técnico ve sus visitas asignadas + fallas sin técnico pendientes
+        # Técnico ve sus visitas asignadas + fallas pendientes
         query = VisitaProgramada.query.filter(
             or_(
                 VisitaProgramada.usuario_id == user_id,
                 and_(
-                    VisitaProgramada.usuario_id.is_(None),
                     VisitaProgramada.falla_id.isnot(None),
                     VisitaProgramada.estado == 'Pendiente'
                 )
@@ -542,7 +541,6 @@ def gestor_visitas(user_id):
         or_(
             VisitaProgramada.usuario_id == current_user.id,
             and_(
-                VisitaProgramada.usuario_id.is_(None),
                 VisitaProgramada.falla_id.isnot(None),
                 VisitaProgramada.estado == 'Pendiente')
         )
@@ -864,7 +862,7 @@ def nueva_entrada(user_id):
             tipo_trabajo = 'Emergencia' if any(p in suceso.lower() for p in ['critico', 'alarma', 'emergencia']) else 'Reparación'
             visita = VisitaProgramada(
                 cliente_id=int(c_id),
-                usuario_id=None,
+                usuario_id=current_user.id,
                 tipo_trabajo=tipo_trabajo,
                 descripcion=f"[Falla desde Bitácora] {desc}",
                 estado='Pendiente',
@@ -2563,15 +2561,6 @@ with app.app_context():
     # Migrar falla_id en visita_programada (unificación Fallas + Agenda)
     try:
         db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN falla_id INTEGER'))
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-    # Migrar usuario_id nullable en visita_programada
-    try:
-        db.session.execute(db.text('ALTER TABLE visita_programada RENAME COLUMN usuario_id TO usuario_id_old'))
-        db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN usuario_id INTEGER REFERENCES usuario(id)'))
-        db.session.execute(db.text('UPDATE visita_programada SET usuario_id = usuario_id_old'))
-        db.session.execute(db.text('ALTER TABLE visita_programada DROP COLUMN usuario_id_old'))
         db.session.commit()
     except Exception:
         db.session.rollback()
