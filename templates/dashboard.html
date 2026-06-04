@@ -160,7 +160,8 @@
                                         data-hora="{{ v.fecha_programada.strftime('%H:%M') }}"
                                         data-tipo="{{ v.tipo_trabajo }}"
                                         data-detalle="{{ v.descripcion|replace('\n', ' ')|replace('\r', ' ') }}"
-                                        data-ubicacion="{{ v.ubicacion or '' }}">
+                                        data-ubicacion="{{ v.ubicacion or '' }}"
+                                        data-id="{{ v.id }}">
                                         <div class="card-body py-2 px-3">
                                             <div class="row align-items-center">
                                                 <div class="col-8 text-start">
@@ -562,8 +563,17 @@
                     </a>
                 </div>
             </div>
-            <div class="modal-footer border-0">
-        </div>
+            <div class="modal-footer border-0 d-flex justify-content-between">
+                    <button type="button" class="btn btn-light btn-sm shadow-sm px-3 rounded-3" data-bs-dismiss="modal">Cerrar</button>
+                    <div id="modal-footer-actions">
+                        <a id="modal-btn-gestionar" href="#" class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-3 d-none">
+                            <i class="fa-solid fa-wrench me-1"></i> Gestionar
+                        </a>
+                        <button id="modal-btn-listo" type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-3 d-none" onclick="confirmarFinalizarFromModal()">
+                            <i class="fa-solid fa-check me-1"></i> LISTO
+                        </button>
+                    </div>
+                </div>
     </div>
 </div>
 <script>
@@ -659,6 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var tipo = this.getAttribute('data-tipo');
             var detalle = this.getAttribute('data-detalle');
             var ubicacion = this.getAttribute('data-ubicacion');
+            var id = this.getAttribute('data-id');
 
             document.getElementById('modal-cliente-nombre').textContent = cliente;
             document.getElementById('modal-hora').textContent = hora;
@@ -674,10 +685,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 ubContainer.classList.add('d-none');
             }
 
+            var btnGestionar = document.getElementById('modal-btn-gestionar');
+            var btnListo = document.getElementById('modal-btn-listo');
+            var esOT = ['Instalación', 'Mantención', 'Reparación', 'Emergencia'].indexOf(tipo) !== -1;
+            if (esOT) {
+                btnGestionar.href = '/completar_visita/' + id + '/' + {{ usuario.id }};
+                btnGestionar.classList.remove('d-none');
+                btnListo.classList.add('d-none');
+            } else {
+                btnListo.setAttribute('data-visita-id', id);
+                btnListo.classList.remove('d-none');
+                btnGestionar.classList.add('d-none');
+            }
+
             var myModal = new bootstrap.Modal(document.getElementById('modalDetalleVisita'));
             myModal.show();
         });
     });
+
+    window.confirmarFinalizarFromModal = function() {
+        var id = document.getElementById('modal-btn-listo').getAttribute('data-visita-id');
+        if (id) confirmarFinalizar(id);
+    };
 });
 </script>
 
