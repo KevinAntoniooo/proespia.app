@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check me-2"></i>Gestor de Visitas</h2>
+        <div class="text-end">
+            <span class="badge bg-warning text-dark px-3 shadow-sm rounded-2">Pendientes: {{ total_pendientes }}</span>
+            <span class="badge bg-dark px-3 shadow-sm rounded-2">Total: {{ visitas|length }}</span>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-2 p-md-3">
+            <form method="GET" action="{{ url_for('gestor_visitas', user_id=usuario.id) }}" class="row g-2 g-md-3 align-items-end">
+                <div class="col-6 col-md-2">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Estado</label>
+                    <select name="tipo_filtro" class="form-select form-select-sm rounded-3 border-primary">
+                        <option value="todas" {% if request.args.get('tipo_filtro') == 'todas' or not request.args.get('tipo_filtro') %}selected{% endif %}>Todas</option>
+                        <option value="pendientes" {% if request.args.get('tipo_filtro') == 'pendientes' %}selected{% endif %}>Pendientes</option>
+                        <option value="realizadas" {% if request.args.get('tipo_filtro') == 'realizadas' %}selected{% endif %}>Realizadas</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
+                    <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_inicio', '') }}">
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Hasta:</label>
+                    <input type="date" name="fecha_fin" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_fin', '') }}">
+                </div>
+                <div class="col-12 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm">
+                        <i class="fa-solid fa-filter me-1"></i>Filtrar
+                    </button>
+                    <a href="{{ url_for('gestor_visitas', user_id=usuario.id) }}" class="btn btn-light btn-sm rounded-3 border w-100 shadow-sm">
+                        <i class="fa-solid fa-eraser me-1"></i>Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">Estado</th>
+                        <th>Cliente</th>
+                        <th>Tipo</th>
+                        <th>Programada</th>
+                        <th class="d-none d-md-table-cell">Descripción</th>
+                        <th class="text-center pe-4">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in visitas %}
+                    <tr class="{% if v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisita(this)"
+                        data-id="{{ v.id }}"
+                        data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
+                        data-tipo="{{ v.tipo_trabajo }}"
+                        data-fecha="{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}"
+                        data-estado="{{ v.estado }}"
+                        data-descripcion="{{ v.descripcion|e if v.descripcion else '' }}"
+                        data-ubicacion="{{ v.ubicacion or '' }}"
+                        data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}">
+                        <td class="ps-4">
+                            {% if v.estado == 'Pendiente' %}
+                            <span class="badge bg-warning text-dark shadow-sm"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>
+                            {% else %}
+                            <span class="badge bg-success shadow-sm"><i class="fa-solid fa-check-circle me-1"></i>Realizada</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold small">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
+                        <td><span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;">{{ v.tipo_trabajo }}</span></td>
+                        <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
+                        <td class="text-center pe-4">
+                            {% if v.estado == 'Pendiente' %}
+                                {% if v.tipo_trabajo in ['Instalación', 'Mantención', 'Reparación', 'Emergencia'] %}
+                                <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
+                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;"
+                                    onclick="event.stopPropagation();">
+                                    <i class="fa-solid fa-wrench me-1"></i>Gestionar
+                                </a>
+                                {% else %}
+                                <button type="button"
+                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;"
+                                    onclick="event.stopPropagation();confirmarFinalizar({{ v.id }})">
+                                    <i class="fa-solid fa-check me-1"></i> LISTO
+                                </button>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted small">Completada</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Sin visitas registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if paginacion and paginacion.pages > 1 %}
+    <nav aria-label="Navegación de visitas" class="mt-4">
+        <ul class="pagination justify-content-center shadow-sm">
+            <li class="page-item {{ 'disabled' if not paginacion.has_prev }}">
+                <a class="page-link rounded-start-pill px-3"
+                    href="{{ url_for('gestor_visitas', user_id=usuario.id, page=paginacion.prev_num, tipo_filtro=request.args.get('tipo_filtro', ''), fecha_inicio=request.args.get('fecha_inicio', ''), fecha_fin=request.args.get('fecha_fin', '')) if paginacion.has_prev else '#' }}">
+                    <i class="bi bi-chevron-left me-1"></i>Anterior
+                </a>
+            </li>
+            {% for p in paginacion.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+            <li class="page-item {{ 'active' if p == paginacion.page }}">
+                <a class="page-link" href="{{ url_for('gestor_visitas', user_id=usuario.id, page=p, tipo_filtro=request.args.get('tipo_filtro', ''), fecha_inicio=request.args.get('fecha_inicio', ''), fecha_fin=request.args.get('fecha_fin', '')) }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+            {% endfor %}
+            <li class="page-item {{ 'disabled' if not paginacion.has_next }}">
+                <a class="page-link rounded-end-pill px-3"
+                    href="{{ url_for('gestor_visitas', user_id=usuario.id, page=paginacion.next_num, tipo_filtro=request.args.get('tipo_filtro', ''), fecha_inicio=request.args.get('fecha_inicio', ''), fecha_fin=request.args.get('fecha_fin', '')) if paginacion.has_next else '#' }}">
+                    Siguiente<i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Modal Detalle de Visita -->
+<div class="modal fade" id="modalDetalleVisita" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-calendar-check me-2 text-success"></i>Detalle de Visita</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Cliente</label>
+                    <p id="visita-cliente" class="fw-bold text-dark mb-0"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Tipo / Estado</label>
+                    <p id="visita-estado" class="fw-bold text-dark mb-0"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Fecha Programada</label>
+                    <p id="visita-fecha" class="fw-bold text-dark mb-0"></p>
+                </div>
+                <hr class="opacity-10">
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Descripción</label>
+                    <p id="visita-descripcion" class="text-dark mb-0"></p>
+                </div>
+                {% if v.ubicacion %}
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Ubicación</label>
+                    <p id="visita-ubicacion" class="text-dark mb-0"></p>
+                </div>
+                {% endif %}
+                <hr class="opacity-10">
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase">Informe Técnico</label>
+                    <p id="visita-informe" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light"></p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal confirmar finalizar visita simple -->
+<div class="modal fade" id="modalConfirmarFinalizarVisita" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-3">
+            <div class="modal-body">
+                <i class="fa-solid fa-check-circle text-success fs-1 mb-2"></i>
+                <h6 class="fw-bold">¿Marcar como realizada?</h6>
+            </div>
+            <div class="d-flex gap-2 justify-content-center border-0">
+                <button type="button" class="btn btn-light btn-sm px-4 rounded-3" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formFinalizarVisitaSimple" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-success btn-sm px-4 rounded-3 shadow-sm"><i class="fa-solid fa-check me-1"></i>Sí, listo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function verDetalleVisita(row) {
+    document.getElementById('visita-cliente').innerText = row.dataset.cliente || '---';
+    document.getElementById('visita-estado').innerHTML = (row.dataset.estado === 'Pendiente'
+        ? '<span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>'
+        : '<span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Realizada</span>')
+        + ' — ' + row.dataset.tipo;
+    document.getElementById('visita-fecha').innerText = row.dataset.fecha || '---';
+    document.getElementById('visita-descripcion').innerText = row.dataset.descripcion || 'Sin descripción';
+    var ubiEl = document.getElementById('visita-ubicacion');
+    if (row.dataset.ubicacion) {
+        ubiEl.innerText = row.dataset.ubicacion;
+    } else {
+        ubiEl.innerText = 'No registrada';
+    }
+    document.getElementById('visita-informe').innerText = row.dataset.informe || 'Pendiente de informe';
+    new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
+}
+
+function confirmarFinalizar(visitaId) {
+    document.getElementById('formFinalizarVisitaSimple').action = '/finalizar_visita/' + visitaId;
+    new bootstrap.Modal(document.getElementById('modalConfirmarFinalizarVisita')).show();
+}
+window.confirmarFinalizar = confirmarFinalizar;
+
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { new bootstrap.Tooltip(el); });
+</script>
+<style>
+.table-warning-subtle { background-color: rgba(255, 193, 7, 0.05); }
+</style>
+{% endblock %}

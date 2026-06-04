@@ -351,6 +351,38 @@ def completar_visita_form(visita_id, user_id):
         return redirect(url_for('dashboard', user_id=user_id))
     
     return render_template('completar_visita.html', visita=visita, usuario=usuario)
+
+# RUTA GESTOR DE VISITAS (para técnico)
+@app.route('/gestor_visitas/<int:user_id>')
+@login_required
+def gestor_visitas(user_id):
+    usuario = Usuario.query.get_or_404(user_id)
+    page = request.args.get('page', 1, type=int)
+
+    query = VisitaProgramada.query.filter_by(usuario_id=user_id)
+
+    tipo_filtro = request.args.get('tipo_filtro', 'todas')
+    if tipo_filtro == 'pendientes':
+        query = query.filter_by(estado='Pendiente')
+    elif tipo_filtro == 'realizadas':
+        query = query.filter_by(estado='Realizada')
+
+    inicio = request.args.get('fecha_inicio')
+    fin = request.args.get('fecha_fin')
+    if inicio:
+        query = query.filter(VisitaProgramada.fecha_programada >= f"{inicio} 00:00:00")
+    if fin:
+        query = query.filter(VisitaProgramada.fecha_programada <= f"{fin} 23:59:59")
+
+    query = query.order_by(VisitaProgramada.fecha_programada.desc())
+    paginado = query.paginate(page=page, per_page=15, error_out=False)
+
+    total_pendientes = VisitaProgramada.query.filter_by(usuario_id=user_id, estado='Pendiente').count()
+
+    return render_template('gestor_visitas.html', usuario=usuario,
+                           visitas=paginado.items, paginacion=paginado,
+                           total_pendientes=total_pendientes)
+
 # ==========================================
 # 4. GESTIÓN DE CLIENTES (SEDES) Y EQUIPOS
 # ==========================================

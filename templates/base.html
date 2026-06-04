@@ -229,6 +229,13 @@
                 </a>
                 {% endif %}
 
+                {% if usuario.rol in ['tecnico'] %}
+                <a href="{{ url_for('gestor_visitas', user_id=usuario.id) }}"
+                    class="nav-link-pro {{ 'active' if 'gestor_visitas' in request.endpoint }}">
+                    <i class="fa-solid fa-calendar-check"></i> <span>Gestión de Visitas</span>
+                </a>
+                {% endif %}
+
                 {% if usuario.rol in ['super_su', 'admin'] %}
                 <a href="/boveda/{{ usuario.id }}" class="nav-link-pro {{ 'active' if 'boveda' in request.endpoint }}">
                     <i class="fa-solid fa-table-cells-large"></i> <span>Bóveda Apps</span>
@@ -389,6 +396,11 @@
                 {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
                 <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="nav-link-pro"><i
                         class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span></a>
+                {% endif %}
+
+                {% if usuario.rol in ['tecnico'] %}
+                <a href="{{ url_for('gestor_visitas', user_id=usuario.id) }}" class="nav-link-pro"><i
+                        class="fa-solid fa-calendar-check"></i> <span>Gestión de Visitas</span></a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
