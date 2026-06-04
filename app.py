@@ -2509,11 +2509,17 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
-        try:
-            db.session.execute(db.text('ALTER TABLE visita_programada ALTER COLUMN fecha_completada TYPE TIMESTAMP USING fecha_completada::timestamp'))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+    try:
+        db.session.execute(db.text('ALTER TABLE visita_programada ALTER COLUMN fecha_completada TYPE TIMESTAMP USING fecha_completada::timestamp'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Migrar falla_id en visita_programada (unificación Fallas + Agenda)
+    try:
+        db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN falla_id INTEGER'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     # Crear admin por defecto si no hay usuarios
     if not Usuario.query.first():
         admin = Usuario(username='admin', nombre='Administrador', rol='admin')
