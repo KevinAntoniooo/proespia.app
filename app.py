@@ -348,9 +348,100 @@ def completar_visita_form(visita_id, user_id):
             db.session.rollback()
             flash(f'Error al guardar: {str(e)}', 'danger')
         
-        return redirect(url_for('dashboard', user_id=user_id))
+        return redirect(url_for('gestor_visitas', user_id=user_id))
     
     return render_template('completar_visita.html', visita=visita, usuario=usuario)
+
+@app.route('/reporte_visita_pdf/<int:visita_id>/<int:user_id>')
+@login_required
+def reporte_visita_pdf(visita_id, user_id):
+    visita = VisitaProgramada.query.get_or_404(visita_id)
+    u = Usuario.query.get_or_404(user_id)
+    
+    pdf = FPDF()
+    pdf.add_page()
+    
+    pdf.set_font('helvetica', 'B', 22)
+    pdf.set_text_color(220, 53, 69)
+    pdf.cell(0, 15, 'PROESPIA LTDA', align='L', new_x="LMARGIN", new_y="NEXT")
+    
+    pdf.set_font('helvetica', 'B', 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, -15, f"OT #00{visita.id} | REPORTE DE VISITA", align='R', new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(15)
+    
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font('helvetica', 'B', 11)
+    pdf.cell(35, 8, 'CLIENTE:')
+    pdf.set_font('helvetica', '', 11)
+    pdf.cell(65, 8, limpiar_pdf(visita.rel_cliente.nombre if visita.rel_cliente else 'Cliente Nuevo'))
+    
+    pdf.set_font('helvetica', 'B', 11)
+    pdf.cell(40, 8, 'FECHA PROG.:')
+    pdf.set_font('helvetica', '', 11)
+    pdf.cell(0, 8, visita.fecha_programada.strftime('%d/%m/%Y %H:%M'), new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font('helvetica', 'B', 11)
+    pdf.cell(35, 8, 'TECNICO:')
+    pdf.set_font('helvetica', '', 11)
+    pdf.cell(65, 8, limpiar_pdf(u.nombre))
+    
+    pdf.set_font('helvetica', 'B', 11)
+    pdf.cell(40, 8, 'TIPO:')
+    pdf.set_font('helvetica', '', 11)
+    pdf.cell(0, 8, limpiar_pdf(visita.tipo_trabajo), new_x="LMARGIN", new_y="NEXT")
+    
+    if visita.fecha_completada:
+        pdf.set_font('helvetica', 'B', 11)
+        pdf.cell(35, 8, 'FECHA CIERRE:')
+        pdf.set_font('helvetica', '', 11)
+        pdf.cell(0, 8, visita.fecha_completada.strftime('%d/%m/%Y %H:%M'), new_x="LMARGIN", new_y="NEXT")
+    
+    pdf.ln(10)
+    
+    pdf.set_fill_color(245, 245, 245)
+    pdf.set_font('helvetica', 'B', 12)
+    pdf.cell(0, 10, ' 1. DESCRIPCION DEL SERVICIO', fill=True, new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.set_font('helvetica', '', 11)
+    pdf.multi_cell(0, 7, limpiar_pdf(visita.descripcion or 'Sin descripcion'))
+    pdf.ln(8)
+    
+    pdf.set_fill_color(232, 245, 233)
+    pdf.set_font('helvetica', 'B', 12)
+    pdf.cell(0, 10, ' 2. INFORME TECNICO', fill=True, new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.set_font('helvetica', '', 11)
+    informe = visita.informe_tecnico if visita.informe_tecnico else 'No se registraron observaciones.'
+    pdf.multi_cell(0, 7, limpiar_pdf(informe))
+    
+    if visita.foto_visita:
+        pdf.ln(10)
+        ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], visita.foto_visita)
+        if os.path.exists(ruta_foto):
+            pdf.set_font('helvetica', 'B', 12)
+            pdf.cell(0, 10, ' 3. EVIDENCIA FOTOGRAFICA', new_x="LMARGIN", new_y="NEXT")
+            pdf.image(ruta_foto, x=15, w=100)
+    
+    pdf.set_y(-50)
+    pdf.set_font('helvetica', 'I', 8)
+    pdf.cell(0, 10, 'Este documento es un comprobante oficial de PROESPIA LTDA - Seguridad Electronica.', align='C', new_x="LMARGIN", new_y="NEXT")
+    
+    pdf.ln(5)
+    y_actual = pdf.get_y()
+    pdf.line(30, y_actual + 15, 80, y_actual + 15)
+    pdf.line(130, y_actual + 15, 180, y_actual + 15)
+    pdf.set_font('helvetica', '', 9)
+    pdf.text(40, y_actual + 20, "Firma Tecnico")
+    pdf.text(140, y_actual + 20, "Recibe Conforme")
+    
+    pdf_output = pdf.output()
+    return send_file(
+        io.BytesIO(bytes(pdf_output)),
+        mimetype='application/pdf',
+        as_attachment=False,
+        download_name=f"OT_Visita_{visita.id}.pdf"
+    )
 
 # RUTA GESTOR DE VISITAS (para técnico)
 @app.route('/gestor_visitas/<int:user_id>')
