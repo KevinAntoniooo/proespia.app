@@ -78,28 +78,29 @@
                         <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
                         <td class="text-center pe-4">
                             {% if v.estado == 'Pendiente' %}
-                                    {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
+                                {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
                                 <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
                                     class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;"
                                     onclick="event.stopPropagation();">
                                     <i class="fa-solid fa-wrench me-1"></i>Gestionar
                                 </a>
                                 {% else %}
-                                <button type="button"
+                                <a href="javascript:void(0)"
                                     class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;"
                                     onclick="event.stopPropagation();confirmarFinalizar({{ v.id }})">
-                                    <i class="fa-solid fa-check me-1"></i> LISTO
-                                </button>
+                                    <i class="fa-solid fa-check me-1"></i>LISTO
+                                </a>
                                 {% endif %}
                             {% else %}
                             <div class="d-flex gap-1 justify-content-center">
-                                <span class="text-muted small me-1">Completada</span>
                                 {% if v.informe_tecnico %}
                                 <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}" target="_blank"
-                                    class="btn btn-sm btn-outline-danger shadow-sm px-2" style="font-size:0.65rem;"
+                                    class="btn btn-sm btn-outline-danger shadow-sm fw-bold px-2" style="font-size:0.75rem;"
                                     onclick="event.stopPropagation();">
-                                    <i class="fa-solid fa-file-pdf"></i>
+                                    <i class="fa-solid fa-file-pdf me-1"></i>PDF
                                 </a>
+                                {% else %}
+                                <span class="text-muted small">Completada</span>
                                 {% endif %}
                             </div>
                             {% endif %}
