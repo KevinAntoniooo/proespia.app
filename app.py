@@ -13,6 +13,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import get_fernet
 import json
 import locale
+import time
+
+os.environ['TZ'] = 'America/Santiago'
+time.tzset()
 from base64 import b64encode, b64decode
 
 # ==========================================
@@ -1968,7 +1972,7 @@ def checklist_viernes():
     ).order_by(ProductoStock.nombre).all()
     if not herramientas:
         flash('Tu vehículo no tiene herramientas registradas. Contacta al administrador.', 'warning')
-    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=dia_habilitado, dia_nombre=DIAS_SEMANA[dia_config], hoy_debug=hoy)
+    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=dia_habilitado, dia_nombre=DIAS_SEMANA[dia_config])
 
 @app.route('/checklist/enviar', methods=['POST'])
 @login_required
