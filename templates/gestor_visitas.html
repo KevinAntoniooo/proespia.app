@@ -80,13 +80,13 @@
                             {% if v.estado == 'Pendiente' %}
                                 {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
                                 <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
-                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;"
+                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
                                     onclick="event.stopPropagation();">
                                     <i class="fa-solid fa-wrench me-1"></i>Gestionar
                                 </a>
                                 {% else %}
                                 <a href="javascript:void(0)"
-                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;"
+                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
                                     onclick="event.stopPropagation();confirmarFinalizar({{ v.id }})">
                                     <i class="fa-solid fa-check me-1"></i>LISTO
                                 </a>
@@ -95,7 +95,7 @@
                             <div class="d-flex gap-1 justify-content-center">
                                 {% if v.informe_tecnico %}
                                 <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}" target="_blank"
-                                    class="btn btn-sm btn-outline-danger shadow-sm fw-bold" style="font-size:0.75rem;"
+                                    class="btn btn-sm btn-outline-danger shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
                                     onclick="event.stopPropagation();">
                                     <i class="fa-solid fa-file-pdf me-1"></i>PDF
                                 </a>
