@@ -114,7 +114,8 @@
                                 <div class="mt-1">
                                     <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}#informe-{{ r.id }}"
                                         class="text-success text-decoration-none fw-bold"
-                                        style="font-size: 0.7rem; letter-spacing: 0.3px;">
+                                        style="font-size: 0.7rem; letter-spacing: 0.3px;"
+                                        onclick="event.stopPropagation();">
                                         <i class="fa-solid fa-eye me-1"></i>VER DETALLE EN GESTOR
                                     </a>
                                 </div>

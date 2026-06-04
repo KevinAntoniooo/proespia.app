@@ -339,6 +339,14 @@ function verDetalleInforme(logId) {
         .catch(err => alert("Error al cargar informe."));
 }
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash && window.location.hash.startsWith('#informe-')) {
+        var id = window.location.hash.replace('#informe-', '');
+        if (id) verDetalleInforme(parseInt(id));
+    }
+});
+</script>
 <style>
 @media (max-width: 767px) {
     .table td:first-child, .table th:first-child { padding-left: 0.5rem !important; }
