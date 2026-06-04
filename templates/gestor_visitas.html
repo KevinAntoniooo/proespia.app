@@ -173,8 +173,16 @@
                     <p id="visita-informe" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light"></p>
                 </div>
             </div>
-            <div class="modal-footer bg-light border-0">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            <div class="modal-footer bg-light border-0 d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary btn-sm shadow-sm px-3" data-bs-dismiss="modal">Cerrar</button>
+                <div id="modal-gv-actions">
+                    <a id="modal-gv-btn-gestionar" href="#" class="btn btn-success btn-sm fw-bold shadow-sm px-3 d-none">
+                        <i class="fa-solid fa-wrench me-1"></i> Gestionar
+                    </a>
+                    <button id="modal-gv-btn-listo" type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3 d-none" onclick="confirmarFinalizarFromModalGV()">
+                        <i class="fa-solid fa-check me-1"></i> LISTO
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -234,6 +242,25 @@ function verDetalleVisita(row) {
         ubiEl.innerText = row.dataset.ubicacion || 'No registrada';
     }
     document.getElementById('visita-informe').innerText = row.dataset.informe || 'Pendiente de informe';
+
+    var btnGestionar = document.getElementById('modal-gv-btn-gestionar');
+    var btnListo = document.getElementById('modal-gv-btn-listo');
+    if (row.dataset.estado === 'Pendiente') {
+        var esOT = ['Instalación', 'Mantención', 'Reparación', 'Emergencia'].indexOf(row.dataset.tipo) !== -1;
+        if (esOT) {
+            btnGestionar.href = '/completar_visita/' + row.dataset.id + '/' + {{ usuario.id }};
+            btnGestionar.classList.remove('d-none');
+            btnListo.classList.add('d-none');
+        } else {
+            btnListo.setAttribute('data-visita-id', row.dataset.id);
+            btnListo.classList.remove('d-none');
+            btnGestionar.classList.add('d-none');
+        }
+    } else {
+        btnGestionar.classList.add('d-none');
+        btnListo.classList.add('d-none');
+    }
+
     new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
 }
 
@@ -261,6 +288,11 @@ function confirmarFinalizar(visitaId) {
     new bootstrap.Modal(document.getElementById('modalConfirmarFinalizarVisita')).show();
 }
 window.confirmarFinalizar = confirmarFinalizar;
+
+function confirmarFinalizarFromModalGV() {
+    var id = document.getElementById('modal-gv-btn-listo').getAttribute('data-visita-id');
+    if (id) confirmarFinalizar(id);
+}
 
 document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { new bootstrap.Tooltip(el); });
 </script>
