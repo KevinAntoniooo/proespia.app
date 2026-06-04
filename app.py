@@ -81,8 +81,21 @@ def vapid_public_b64():
     return app.config['VAPID_PUBLIC_KEY']
 
 @app.context_processor
-def inject_vapid():
-    return dict(VAPID_PUBLIC_KEY_B64=vapid_public_b64())
+def inject_globals():
+    ctx = dict(VAPID_PUBLIC_KEY_B64=vapid_public_b64())
+    try:
+        if current_user.is_authenticated:
+            ctx['pendientes_fallas'] = Bitacora.query.filter(
+                Bitacora.tipo_visita.ilike('%Falla%'),
+                ~Bitacora.tipo_visita.ilike('%RESUELTA%')
+            ).count()
+            ctx['pendientes_visitas'] = VisitaProgramada.query.filter(
+                VisitaProgramada.estado == 'Pendiente',
+                VisitaProgramada.usuario_id == current_user.id
+            ).count()
+    except Exception:
+        pass
+    return ctx
 
 # ==========================================
 # 2. FUNCIONES DE APOYO (HELPERS)
