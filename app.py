@@ -133,7 +133,7 @@ def service_worker():
 @app.route('/manifest.json')
 def manifest_json():
     response = app.send_static_file('manifest.json')
-    response.headers['Content-Type'] = 'application/manifest+json'
+    response.headers['Content-Type'] = 'application/json'
     response.headers['Cache-Control'] = 'no-cache'
     return response
 
