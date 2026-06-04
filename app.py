@@ -1159,7 +1159,8 @@ def ver_todas_las_tareas(user_id):
     return render_template('tareas_pendientes.html', 
                            tareas=paginado.items, 
                            paginacion=paginado, 
-                           usuario=usuario)
+                           usuario=usuario,
+                           hoy_iso=date.today().isoformat())
         
 # RUTA PARA OBTENER LOS DETALLES DE UNA TAREA (AJAX)
 @app.route('/api/tarea_detalle/<int:log_id>')
