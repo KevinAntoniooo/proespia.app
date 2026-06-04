@@ -165,7 +165,7 @@
                 <div class="mb-3">
                     <label class="small text-muted fw-bold text-uppercase">Ubicación</label>
                     <p id="visita-ubicacion" class="text-dark mb-1"></p>
-                    <div id="mapa-visita" style="height:180px;border-radius:12px;border:2px solid #e2e8f0;display:none;"></div>
+                    <div id="mapa-visita" style="height:200px;border-radius:12px;border:2px solid #e2e8f0;display:none;"></div>
                 </div>
                 <hr class="opacity-10">
                 <div class="mb-3">
@@ -213,28 +213,25 @@ function verDetalleVisita(row) {
     document.getElementById('visita-descripcion').innerText = row.dataset.descripcion || 'Sin descripción';
     var ubiEl = document.getElementById('visita-ubicacion');
     var mapaEl = document.getElementById('mapa-visita');
-    if (row.dataset.ubicacion) {
-        ubiEl.innerText = row.dataset.ubicacion;
-        var coords = extraerCoordenadas(row.dataset.ubicacion);
-        if (coords) {
-            mapaEl.style.display = 'block';
-            if (mapaVisita) {
-                mapaVisita.setView([coords.lat, coords.lng], 15);
-                if (marcadorVisita) mapaVisita.removeLayer(marcadorVisita);
-                marcadorVisita = L.marker([coords.lat, coords.lng]).addTo(mapaVisita);
-                setTimeout(function() { mapaVisita.invalidateSize(); }, 300);
-            } else {
-                mapaVisita = L.map('mapa-visita').setView([coords.lat, coords.lng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapaVisita);
-                marcadorVisita = L.marker([coords.lat, coords.lng]).addTo(mapaVisita);
-                setTimeout(function() { mapaVisita.invalidateSize(); }, 300);
-            }
+    var coords = extraerCoordenadas(row.dataset.ubicacion);
+    if (coords) {
+        ubiEl.style.display = 'none';
+        mapaEl.style.display = 'block';
+        if (mapaVisita) {
+            mapaVisita.setView([coords.lat, coords.lng], 16);
+            if (marcadorVisita) mapaVisita.removeLayer(marcadorVisita);
+            marcadorVisita = L.marker([coords.lat, coords.lng]).addTo(mapaVisita);
+            setTimeout(function() { mapaVisita.invalidateSize(); }, 300);
         } else {
-            mapaEl.style.display = 'none';
+            mapaVisita = L.map('mapa-visita').setView([coords.lat, coords.lng], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapaVisita);
+            marcadorVisita = L.marker([coords.lat, coords.lng]).addTo(mapaVisita);
+            setTimeout(function() { mapaVisita.invalidateSize(); }, 300);
         }
     } else {
-        ubiEl.innerText = 'No registrada';
         mapaEl.style.display = 'none';
+        ubiEl.style.display = '';
+        ubiEl.innerText = row.dataset.ubicacion || 'No registrada';
     }
     document.getElementById('visita-informe').innerText = row.dataset.informe || 'Pendiente de informe';
     new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
