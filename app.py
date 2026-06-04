@@ -853,13 +853,13 @@ def nueva_entrada(user_id):
         flash('Suceso registrado correctamente', 'success')
 
         # --- DISPARADOR: Nueva falla en bitácora ---
-        if 'falla' in suceso.lower() or 'emergencia' in suceso.lower() or 'critico' in suceso.lower() or 'alarma' in suceso.lower() or 'incidente' in suceso.lower():
+        if 'falla' in suceso.lower():
             cliente = Cliente.query.get(int(c_id))
             autor = Usuario.query.get(user_id)
             nom_cliente = cliente.nombre if cliente else 'Desconocido'
 
             # Auto-crear VisitaProgramada para la agenda de terreno
-            tipo_trabajo = 'Emergencia' if any(p in suceso.lower() for p in ['critico', 'alarma', 'emergencia']) else 'Reparación'
+            tipo_trabajo = 'Reparación'
             visita = VisitaProgramada(
                 cliente_id=int(c_id),
                 usuario_id=current_user.id,
