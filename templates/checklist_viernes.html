@@ -2,7 +2,19 @@
 {% block content %}
     <div class="container py-3">
     
-    {% if dia_habilitado %}
+    {% if usuario.rol == 'tecnico' and ya_completado_hoy %}
+    <div class="card border-0 shadow-sm rounded-4 mb-3 border-start border-4 border-success">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-2 mb-0">
+                <i class="fa-solid fa-circle-check text-success fs-4 me-2"></i>
+                <div>
+                    <h6 class="fw-bold text-success mb-0">Checklist completado hoy</h6>
+                    <small class="text-muted">Ya realizaste el checklist hoy. Vuelve mañana para el próximo.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif dia_habilitado or usuario.rol in ['admin','super_su'] %}
     <div class="card border-0 shadow-sm rounded-4 mb-3 border-start border-4 border-warning">
         <div class="card-body p-3">
             <div class="d-flex align-items-center gap-2 mb-0">
@@ -22,6 +34,8 @@
     </div>
     {% endif %}
 
+    {% if usuario.rol == 'tecnico' and ya_completado_hoy %}
+    {% else %}
     <form id="formChecklist" method="POST" action="{% if usuario.rol == 'tecnico' %}/checklist/enviar{% else %}/checklist/vehiculo/{{ vehiculo.id }}{% endif %}">
         <div class="card border-0 shadow-sm rounded-4 mb-3">
             <div class="card-body p-3">
@@ -33,7 +47,7 @@
                         <span class="fw-semibold text-dark small">{{ h.nombre }}</span>
                     </div>
                     <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" name="herramientas_ok" value="{{ h.nombre }}" id="check{{ h.id }}" style="width:1.1rem;height:1.1rem;cursor:pointer;" {% if not dia_habilitado %}disabled{% endif %}>
+                        <input class="form-check-input" type="checkbox" name="herramientas_ok" value="{{ h.nombre }}" id="check{{ h.id }}" style="width:1.1rem;height:1.1rem;cursor:pointer;" {% if usuario.rol == 'tecnico' and not dia_habilitado %}disabled{% endif %}>
                         <label class="form-check-label small text-success fw-bold" for="check{{ h.id }}" id="label{{ h.id }}" style="font-size:0.6rem;">OK</label>
                     </div>
                 </div>
@@ -50,14 +64,15 @@
         <div class="card border-0 shadow-sm rounded-4 mb-3">
             <div class="card-body p-3">
                 <label class="form-label small fw-bold text-dark"><i class="fa-regular fa-note-sticky me-1"></i>Observaciones</label>
-                <textarea name="observaciones" class="form-control shadow-sm" rows="2" placeholder="Ingresa alguna novedad si es necesario..." {% if not dia_habilitado %}disabled{% endif %}></textarea>
+                <textarea name="observaciones" class="form-control shadow-sm" rows="2" placeholder="Ingresa alguna novedad si es necesario..." {% if usuario.rol == 'tecnico' and not dia_habilitado %}disabled{% endif %}></textarea>
             </div>
         </div>
 
-        <button type="button" class="btn btn-warning w-100 shadow-sm py-2 fw-bold" style="font-size:0.85rem;" id="btnPrevisualizar" {% if not herramientas or not dia_habilitado %}disabled{% endif %}>
+        <button type="button" class="btn btn-warning w-100 shadow-sm py-2 fw-bold" style="font-size:0.85rem;" id="btnPrevisualizar" {% if not herramientas or (usuario.rol == 'tecnico' and not dia_habilitado) %}disabled{% endif %}>
             <i class="fa-solid fa-eye me-1"></i>Previsualizar y Guardar
         </button>
     </form>
+    {% endif %}
 </div>
 
 <div class="modal fade" id="modalVistaPrevia" tabindex="-1">

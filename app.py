@@ -1966,13 +1966,18 @@ def checklist_viernes():
     hoy = datetime.now().weekday()
     dia_config = vehiculo.dia_checklist
     dia_habilitado = (hoy == dia_config)
+    hoy_chile = date.today()
+    ya_completado_hoy = ChecklistSemanal.query.filter(
+        ChecklistSemanal.vehiculo_id == vehiculo.id,
+        db.func.date(ChecklistSemanal.fecha_registro) == hoy_chile.isoformat()
+    ).first() is not None
     herramientas = ProductoStock.query.join(CategoriaItem).filter(
         CategoriaItem.nombre == 'Herramientas',
         ProductoStock.ubicacion_id == vehiculo.ubicacion_id
     ).order_by(ProductoStock.nombre).all()
     if not herramientas:
         flash('Tu vehículo no tiene herramientas registradas. Contacta al administrador.', 'warning')
-    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=dia_habilitado, dia_nombre=DIAS_SEMANA[dia_config])
+    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=dia_habilitado, dia_nombre=DIAS_SEMANA[dia_config], ya_completado_hoy=ya_completado_hoy)
 
 @app.route('/checklist/enviar', methods=['POST'])
 @login_required
@@ -1986,6 +1991,13 @@ def checklist_enviar():
         hoy = datetime.now().weekday()
         if hoy != vehiculo.dia_checklist:
             return jsonify({'ok': False, 'msg': 'Hoy no es día de checklist para tu vehículo'}), 400
+        hoy_chile = date.today()
+        ya_hoy = ChecklistSemanal.query.filter(
+            ChecklistSemanal.vehiculo_id == vehiculo.id,
+            db.func.date(ChecklistSemanal.fecha_registro) == hoy_chile.isoformat()
+        ).first()
+        if ya_hoy:
+            return jsonify({'ok': False, 'msg': 'El checklist ya fue completado hoy'}), 400
         herramientas_ok = request.form.getlist('herramientas_ok')
         obs = request.form.get('observaciones', '').strip()
         total = ProductoStock.query.join(CategoriaItem).filter(
@@ -2047,7 +2059,12 @@ def checklist_vehiculo_admin(vehiculo_id):
         CategoriaItem.nombre == 'Herramientas',
         ProductoStock.ubicacion_id == vehiculo.ubicacion_id
     ).order_by(ProductoStock.nombre).all()
-    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=True, dia_nombre='Hoy')
+    hoy_chile = date.today()
+    ya_completado_hoy = ChecklistSemanal.query.filter(
+        ChecklistSemanal.vehiculo_id == vehiculo.id,
+        db.func.date(ChecklistSemanal.fecha_registro) == hoy_chile.isoformat()
+    ).first() is not None
+    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=True, dia_nombre='Hoy', ya_completado_hoy=ya_completado_hoy)
 
 @app.route('/checklist/reporte_pdf/<int:checklist_id>')
 @login_required
