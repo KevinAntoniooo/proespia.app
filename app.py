@@ -16,7 +16,8 @@ import locale
 import time
 
 os.environ['TZ'] = 'America/Santiago'
-time.tzset()
+if hasattr(time, 'tzset'):
+    time.tzset()
 from base64 import b64encode, b64decode
 
 # ==========================================
@@ -233,12 +234,23 @@ def dashboard(user_id):
 
         vehiculo_tec = Vehiculo.query.filter(Vehiculo.ubicacion_id == usuario.ubicacion_id).first()
         es_viernes = (vehiculo_tec and hoy_date.weekday() == vehiculo_tec.dia_checklist) if vehiculo_tec else False
+        checklist_ok_hoy = False
+        checklist_ok_hoy_id = None
+        if vehiculo_tec:
+            ck_hoy = ChecklistSemanal.query.filter(
+                ChecklistSemanal.vehiculo_id == vehiculo_tec.id,
+                db.func.date(ChecklistSemanal.fecha_registro) == hoy_date.isoformat()
+            ).first()
+            checklist_ok_hoy = ck_hoy is not None
+            checklist_ok_hoy_id = ck_hoy.id if ck_hoy else None
         return render_template('dashboard.html',
                                usuario=usuario,
                                visitas_hoy=visitas_hoy,
                                proximas=proximas,
                                tareas=tareas_tecnico,
-                               es_viernes=es_viernes)
+                               es_viernes=es_viernes,
+                               checklist_ok_hoy=checklist_ok_hoy,
+                               checklist_ok_hoy_id=checklist_ok_hoy_id)
 
     # --- LÓGICA PARA EL ADMINISTRADOR / OPERADOR (El bloque que tenías en rojo) ---
     else:
@@ -2096,7 +2108,11 @@ def checklist_reporte_pdf(checklist_id):
     pdf.set_font('helvetica', '', 10)
     pdf.cell(60, 6, ck.fecha_registro.strftime('%d/%m/%Y %H:%M'), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(6)
-    herramientas = Herramienta.query.filter_by(vehiculo_id=ck.vehiculo_id).order_by(Herramienta.nombre).all()
+    vehiculo = Vehiculo.query.get(ck.vehiculo_id)
+    herramientas = ProductoStock.query.join(CategoriaItem).filter(
+        CategoriaItem.nombre == 'Herramientas',
+        ProductoStock.ubicacion_id == vehiculo.ubicacion_id
+    ).order_by(ProductoStock.nombre).all()
     herramientas_ok = (ck.herramientas_ok or '').split(',')
     pdf.set_font('helvetica', 'B', 9)
     pdf.set_fill_color(30, 30, 30)

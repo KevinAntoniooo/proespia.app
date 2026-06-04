@@ -377,7 +377,7 @@
         </div>
         {% endif %}
 
-        {% if usuario.rol == 'tecnico' and es_viernes %}
+        {% if usuario.rol == 'tecnico' and es_viernes and not checklist_ok_hoy %}
         <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-warning border-3 bg-warning bg-opacity-10" style="animation: pulse-warning 2s infinite;">
             <div class="d-flex align-items-start gap-2">
                 <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
@@ -393,6 +393,21 @@
             </div>
         </div>
         <style>@keyframes pulse-warning{0%,100%{border-color:#ffc107}50%{border-color:#ff8800}}</style>
+        {% elif usuario.rol == 'tecnico' and es_viernes and checklist_ok_hoy %}
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-success border-3 bg-success bg-opacity-10">
+            <div class="d-flex align-items-start gap-2">
+                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;">
+                    <i class="fa-solid fa-check text-white"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1 text-dark" style="font-size:0.75rem;">CHECKLIST COMPLETADO</h6>
+                    <p class="small mb-2 text-dark" style="font-size:0.6rem;">Ya realizaste el control de inventario de hoy.</p>
+                    <a href="/checklist/reporte_pdf/{{ checklist_ok_hoy_id }}" class="btn btn-success btn-sm w-100 rounded-pill fw-bold shadow-sm" style="font-size:0.65rem;">
+                        <i class="fa-solid fa-file-pdf me-1"></i>Ver PDF
+                    </a>
+                </div>
+            </div>
+        </div>
         {% endif %}
         {% if usuario.rol == 'tecnico' %}
         <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-info border-opacity-50">
