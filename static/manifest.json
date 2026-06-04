@@ -5,6 +5,7 @@
   "id": "/",
   "start_url": "/",
   "scope": "/",
+  "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "dir": "ltr",
