@@ -13,7 +13,7 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-2 p-md-3">
             <form method="GET" action="{{ url_for('gestor_visitas', user_id=usuario.id) }}" class="row g-2 g-md-3 align-items-end">
-                <div class="col-6 col-md-2">
+                <div class="col-12 col-md-2">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Estado</label>
                     <select name="tipo_filtro" class="form-select form-select-sm rounded-3 border-primary">
                         <option value="todas" {% if request.args.get('tipo_filtro') == 'todas' or not request.args.get('tipo_filtro') %}selected{% endif %}>Todas</option>
@@ -67,12 +67,12 @@
                         data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}">
                         <td class="ps-4">
                             {% if v.estado == 'Pendiente' %}
-                            <span class="badge bg-warning text-dark shadow-sm"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>
+                            <span class="badge bg-warning text-dark shadow-sm px-2 px-sm-3"><i class="fa-solid fa-clock fa-sm"></i><span class="d-none d-sm-inline ms-1">Pendiente</span></span>
                             {% else %}
-                            <span class="badge bg-success shadow-sm"><i class="fa-solid fa-check-circle me-1"></i>Realizada</span>
+                            <span class="badge bg-success shadow-sm px-2 px-sm-3"><i class="fa-solid fa-check-circle fa-sm"></i><span class="d-none d-sm-inline ms-1">Realizada</span></span>
                             {% endif %}
                         </td>
-                        <td class="fw-bold small">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
+                        <td class="fw-bold small text-truncate" style="max-width:120px;">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
                         <td><span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;">{{ v.tipo_trabajo }}</span></td>
                         <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
                         <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
@@ -329,5 +329,8 @@ document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { n
 </script>
 <style>
 .table-warning-subtle { background-color: rgba(255, 193, 7, 0.05); }
+@media (max-width: 576px) {
+    .table td, .table th { font-size: 0.7rem; }
+}
 </style>
 {% endblock %}
