@@ -505,7 +505,7 @@ def gestor_visitas(user_id):
     page = request.args.get('page', 1, type=int)
 
     if usuario.rol in ['admin', 'super_su']:
-        query = VisitaProgramada.query
+        query = VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None))
         tecnico_id = request.args.get('tecnico_id', type=int)
         if tecnico_id:
             query = query.filter_by(usuario_id=tecnico_id)
@@ -544,7 +544,7 @@ def gestor_visitas(user_id):
                 VisitaProgramada.falla_id.isnot(None),
                 VisitaProgramada.estado == 'Pendiente')
         )
-    ).count() if current_user.rol == 'tecnico' else VisitaProgramada.query.filter_by(estado='Pendiente').count()
+    ).count() if current_user.rol == 'tecnico' else VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None), VisitaProgramada.estado == 'Pendiente').count()
     tecnicos = Usuario.query.filter_by(rol='tecnico').all() if usuario.rol in ['admin', 'super_su'] else []
 
     return render_template('gestor_visitas.html', usuario=usuario,
@@ -1392,7 +1392,7 @@ def ver_agenda(user_id):
     # Ya no necesitamos buscar en session.get, usamos el user_id de la URL
     usuario = Usuario.query.get_or_404(user_id)
     
-    visitas = VisitaProgramada.query.order_by(VisitaProgramada.fecha_programada.asc()).all()
+    visitas = VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None)).order_by(VisitaProgramada.fecha_programada.asc()).all()
     clientes = Cliente.query.all()
     tecnicos = Usuario.query.filter_by(rol='tecnico').all()
     
@@ -1476,7 +1476,7 @@ def agendar_visita():
 @app.route('/api/eventos_agenda')
 def api_eventos_agenda():
     try:
-        visitas = VisitaProgramada.query.all()
+        visitas = VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None)).all()
         eventos = []
         
         for v in visitas:
