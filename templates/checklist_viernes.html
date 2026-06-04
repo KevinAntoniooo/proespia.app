@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-3">
+    <div class="container py-3">
+    <!-- DEBUG: hoy_weekday={{ hoy_debug }}, dia_config={{ vehiculo.dia_checklist }}, ubicacion_id={{ current_user.ubicacion_id }}, vehiculo_id={{ vehiculo.id }}, placa={{ vehiculo.placa }} -->
+    <div class="alert alert-info small py-1 mb-2" style="font-size:0.65rem;">
+        <strong>DEBUG</strong> — hoy={{ hoy_debug }} | dia_config={{ vehiculo.dia_checklist }} | user_ubc={{ current_user.ubicacion_id }} | vhc_id={{ vehiculo.id }} | placa={{ vehiculo.placa }}
+    </div>
+    <!-- END DEBUG -->
     <div class="d-flex align-items-center gap-2 mb-4">
         <div class="bg-warning bg-opacity-10 rounded-3 p-2 lh-1">
             <i class="fa-solid fa-clipboard-check text-warning fs-4"></i>

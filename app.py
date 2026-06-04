@@ -1968,7 +1968,7 @@ def checklist_viernes():
     ).order_by(ProductoStock.nombre).all()
     if not herramientas:
         flash('Tu vehículo no tiene herramientas registradas. Contacta al administrador.', 'warning')
-    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=dia_habilitado, dia_nombre=DIAS_SEMANA[dia_config])
+    return render_template('checklist_viernes.html', usuario=current_user, vehiculo=vehiculo, herramientas=herramientas, dia_habilitado=dia_habilitado, dia_nombre=DIAS_SEMANA[dia_config], hoy_debug=hoy)
 
 @app.route('/checklist/enviar', methods=['POST'])
 @login_required
