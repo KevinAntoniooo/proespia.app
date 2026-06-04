@@ -846,14 +846,16 @@ def reporte_bitacora_pdf(user_id):
     fin = request.args.get('fin')
     sede_id = request.args.get('sede_id', type=int)
     
-    query = Bitacora.query.filter(Bitacora.fecha >= f"{inicio} 00:00:00", 
-                                  Bitacora.fecha <= f"{fin} 23:59:59")
+    query = Bitacora.query
+    if inicio and fin:
+        query = query.filter(Bitacora.fecha >= f"{inicio} 00:00:00",
+                             Bitacora.fecha <= f"{fin} 23:59:59")
     if sede_id:
         sede = Cliente.query.get(sede_id)
         query = query.filter(Bitacora.cliente_id == sede_id)
     else:
         sede = None
-    registros = query.order_by(Bitacora.prioridad.asc()).all()
+    registros = query.order_by(Bitacora.fecha.desc()).all()
     
     pdf = FPDF()
     pdf.add_page()
@@ -862,7 +864,7 @@ def reporte_bitacora_pdf(user_id):
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(0, 10, "PROESPIA LTDA - SEGURIDAD ELECTRONICA", 0, 1, 'C')
     pdf.set_font("Arial", '', 10)
-    pdf.cell(0, 10, f"REPORTE DE NOVEDADES: {inicio} al {fin}{' - ' + sede.nombre if sede else ''}", 0, 1, 'C')
+    pdf.cell(0, 10, f"REPORTE DE NOVEDADES{' ' + inicio + ' al ' + fin if inicio and fin else ' (todo el historial)'}{' - ' + sede.nombre if sede else ''}", 0, 1, 'C')
     pdf.ln(10)
     
     # --- Tabla de Datos ---
@@ -911,12 +913,14 @@ def api_consulta_bitacora():
     inicio = request.args.get('inicio')
     fin = request.args.get('fin')
     sede_id = request.args.get('sede_id', type=int)
-    
-    query = Bitacora.query.filter(Bitacora.fecha >= f"{inicio} 00:00:00", 
-                                  Bitacora.fecha <= f"{fin} 23:59:59")
+
+    query = Bitacora.query
+    if inicio and fin:
+        query = query.filter(Bitacora.fecha >= f"{inicio} 00:00:00",
+                             Bitacora.fecha <= f"{fin} 23:59:59")
     if sede_id:
         query = query.filter(Bitacora.cliente_id == sede_id)
-    registros = query.order_by(Bitacora.prioridad.asc()).all()
+    registros = query.order_by(Bitacora.fecha.desc()).all()
     datos = []
     for r in registros:
         datos.append({

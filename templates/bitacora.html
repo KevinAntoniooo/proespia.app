@@ -239,12 +239,18 @@
                 <div class="row g-2 mb-3">
                     <div class="col-12 col-md-4">
                         <label class="form-label small fw-bold">Sede (opcional):</label>
-                        <select id="busq_sede" class="form-select">
-                            <option value="">Todas las sedes</option>
-                            {% for c in clientes %}
-                            <option value="{{ c.id }}">{{ c.nombre }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="position-relative">
+                            <input type="text" id="busq_sede_input" class="form-control"
+                                placeholder="Escriba para buscar sede..." autocomplete="off"
+                                onfocus="mostrarSedesBusq()" oninput="filtrarSedesBusq()">
+                            <div id="sede-dropdown-busq" class="list-group position-absolute w-100 shadow-sm d-none border" style="z-index:1050;max-height:200px;overflow-y:auto;border-radius:8px;top:100%;">
+                                <button type="button" class="list-group-item list-group-item-action" data-id="" data-nombre="Todas las sedes" onclick="seleccionarSedeBusq(this)">Todas las sedes</button>
+                                {% for c in clientes %}
+                                <button type="button" class="list-group-item list-group-item-action" data-id="{{ c.id }}" data-nombre="{{ c.nombre }}" onclick="seleccionarSedeBusq(this)">{{ c.nombre }}</button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="hidden" id="busq_sede_id" value="">
                     </div>
                     <div class="col-6 col-md-3">
                         <label class="form-label small fw-bold">Desde:</label>
@@ -352,11 +358,16 @@
     function consultarSucesos() {
         const inicio = document.getElementById('busq_inicio').value;
         const fin = document.getElementById('busq_fin').value;
-        const sede = document.getElementById('busq_sede').value;
-        if (!inicio || !fin) { alert("Selecciona ambas fechas"); return; }
+        const sede = document.getElementById('busq_sede_id').value;
 
-        var url = `/api/bitacora/consulta?inicio=${inicio}&fin=${fin}`;
-        if (sede) url += `&sede_id=${sede}`;
+        var url = '/api/bitacora/consulta?';
+        var params = [];
+        if (inicio && fin) {
+            params.push('inicio=' + inicio, 'fin=' + fin);
+        }
+        if (sede) params.push('sede_id=' + sede);
+        if (params.length === 0) { alert("Selecciona al menos una sede o un rango de fechas."); return; }
+        url += params.join('&');
 
         fetch(url)
             .then(response => response.json())
@@ -367,8 +378,7 @@
                     data.sucesos.forEach(s => {
                         cuerpo.innerHTML += `<tr><td class="small">${s.fecha}</td><td class="small">${s.sede}</td><td class="small">${s.suceso}</td></tr>`;
                     });
-                    var pdfUrl = `/bitacora/reporte_pdf/{{ usuario.id }}?inicio=${inicio}&fin=${fin}`;
-                    if (sede) pdfUrl += `&sede_id=${sede}`;
+                    var pdfUrl = '/bitacora/reporte_pdf/{{ usuario.id }}?' + params.join('&');
                     document.getElementById('btn-descargar-pdf').href = pdfUrl;
                     document.getElementById('zona-previa').style.display = "block";
                 } else {
@@ -377,6 +387,35 @@
                 }
             });
     }
+
+    // Sede dropdown para el buscador
+    function mostrarSedesBusq() {
+        document.getElementById('sede-dropdown-busq').classList.remove('d-none');
+    }
+    function filtrarSedesBusq() {
+        const input = document.getElementById('busq_sede_input').value.toLowerCase();
+        const items = document.querySelectorAll('#sede-dropdown-busq .list-group-item');
+        let visible = 0;
+        items.forEach(function(item) {
+            if (item.dataset.nombre.toLowerCase().includes(input)) {
+                item.style.display = 'block';
+                visible++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        document.getElementById('sede-dropdown-busq').classList.toggle('d-none', visible === 0);
+    }
+    function seleccionarSedeBusq(btn) {
+        document.getElementById('busq_sede_input').value = btn.dataset.nombre;
+        document.getElementById('busq_sede_id').value = btn.dataset.id;
+        document.getElementById('sede-dropdown-busq').classList.add('d-none');
+    }
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#busq_sede_input') && !e.target.closest('#sede-dropdown-busq') && !e.target.closest('#cliente_search') && !e.target.closest('#sede-dropdown')) {
+            document.getElementById('sede-dropdown-busq').classList.add('d-none');
+        }
+    });
 
     // Sede dropdown
     function mostrarSedes() {
