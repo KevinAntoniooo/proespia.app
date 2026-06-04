@@ -160,53 +160,55 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
             <div class="modal-header bg-dark text-white border-0 py-3">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-calendar-check me-2 text-success"></i>Detalle de Visita</h5>
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-calendar-check me-1 text-success"></i>Detalle Visita</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="mb-3">
-                    <label class="small text-muted fw-bold text-uppercase">Cliente</label>
-                    <p id="visita-cliente" class="fw-bold text-dark mb-0"></p>
+            <div class="modal-body p-3 p-md-4">
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Cliente</label>
+                    <p id="visita-cliente" class="fw-bold text-dark mb-0" style="font-size:0.85rem;"></p>
                 </div>
-                <div class="mb-3">
-                    <label class="small text-muted fw-bold text-uppercase">Tipo / Estado</label>
-                    <p id="visita-estado" class="fw-bold text-dark mb-0"></p>
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Tipo / Estado</label>
+                    <p id="visita-estado" class="fw-bold text-dark mb-0" style="font-size:0.85rem;"></p>
                 </div>
-                <div class="mb-3">
-                    <label class="small text-muted fw-bold text-uppercase">Fecha Programada</label>
-                    <p id="visita-fecha" class="fw-bold text-dark mb-0"></p>
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Fecha Programada</label>
+                    <p id="visita-fecha" class="fw-bold text-dark mb-0" style="font-size:0.85rem;"></p>
                 </div>
-                <hr class="opacity-10">
-                <div class="mb-3">
-                    <label class="small text-muted fw-bold text-uppercase">Descripción</label>
-                    <p id="visita-descripcion" class="text-dark mb-0"></p>
+                <hr class="opacity-10 my-2 my-md-3">
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Descripción</label>
+                    <p id="visita-descripcion" class="text-dark mb-0" style="font-size:0.8rem;"></p>
                 </div>
-                <hr class="opacity-10">
-                <div class="mb-3">
-                    <label class="small text-muted fw-bold text-uppercase">Ubicación</label>
-                    <p id="visita-ubicacion" class="text-dark mb-1"></p>
-                    <div id="mapa-visita" style="height:200px;border-radius:12px;border:2px solid #e2e8f0;display:none;"></div>
+                <hr class="opacity-10 my-2 my-md-3">
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Ubicación</label>
+                    <p id="visita-ubicacion" class="text-dark mb-1" style="font-size:0.8rem;"></p>
+                    <div id="mapa-visita" style="height:150px;border-radius:12px;border:2px solid #e2e8f0;display:none;"></div>
                 </div>
-                <hr class="opacity-10">
-                <div class="mb-3" id="visita-informe-container">
-                    <label class="small text-muted fw-bold text-uppercase">Informe Técnico</label>
-                    <p id="visita-informe" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light"></p>
+                <hr class="opacity-10 my-2 my-md-3">
+                <div class="mb-2 mb-md-3" id="visita-informe-container">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Informe Técnico</label>
+                    <p id="visita-informe" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light" style="font-size:0.8rem;"></p>
                 </div>
             </div>
-            <div class="modal-footer bg-light border-0 d-flex justify-content-between">
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-secondary btn-sm shadow-sm px-3" data-bs-dismiss="modal">Cerrar</button>
-                    <a id="modal-gv-btn-pdf" href="#" class="btn btn-outline-danger btn-sm shadow-sm px-3 d-none" target="_blank">
-                        <i class="fa-solid fa-file-pdf me-1"></i> PDF
-                    </a>
-                </div>
-                <div id="modal-gv-actions">
-                    <a id="modal-gv-btn-gestionar" href="#" class="btn btn-success btn-sm fw-bold shadow-sm px-3 d-none">
-                        <i class="fa-solid fa-wrench me-1"></i> Gestionar
-                    </a>
-                    <button id="modal-gv-btn-listo" type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3 d-none" onclick="confirmarFinalizarFromModalGV()">
-                        <i class="fa-solid fa-check me-1"></i> LISTO
-                    </button>
+            <div class="modal-footer bg-light border-0 p-3 p-md-3">
+                <div class="d-flex flex-column flex-sm-row gap-2 w-100">
+                    <div class="d-flex gap-2 w-100">
+                        <button type="button" class="btn btn-secondary btn-sm shadow-sm px-3 flex-fill" data-bs-dismiss="modal">Cerrar</button>
+                        <a id="modal-gv-btn-pdf" href="#" class="btn btn-outline-danger btn-sm shadow-sm px-3 flex-fill d-none" target="_blank">
+                            <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                        </a>
+                    </div>
+                    <div id="modal-gv-actions" class="d-flex gap-2 w-100">
+                        <a id="modal-gv-btn-gestionar" href="#" class="btn btn-success btn-sm fw-bold shadow-sm px-3 flex-fill d-none">
+                            <i class="fa-solid fa-wrench me-1"></i> Gestionar
+                        </a>
+                        <button id="modal-gv-btn-listo" type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3 flex-fill d-none" onclick="confirmarFinalizarFromModalGV()">
+                            <i class="fa-solid fa-check me-1"></i> LISTO
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -344,6 +346,9 @@ document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { n
     .table td:nth-child(4),
     .table td:nth-child(5) { font-size: 0.65rem; }
     .table td:last-child .btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; min-width: 70px !important; }
+    .modal-body label { font-size: 0.55rem !important; }
+    .modal-body p { font-size: 0.8rem !important; }
+    #mapa-visita { height: 130px !important; }
 }
 </style>
 {% endblock %}
