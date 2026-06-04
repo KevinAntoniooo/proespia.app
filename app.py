@@ -508,7 +508,8 @@ def gestor_visitas(user_id):
 
     return render_template('gestor_visitas.html', usuario=usuario,
                            visitas=paginado.items, paginacion=paginado,
-                           total_pendientes=total_pendientes)
+                           total_pendientes=total_pendientes,
+                           hoy_iso=date.today().isoformat())
 
 # ==========================================
 # 4. GESTIÓN DE CLIENTES (SEDES) Y EQUIPOS
