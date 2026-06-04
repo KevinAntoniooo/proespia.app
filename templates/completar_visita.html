@@ -4,32 +4,25 @@
     <div class="row justify-content-center">
         <div class="col-12 col-md-10 col-lg-8">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-header bg-primary text-white p-3 p-md-4 border-0"
-                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
-                    <h4 class="fw-bold mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Cierre de Visita #{{ visita.id }}</h4>
+                <div class="card-header bg-danger text-white p-3 p-md-4 border-0">
+                    <h4 class="fw-bold mb-0"><i class="fa-solid fa-file-signature me-2"></i>Cierre de OT #{{ visita.id }}</h4>
                     <p class="mb-0 small opacity-75">{{ visita.tipo_trabajo }} - {{ visita.fecha_programada.strftime('%d/%m/%Y') }}</p>
                 </div>
 
                 <div class="card-body p-3 p-md-4">
                     <div class="mb-4 py-2 border-top border-bottom border-light">
                         <div class="d-flex justify-content-between align-items-center py-2">
-                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Cliente</span>
-                            <span class="text-secondary fw-bold">{{ visita.rel_cliente.nombre if visita.rel_cliente else 'Cliente Nuevo (Cotización)' }}</span>
+                            <span class="fw-bold text-dark small text-uppercase info-label" style="letter-spacing:0.5px;">Cliente</span>
+                            <span class="text-secondary fw-bold info-value">{{ visita.rel_cliente.nombre if visita.rel_cliente else 'Cliente Nuevo' }}</span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center py-2 border-top border-light">
-                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Tipo</span>
-                            <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2">{{ visita.tipo_trabajo }}</span>
+                            <span class="fw-bold text-dark small text-uppercase info-label" style="letter-spacing:0.5px;">Tipo de Servicio</span>
+                            <span class="text-secondary fw-bold info-value">{{ visita.tipo_trabajo }}</span>
                         </div>
                         {% if visita.descripcion %}
                         <div class="d-flex justify-content-between align-items-center py-2 border-top border-light">
-                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Descripción</span>
-                            <span class="small text-end text-muted" style="max-width:70%;">{{ visita.descripcion }}</span>
-                        </div>
-                        {% endif %}
-                        {% if visita.ubicacion %}
-                        <div class="d-flex justify-content-between align-items-center py-2 border-top border-light">
-                            <span class="fw-bold text-dark small text-uppercase" style="letter-spacing:0.5px;">Ubicación</span>
-                            <span class="small text-end text-muted" style="max-width:70%;">{{ visita.ubicacion }}</span>
+                            <span class="fw-bold text-dark small text-uppercase info-label" style="letter-spacing:0.5px;">Descripción</span>
+                            <span class="small text-end text-muted info-value" style="max-width:70%;">{{ visita.descripcion }}</span>
                         </div>
                         {% endif %}
                     </div>
@@ -49,9 +42,9 @@
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg rounded-3 fw-bold shadow-sm">
-                                <i class="fa-solid fa-check-double me-2"></i>Finalizar Visita
+                                <i class="fa-solid fa-check-double me-2"></i>Finalizar OT
                             </button>
-                            <a href="{{ url_for('dashboard', user_id=usuario.id) }}" class="btn btn-link text-muted btn-sm text-decoration-none">
+                            <a href="{{ url_for('gestor_visitas', user_id=usuario.id) }}" class="btn btn-link text-muted btn-sm text-decoration-none">
                                 <i class="fa-solid fa-arrow-left me-1"></i>Volver sin cambios
                             </a>
                         </div>
@@ -63,6 +56,10 @@
 </div>
 
 <style>
+    .bg-danger-soft { background-color: #fee2e2; }
+    .card-header.bg-danger {
+        background: linear-gradient(45deg, #dc3545, #b02a37);
+    }
     @media (max-width: 576px) {
         .info-label { font-size: 0.72rem; }
         .info-value { font-size: 0.88rem; }

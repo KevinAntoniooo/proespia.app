@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check me-2"></i>Gestor de Visitas</h2>
@@ -163,7 +164,8 @@
                 <hr class="opacity-10">
                 <div class="mb-3">
                     <label class="small text-muted fw-bold text-uppercase">Ubicación</label>
-                    <p id="visita-ubicacion" class="text-dark mb-0"></p>
+                    <p id="visita-ubicacion" class="text-dark mb-1"></p>
+                    <div id="mapa-visita" style="height:180px;border-radius:12px;border:2px solid #e2e8f0;display:none;"></div>
                 </div>
                 <hr class="opacity-10">
                 <div class="mb-3">
@@ -196,7 +198,11 @@
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+var mapaVisita = null;
+var marcadorVisita = null;
+
 function verDetalleVisita(row) {
     document.getElementById('visita-cliente').innerText = row.dataset.cliente || '---';
     document.getElementById('visita-estado').innerHTML = (row.dataset.estado === 'Pendiente'
@@ -206,13 +212,51 @@ function verDetalleVisita(row) {
     document.getElementById('visita-fecha').innerText = row.dataset.fecha || '---';
     document.getElementById('visita-descripcion').innerText = row.dataset.descripcion || 'Sin descripción';
     var ubiEl = document.getElementById('visita-ubicacion');
+    var mapaEl = document.getElementById('mapa-visita');
     if (row.dataset.ubicacion) {
         ubiEl.innerText = row.dataset.ubicacion;
+        var coords = extraerCoordenadas(row.dataset.ubicacion);
+        if (coords) {
+            mapaEl.style.display = 'block';
+            if (mapaVisita) {
+                mapaVisita.setView([coords.lat, coords.lng], 15);
+                if (marcadorVisita) mapaVisita.removeLayer(marcadorVisita);
+                marcadorVisita = L.marker([coords.lat, coords.lng]).addTo(mapaVisita);
+                setTimeout(function() { mapaVisita.invalidateSize(); }, 300);
+            } else {
+                mapaVisita = L.map('mapa-visita').setView([coords.lat, coords.lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapaVisita);
+                marcadorVisita = L.marker([coords.lat, coords.lng]).addTo(mapaVisita);
+                setTimeout(function() { mapaVisita.invalidateSize(); }, 300);
+            }
+        } else {
+            mapaEl.style.display = 'none';
+        }
     } else {
         ubiEl.innerText = 'No registrada';
+        mapaEl.style.display = 'none';
     }
     document.getElementById('visita-informe').innerText = row.dataset.informe || 'Pendiente de informe';
     new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
+}
+
+document.getElementById('modalDetalleVisita').addEventListener('hidden.bs.modal', function () {
+    if (mapaVisita) { setTimeout(function() { mapaVisita.invalidateSize(); }, 100); }
+});
+
+function extraerCoordenadas(url) {
+    var idx = url.indexOf('?q=');
+    var offset = 3;
+    if (idx === -1) { idx = url.indexOf('?query='); offset = 6; }
+    if (idx === -1) return null;
+    var params = url.substring(idx + offset);
+    var coords = params.split(',');
+    if (coords.length >= 2) {
+        var lat = parseFloat(coords[0].trim());
+        var lng = parseFloat(coords[1].trim());
+        if (!isNaN(lat) && !isNaN(lng)) return { lat: lat, lng: lng };
+    }
+    return null;
 }
 
 function confirmarFinalizar(visitaId) {

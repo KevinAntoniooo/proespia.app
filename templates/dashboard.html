@@ -176,7 +176,7 @@
                                                 <div class="col-4 text-end">
                                                     {% if v.tipo_trabajo in ['Instalación', 'Mantención', 'Reparación', 'Emergencia'] %}
                                                     <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}" class="btn btn-success btn-sm fw-bold shadow-sm" style="font-size:0.85rem;">
-                                                        <i class="fa-solid fa-check me-1"></i> LISTO
+                                                        <i class="fa-solid fa-wrench me-1"></i> Gestionar
                                                     </a>
                                                     {% else %}
                                                     <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm" style="font-size:0.85rem;" onclick="event.stopPropagation();confirmarFinalizar({{ v.id }})">
