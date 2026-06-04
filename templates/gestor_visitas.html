@@ -51,7 +51,7 @@
                         <th>Tipo</th>
                         <th>Programada</th>
                         <th class="d-none d-md-table-cell">Descripción</th>
-                        <th class="text-center pe-4">Acción</th>
+                        <th class="text-center pe-4 d-none d-sm-table-cell">Acción</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,10 +83,10 @@
                             {% endif %}
                         </td>
                         <td class="fw-bold small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
-                        <td><span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;">{{ v.tipo_trabajo }}</span></td>
+                        <td><span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span></td>
                         <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
                         <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
-                        <td class="text-center pe-4">
+                        <td class="text-center pe-4 d-none d-sm-table-cell">
                             {% if v.estado == 'Pendiente' %}
                                 {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
                                 <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
