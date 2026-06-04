@@ -152,7 +152,7 @@
                         <div class="row g-2">
                             <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size: 0.7rem;"><i class="fa-solid fa-calendar-day me-1"></i>Agenda de Hoy <span class="badge bg-warning text-dark rounded-pill ms-1">{{ visitas_hoy|length }}</span></h6>
                             {% if visitas_hoy %}
-                                {% for v in visitas_hoy %}
+                                {% for v in visitas_hoy[:5] %}
                                 <div class="col-12">
                                     <div class="card border-0 bg-light rounded-3 shadow-sm border-start border-4 border-warning item-visita" 
                                         style="cursor: pointer;" 
@@ -224,7 +224,7 @@
                 <div class="tab-pane fade show active" id="fallas">
                     {% if tareas %}
                     <div class="row g-2">
-                        {% for t in tareas %}
+                        {% for t in tareas[:5] %}
                         <div class="col-12">
                             <div class="d-flex align-items-center p-2 border rounded-3 bg-white shadow-sm border-start border-danger border-4">
                                 <div class="icon-box bg-danger-soft text-danger me-2" style="width: 30px; height: 30px; min-width: 30px; font-size: 0.7rem;">
