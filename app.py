@@ -882,7 +882,7 @@ def nueva_entrada(user_id):
             )
             db.session.add(visita)
             db.session.commit()
-            flash(f'Visita creada en Agenda de Terreno para {nom_cliente}', 'success')
+            flash(f'✓ Visita creada en Agenda de Terreno para {nom_cliente} (prioridad {prioridad_final})', 'success')
 
             notificar_admin(
                 f'Falla Registrada - {nom_cliente}',
