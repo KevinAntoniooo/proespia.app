@@ -58,7 +58,19 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% set ns = namespace(last_section='') %}
                     {% for v in visitas %}
+                    {% set section = 'realizadas' if v.estado == 'Realizada' else 'pendientes' %}
+                    {% if section != ns.last_section and ns.last_section != '' %}
+                    <tr class="separator-row"><td colspan="6" class="py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-check-circle text-success"></i>
+                            <span class="fw-bold text-success" style="font-size:0.85rem;">Historial de Realizadas</span>
+                            <hr class="flex-grow-1 my-0 border-success opacity-25">
+                        </div>
+                    </td></tr>
+                    {% endif %}
+                    {% set ns.last_section = section %}
                     <tr class="{% if v.prioridad == 1 %}table-danger-subtle{% elif v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisita(this)"
                         data-id="{{ v.id }}"
                         data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
@@ -368,6 +380,9 @@ document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { n
 </script>
 <style>
 .table-warning-subtle { background-color: rgba(255, 193, 7, 0.05); }
+.separator-row td { background-color: rgba(25, 135, 84, 0.08) !important; border-top: 2px solid rgba(25, 135, 84, 0.3) !important; padding: 0.5rem 1rem !important; }
+.separator-row:hover td { background-color: rgba(25, 135, 84, 0.12) !important; }
+.separator-row td hr { border-color: #198754 !important; opacity: 0.25; }
 @media (max-width: 576px) {
     .table td:nth-child(2) { max-width: 80px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .table td:nth-child(4),
