@@ -158,12 +158,12 @@
                         <i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i>Fallas Reportadas <span class="badge bg-warning text-dark ms-1">{{ fallas_pendientes|length }}</span>
                     </button>
                 </li>
-                {% endif %}
                 <li class="nav-item">
                     <button class="nav-link fw-bold small" id="realizadas-tab" data-bs-toggle="tab" data-bs-target="#tab_realizadas" role="tab">
                         <i class="fa-solid fa-check-circle me-1 text-success"></i>Realizadas <span class="badge bg-success ms-1">{{ visitas_realizadas|length }}</span>
                     </button>
                 </li>
+                {% endif %}
             </ul>
         </div>
         <div class="card-body p-0 tab-content">
@@ -174,10 +174,10 @@
             <div class="tab-pane fade" id="tab_fallas_pend" role="tabpanel">
                 {{ tabla_visitas(fallas_pendientes, 'No hay fallas pendientes.', es_falla=True) }}
             </div>
-            {% endif %}
             <div class="tab-pane fade" id="tab_realizadas" role="tabpanel">
                 {{ tabla_visitas(visitas_realizadas, 'No hay visitas realizadas.') }}
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

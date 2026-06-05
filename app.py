@@ -544,18 +544,8 @@ def gestor_visitas(user_id):
             VisitaProgramada.prioridad.asc(),
             VisitaProgramada.fecha_programada.desc()
         ).all()
-
-        q_realizadas = VisitaProgramada.query.filter(
-            VisitaProgramada.estado == 'Realizada',
-            VisitaProgramada.falla_id.is_(None)
-        )
-        if tecnico_id:
-            q_realizadas = q_realizadas.filter_by(usuario_id=tecnico_id)
-        for f in filtros_fecha:
-            q_realizadas = q_realizadas.filter(f)
-        visitas_realizadas = q_realizadas.order_by(VisitaProgramada.fecha_programada.desc()).all()
-
         fallas_pendientes = []
+        visitas_realizadas = []
     else:
         q_agendadas = VisitaProgramada.query.filter(
             VisitaProgramada.falla_id.is_(None),
