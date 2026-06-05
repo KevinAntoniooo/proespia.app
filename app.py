@@ -362,7 +362,12 @@ def finalizar_visita(visita_id):
     # 1. Cambiamos el estado
     visita.estado = 'Realizada'
     
-    # 2. Manejamos el nombre del cliente de forma segura para el mensaje Flash
+    # 2. Guardamos la nota si viene
+    nota = request.form.get('nota', '').strip()
+    if nota:
+        visita.informe_tecnico = nota
+    
+    # 3. Manejamos el nombre del cliente de forma segura para el mensaje Flash
     # Si rel_cliente existe, usamos su nombre. Si no, ponemos "Cliente Nuevo"
     nombre_cliente = visita.rel_cliente.nombre if visita.rel_cliente else "Cliente Nuevo"
     

@@ -118,6 +118,11 @@
                 <p id="detailDescripcion" class="mb-0" style="font-size:0.8rem;color:#475569;white-space:pre-line;">---</p>
             </div>
 
+            <div class="mb-2 p-2 rounded-3 agenda-subtle-bg" id="detailInformeContainer" style="display:none;">
+                <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem;font-weight:600;">Nota del Técnico</p>
+                <p id="detailInforme" class="mb-0" style="font-size:0.8rem;color:#475569;white-space:pre-line;">---</p>
+            </div>
+
             <div id="detailUbicacionContainer" class="mb-2" style="display:none;">
                 <a id="detailUbicacionLink" href="#" target="_blank" class="btn d-flex align-items-center gap-2 w-100 rounded-3 agenda-bg-indigo" style="font-size:0.8rem;font-weight:600;color:#6366f1;border:none;padding:0.5rem 0.75rem;">
                     <i class="fa-solid fa-location-dot"></i>
@@ -663,6 +668,15 @@
         badge.className = 'badge ' + getEstadoBadgeClass(v.estado);
 
         document.getElementById('detailDescripcion').textContent = v.descripcion || 'Sin notas adicionales.';
+
+        var informeContainer = document.getElementById('detailInformeContainer');
+        var informeText = document.getElementById('detailInforme');
+        if (v.informe_tecnico) {
+            informeContainer.style.display = 'block';
+            informeText.textContent = v.informe_tecnico;
+        } else {
+            informeContainer.style.display = 'none';
+        }
 
         var ubContainer = document.getElementById('detailUbicacionContainer');
         var ubLink = document.getElementById('detailUbicacionLink');
