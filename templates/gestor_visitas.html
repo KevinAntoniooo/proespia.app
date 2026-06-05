@@ -43,7 +43,7 @@
         </div>
     </div>
 
-    {% macro tabla_visitas(lista, mensaje_vacio) %}
+    {% macro tabla_visitas(lista, mensaje_vacio, es_falla=False) %}
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="table-dark">
@@ -94,9 +94,12 @@
                         {% endif %}
                     </td>
                     <td class="fw-bold small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
-                    <td>
+                    <td>{% if es_falla %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger py-1 px-2" style="font-size:0.7rem;">Falla</span>
+                        {% else %}
                         <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span>
                         {% if v.falla_id %}&nbsp;<span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:0.6rem;">Falla</span>{% endif %}
+                        {% endif %}
                     </td>
                     <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
                     <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
@@ -168,10 +171,10 @@
             </div>
             {% if usuario.rol == 'tecnico' %}
             <div class="tab-pane fade" id="tab_fallas_pend" role="tabpanel">
-                {{ tabla_visitas(fallas_pendientes, 'No hay fallas pendientes.') }}
+                {{ tabla_visitas(fallas_pendientes, 'No hay fallas pendientes.', es_falla=True) }}
             </div>
             <div class="tab-pane fade" id="tab_fallas_real" role="tabpanel">
-                {{ tabla_visitas(fallas_realizadas, 'No hay fallas realizadas.') }}
+                {{ tabla_visitas(fallas_realizadas, 'No hay fallas realizadas.', es_falla=True) }}
             </div>
             {% endif %}
         </div>

@@ -540,8 +540,7 @@ def gestor_visitas(user_id):
             q_agendadas = q_agendadas.filter_by(usuario_id=tecnico_id)
         for f in filtros_fecha:
             q_agendadas = q_agendadas.filter(f)
-        visitas_agendadas = q_agendadas.order_by(
-            case((VisitaProgramada.estado == 'Pendiente', 0), (VisitaProgramada.estado == 'Realizada', 2), else_=1),
+        visitas_agendadas = q_agendadas.filter(VisitaProgramada.estado == 'Pendiente').order_by(
             VisitaProgramada.prioridad.asc(),
             VisitaProgramada.fecha_programada.desc()
         ).all()
