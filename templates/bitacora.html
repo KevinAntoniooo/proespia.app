@@ -196,21 +196,10 @@
                             required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tipo de Suceso / Novedad</label>
-                        <select name="tipo_suceso" id="tipo_suceso" class="form-select" onchange="verificarGravedad()">
-                            <option value="Incidente Crítico">⚠️ Incidente Crítico / Emergencia</option>
-                            <option value="Activación de Alarma">🚨 Activación de Alarma</option>
-                            <option value="Ronda de Vigilancia">✅ Ronda de Vigilancia</option>
-                            <option value="Apertura/Cierre Sede">🏢 Apertura/Cierre Sede</option>
-                            <option value="Falla Técnica (CCTV/Red)">🔌 Falla Técnica (CCTV/Red)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="div_prioridad">
-                        <label class="form-label fw-bold">Gravedad de la Falla</label>
-                        <select name="prioridad" id="prioridad_select" class="form-select border-primary">
-                            <option value="1">🔴 CRÍTICA</option>
-                            <option value="2">🟡 ALTA</option>
-                            <option value="3" selected>🔵 MEDIA</option>
+                        <label class="form-label fw-bold">Tipo de Falla</label>
+                        <select name="tipo_suceso" id="tipo_suceso" class="form-select">
+                            <option value="Falla Básica">🔵 Falla Básica</option>
+                            <option value="Falla Crítica">🔴 Falla Crítica</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -327,24 +316,7 @@
 </div>
 
 <script>
-    // Lógica de Prioridad Dinámica
-    function verificarGravedad() {
-        const tipo = document.getElementById('tipo_suceso').value;
-        const divPrioridad = document.getElementById('div_prioridad');
-        const selectPrioridad = document.getElementById('prioridad_select');
-        const criticos = ['Incidente Crítico', 'Activación de Alarma', 'Ronda de Vigilancia', 'Apertura/Cierre Sede'];
-
-        if (criticos.includes(tipo)) {
-            selectPrioridad.value = "1";
-            divPrioridad.style.display = 'none';
-        } else {
-            divPrioridad.style.display = 'block';
-            selectPrioridad.value = "3";
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', function () {
-        verificarGravedad();
         // Fecha actual con segundos para el modal
         const ahora = new Date();
         ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());

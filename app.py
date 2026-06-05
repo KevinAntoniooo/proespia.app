@@ -203,33 +203,45 @@ def dashboard(user_id):
 
     # --- LÓGICA PARA EL TÉCNICO ---
     if usuario.rol == 'tecnico':
-        # 1. Visitas para HOY que estén Pendientes
+        # 1. Visitas para HOY que estén Pendientes (incluye fallas)
         visitas_hoy = VisitaProgramada.query.filter(
-            VisitaProgramada.usuario_id == user_id,
             VisitaProgramada.fecha_programada >= inicio_hoy,
             VisitaProgramada.fecha_programada <= fin_hoy,
-            VisitaProgramada.estado == 'Pendiente'
-        ).order_by(VisitaProgramada.fecha_programada.asc()).all()
+            VisitaProgramada.estado == 'Pendiente',
+            or_(
+                VisitaProgramada.usuario_id == user_id,
+                VisitaProgramada.falla_id.isnot(None)
+            )
+        ).order_by(VisitaProgramada.prioridad.asc(), VisitaProgramada.fecha_programada.asc()).all()
 
         # 2. Próximas Visitas (Mañana en adelante, excluye vencidas)
         VisitaProgramada.query.filter(
-            VisitaProgramada.usuario_id == user_id,
+            or_(
+                VisitaProgramada.usuario_id == user_id,
+                VisitaProgramada.falla_id.isnot(None)
+            ),
             VisitaProgramada.fecha_programada < inicio_hoy,
             VisitaProgramada.estado == 'Pendiente'
         ).update({VisitaProgramada.estado: 'Vencida'}, synchronize_session=False)
         hace_3_dias = datetime.combine(hoy_date - timedelta(days=3), time.min)
         VisitaProgramada.query.filter(
-            VisitaProgramada.usuario_id == user_id,
+            or_(
+                VisitaProgramada.usuario_id == user_id,
+                VisitaProgramada.falla_id.isnot(None)
+            ),
             VisitaProgramada.estado == 'Vencida',
             VisitaProgramada.fecha_programada < hace_3_dias
         ).delete(synchronize_session=False)
         db.session.commit()
 
         proximas = VisitaProgramada.query.filter(
-            VisitaProgramada.usuario_id == user_id,
             VisitaProgramada.fecha_programada > fin_hoy,
-            VisitaProgramada.estado.in_(['Pendiente'])
-        ).order_by(VisitaProgramada.fecha_programada.asc()).limit(5).all()
+            VisitaProgramada.estado.in_(['Pendiente']),
+            or_(
+                VisitaProgramada.usuario_id == user_id,
+                VisitaProgramada.falla_id.isnot(None)
+            )
+        ).order_by(VisitaProgramada.prioridad.asc(), VisitaProgramada.fecha_programada.asc()).limit(5).all()
 
         # 3. Fallas pendientes (todas, no solo las que creó el técnico)
         tareas_tecnico = Bitacora.query.filter(
@@ -817,7 +829,6 @@ def nueva_entrada(user_id):
     suceso = request.form.get('tipo_suceso')
     desc = request.form.get('descripcion')
     fecha_str = request.form.get('fecha_suceso')
-    prioridad_form = request.form.get('prioridad')
     
     try:
         # 1. Intentamos leer la fecha. Usamos una lógica flexible:
@@ -830,18 +841,14 @@ def nueva_entrada(user_id):
             ahora = datetime.now()
             fecha_final = fecha_final.replace(second=ahora.second, microsecond=ahora.microsecond)
 
-        # 2. Lógica de prioridad (Sigue igual)
-        sucesos_prioridad_fija = ['Incidente Crítico', 'Activación de Alarma', 'Ronda de Vigilancia', 'Apertura/Cierre Sede']
-        
-        if suceso in sucesos_prioridad_fija:
-            prioridad_final = 1
-        else:
-            prioridad_final = int(prioridad_form) if prioridad_form else 3
+        # 2. Prioridad según tipo de falla
+        prioridad_final = 1 if suceso == 'Falla Crítica' else 3
+        tipo_visita = suceso
 
         # 3. Guardar en DB
         nueva = Bitacora(
             cliente_id=int(c_id),
-            tipo_visita=suceso, 
+            tipo_visita=tipo_visita, 
             descripcion=desc,
             usuario_id=user_id,
             fecha=fecha_final,
@@ -852,41 +859,38 @@ def nueva_entrada(user_id):
         db.session.commit()
         flash('Suceso registrado correctamente', 'success')
 
-        # --- DISPARADOR: Nueva falla en bitácora ---
-        if 'falla' in suceso.lower():
-            cliente = Cliente.query.get(int(c_id))
-            autor = Usuario.query.get(user_id)
-            nom_cliente = cliente.nombre if cliente else 'Desconocido'
+        # --- DISPARADOR: Crear VisitaProgramada para la agenda de terreno ---
+        cliente = Cliente.query.get(int(c_id))
+        autor = Usuario.query.get(user_id)
+        nom_cliente = cliente.nombre if cliente else 'Desconocido'
 
-            # Auto-crear VisitaProgramada para la agenda de terreno
-            tipo_trabajo = 'Reparación'
-            visita = VisitaProgramada(
-                cliente_id=int(c_id),
-                usuario_id=current_user.id,
-                tipo_trabajo=tipo_trabajo,
-                descripcion=f"[Falla desde Bitácora] {desc}",
-                estado='Pendiente',
-                prioridad=prioridad_final,
-                falla_id=nueva.id,
-                fecha_programada=datetime.now()
-            )
-            db.session.add(visita)
-            db.session.commit()
-            flash(f'Visita creada en Agenda de Terreno para {nom_cliente}', 'success')
+        visita = VisitaProgramada(
+            cliente_id=int(c_id),
+            usuario_id=current_user.id,
+            tipo_trabajo='Reparación',
+            descripcion=f"[Falla desde Bitácora] {desc}",
+            estado='Pendiente',
+            prioridad=prioridad_final,
+            falla_id=nueva.id,
+            fecha_programada=datetime.now()
+        )
+        db.session.add(visita)
+        db.session.commit()
+        flash(f'Visita creada en Agenda de Terreno para {nom_cliente}', 'success')
 
-            notificar_admin(
-                f'Falla Registrada - {nom_cliente}',
-                f'{autor.nombre} registró una falla en {nom_cliente}',
-                url_for('ver_bitacora', user_id=1),
-                tipo='falla',
-                exclude_id=current_user.id
-            )
-            notificar_tecnicos(
-                f'Falla Pendiente - {nom_cliente}',
-                f'Falla reportada en {nom_cliente}. Revisar terreno.',
-                url_for('gestor_visitas', user_id=user_id) if 'gestor_visitas' in dir() else '/',
-                tipo='falla'
-            )
+        notificar_admin(
+            f'Falla Registrada - {nom_cliente}',
+            f'{autor.nombre} registró una {suceso} en {nom_cliente}',
+            url_for('ver_bitacora', user_id=1),
+            tipo='falla',
+            exclude_id=current_user.id
+        )
+        notificar_tecnicos(
+            f'Falla Pendiente - {nom_cliente}',
+            f'{suceso} reportada en {nom_cliente}. Revisar terreno.',
+            url_for('gestor_visitas', user_id=user_id) if 'gestor_visitas' in dir() else '/',
+            tipo='falla'
+        )
 
     except Exception as e:
         db.session.rollback()
