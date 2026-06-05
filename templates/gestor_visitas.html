@@ -381,11 +381,45 @@ document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { n
 </script>
 <style>
 .table-warning-subtle { background-color: rgba(255, 193, 7, 0.05); }
-.nav-tabs .nav-link { color: #adb5bd; border: none; padding: 0.65rem 1rem; }
-.nav-tabs .nav-link.active { border: none; border-bottom: 3px solid #0d6efd; color: #fff; background: none; }
-.nav-tabs .nav-link .badge { font-size: 0.65rem; vertical-align: middle; }
+.nav-tabs .nav-link { 
+    color: #94a3b8; 
+    border: none; 
+    padding: 0.75rem 1.1rem; 
+    transition: all 0.2s ease;
+    position: relative;
+}
+.nav-tabs .nav-link:hover { 
+    color: #e2e8f0; 
+    background: rgba(255,255,255,0.04); 
+}
+.nav-tabs .nav-link.active { 
+    border: none; 
+    color: #fff; 
+    background: rgba(255,255,255,0.08); 
+}
+.nav-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 1rem;
+    right: 1rem;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 3px 3px 0 0;
+}
+.nav-tabs .nav-link .badge { 
+    font-size: 0.65rem; 
+    vertical-align: middle; 
+    transition: all 0.2s ease;
+}
+.nav-tabs .nav-link.active .badge.bg-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6) !important; }
+.nav-tabs .nav-link.active .badge.bg-warning { background: linear-gradient(135deg, #f59e0b, #d97706) !important; border: none; }
+.nav-tabs .nav-link.active .badge.bg-success { background: linear-gradient(135deg, #10b981, #059669) !important; }
+.card-header { border-bottom: 1px solid rgba(255,255,255,0.06); }
 @media (max-width: 576px) {
-    .nav-tabs .nav-link { font-size: 0.7rem; padding: 0.5rem 0.6rem; }
+    .nav-tabs .nav-link { font-size: 0.7rem; padding: 0.55rem 0.6rem; }
+    .nav-tabs .nav-link.active::after { left: 0.6rem; right: 0.6rem; }
+    .nav-tabs .nav-link .badge { font-size: 0.6rem; }
     .table td:nth-child(2) { max-width: 80px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .table td:nth-child(4),
     .table td:nth-child(5) { font-size: 0.65rem; }
