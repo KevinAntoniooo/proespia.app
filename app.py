@@ -1586,7 +1586,8 @@ def api_eventos_por_fecha():
                 'descripcion': v.descripcion,
                 'ubicacion': v.ubicacion or '',
                 'cliente_id': v.cliente_id,
-                'usuario_id': v.usuario_id
+                'usuario_id': v.usuario_id,
+                'informe_tecnico': v.informe_tecnico or ''
             })
         resp = make_response(jsonify(resultados))
         resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
