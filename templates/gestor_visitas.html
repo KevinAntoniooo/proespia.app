@@ -6,24 +6,23 @@
         <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check me-2"></i>Gestor de Visitas</h2>
         <div class="text-end">
             <span class="badge bg-warning text-dark px-3 shadow-sm rounded-2">Pendientes: {{ total_pendientes }}</span>
-            <span class="badge bg-dark px-3 shadow-sm rounded-2">Total: {{ paginacion.total }}</span>
         </div>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-2 p-md-3">
             <form method="GET" action="{{ url_for('gestor_visitas', user_id=usuario.id) }}" class="row g-2 g-md-3 align-items-end">
-                <div class="col-12 col-md-2">
-                    <label class="small fw-bold text-muted text-uppercase mb-1">Estado</label>
-                    <select name="tipo_filtro" class="form-select form-select-sm rounded-3 border-primary">
-                        <option value="todas" {% if request.args.get('tipo_filtro') == 'todas' or not request.args.get('tipo_filtro') %}selected{% endif %}>Todas</option>
-                        <option value="pendientes" {% if request.args.get('tipo_filtro') == 'pendientes' %}selected{% endif %}>Pendientes</option>
-                        <option value="realizadas" {% if request.args.get('tipo_filtro') == 'realizadas' %}selected{% endif %}>Realizadas</option>
-                        <option value="falla_critica" {% if request.args.get('tipo_filtro') == 'falla_critica' %}selected{% endif %}>🔴 Falla Crítica</option>
-                        <option value="falla_normal" {% if request.args.get('tipo_filtro') == 'falla_normal' %}selected{% endif %}>🔵 Falla Normal</option>
-                        <option value="visita_agendada" {% if request.args.get('tipo_filtro') == 'visita_agendada' %}selected{% endif %}>📅 Visita Agendada</option>
+                {% if tecnicos %}
+                <div class="col-6 col-md-2">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Técnico</label>
+                    <select name="tecnico_id" class="form-select form-select-sm rounded-3 border-primary">
+                        <option value="">Todos</option>
+                        {% for t in tecnicos %}
+                        <option value="{{ t.id }}" {% if request.args.get('tecnico_id')|int == t.id %}selected{% endif %}>{{ t.nombre }}</option>
+                        {% endfor %}
                     </select>
                 </div>
+                {% endif %}
                 <div class="col-6 col-md-3">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
                     <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_inicio', '') }}">
@@ -44,142 +43,139 @@
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th class="ps-4">Estado</th>
-                        <th>Cliente</th>
-                        <th>Tipo</th>
-                        <th>Programada</th>
-                        <th class="d-none d-md-table-cell">Descripción</th>
-                        <th class="text-center pe-4 d-none d-sm-table-cell">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% set ns = namespace(last_section='') %}
-                    {% for v in visitas %}
-                    {% set section = 'realizadas' if v.estado == 'Realizada' else 'pendientes' %}
-                    {% if section != ns.last_section and ns.last_section != '' %}
-                    <tr class="separator-row"><td colspan="6" class="py-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fa-solid fa-check-circle text-success"></i>
-                            <span class="fw-bold text-success" style="font-size:0.85rem;">Historial de Realizadas</span>
-                            <hr class="flex-grow-1 my-0 border-success opacity-25">
-                        </div>
-                    </td></tr>
-                    {% endif %}
-                    {% set ns.last_section = section %}
-                    <tr class="{% if v.prioridad == 1 %}table-danger-subtle{% elif v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisita(this)"
-                        data-id="{{ v.id }}"
-                        data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
-                        data-tipo="{{ v.tipo_trabajo }}"
-                        data-fecha="{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}"
-                        data-estado="{{ v.estado }}"
-                        data-descripcion="{{ v.descripcion|e if v.descripcion else '' }}"
-                        data-ubicacion="{{ v.ubicacion or '' }}"
-                        data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}"
-                        data-prioridad="{{ v.prioridad or 3 }}"
-                        data-falla-id="{{ v.falla_id or '' }}">
-                        <td class="ps-2 ps-sm-4">
-                            {% if v.estado == 'Realizada' %}
-                            <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-success rounded-circle shadow-sm" style="width:30px;height:30px;">
-                                <i class="fa-solid fa-check text-white" style="font-size:0.8rem;"></i>
-                            </span>
-                            <span class="badge bg-success shadow-sm d-none d-sm-inline-block px-3">
-                                <i class="fa-solid fa-check-circle me-1"></i>Realizada
-                            </span>
-                            {% elif v.prioridad == 1 %}
-                            <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-danger rounded-circle shadow-sm" style="width:30px;height:30px;">
-                                <i class="fa-solid fa-bolt text-white" style="font-size:0.8rem;"></i>
-                            </span>
-                            <span class="badge bg-danger shadow-sm d-none d-sm-inline-block px-3">
-                                <i class="fa-solid fa-bolt me-1"></i>Crítica
-                            </span>
-                            {% elif v.estado == 'Pendiente' %}
-                            <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-warning rounded-circle shadow-sm" style="width:30px;height:30px;">
-                                <i class="fa-solid fa-clock text-dark" style="font-size:0.8rem;"></i>
-                            </span>
-                            <span class="badge bg-warning text-dark shadow-sm d-none d-sm-inline-block px-3">
-                                <i class="fa-solid fa-clock me-1"></i>Pendiente
-                            </span>
-                            {% endif %}
-                        </td>
-                        <td class="fw-bold small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
-                        <td>
-                            <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span>
-                            {% if v.falla_id %}&nbsp;<span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:0.6rem;">Falla</span>{% endif %}
-                        </td>
-                        <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
-                        <td class="text-center pe-4 d-none d-sm-table-cell">
-                            {% if v.estado == 'Pendiente' %}
-                                {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
-                                <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
-                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
-                                    onclick="event.stopPropagation();">
-                                    <i class="fa-solid fa-wrench me-1"></i>Gestionar
-                                </a>
-                                {% else %}
-                                <a href="javascript:void(0)"
-                                    class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
-                                    onclick="event.stopPropagation();confirmarFinalizar({{ v.id }})">
-                                    <i class="fa-solid fa-check me-1"></i>LISTO
-                                </a>
-                                {% endif %}
+    {% macro tabla_visitas(lista, mensaje_vacio) %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-4">Estado</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Programada</th>
+                    <th class="d-none d-md-table-cell">Descripción</th>
+                    <th class="text-center pe-4 d-none d-sm-table-cell">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in lista %}
+                <tr class="{% if v.prioridad == 1 %}table-danger-subtle{% elif v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisita(this)"
+                    data-id="{{ v.id }}"
+                    data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
+                    data-tipo="{{ v.tipo_trabajo }}"
+                    data-fecha="{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}"
+                    data-estado="{{ v.estado }}"
+                    data-descripcion="{{ v.descripcion|e if v.descripcion else '' }}"
+                    data-ubicacion="{{ v.ubicacion or '' }}"
+                    data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}"
+                    data-prioridad="{{ v.prioridad or 3 }}"
+                    data-falla-id="{{ v.falla_id or '' }}">
+                    <td class="ps-2 ps-sm-4">
+                        {% if v.estado == 'Realizada' %}
+                        <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-success rounded-circle shadow-sm" style="width:30px;height:30px;">
+                            <i class="fa-solid fa-check text-white" style="font-size:0.8rem;"></i>
+                        </span>
+                        <span class="badge bg-success shadow-sm d-none d-sm-inline-block px-3">
+                            <i class="fa-solid fa-check-circle me-1"></i>Realizada
+                        </span>
+                        {% elif v.prioridad == 1 %}
+                        <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-danger rounded-circle shadow-sm" style="width:30px;height:30px;">
+                            <i class="fa-solid fa-bolt text-white" style="font-size:0.8rem;"></i>
+                        </span>
+                        <span class="badge bg-danger shadow-sm d-none d-sm-inline-block px-3">
+                            <i class="fa-solid fa-bolt me-1"></i>Crítica
+                        </span>
+                        {% elif v.estado == 'Pendiente' %}
+                        <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-warning rounded-circle shadow-sm" style="width:30px;height:30px;">
+                            <i class="fa-solid fa-clock text-dark" style="font-size:0.8rem;"></i>
+                        </span>
+                        <span class="badge bg-warning text-dark shadow-sm d-none d-sm-inline-block px-3">
+                            <i class="fa-solid fa-clock me-1"></i>Pendiente
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
+                    <td>
+                        <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span>
+                        {% if v.falla_id %}&nbsp;<span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:0.6rem;">Falla</span>{% endif %}
+                    </td>
+                    <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
+                    <td class="text-center pe-4 d-none d-sm-table-cell">
+                        {% if v.estado == 'Pendiente' %}
+                            {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
+                            <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
+                                class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
+                                onclick="event.stopPropagation();">
+                                <i class="fa-solid fa-wrench me-1"></i>Gestionar
+                            </a>
                             {% else %}
-                            <div class="d-flex gap-1 justify-content-center">
-                                {% if v.informe_tecnico %}
-                                <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}"
-                                    class="btn btn-sm btn-outline-danger shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
-                                    onclick="event.stopPropagation();">
-                                    <i class="fa-solid fa-file-pdf me-1"></i>PDF
-                                </a>
-                                {% else %}
-                                <span class="text-muted small">Completada</span>
-                                {% endif %}
-                            </div>
+                            <a href="javascript:void(0)"
+                                class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
+                                onclick="event.stopPropagation();confirmarFinalizar({{ v.id }})">
+                                <i class="fa-solid fa-check me-1"></i>LISTO
+                            </a>
                             {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">Sin visitas registradas.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        {% else %}
+                        <div class="d-flex gap-1 justify-content-center">
+                            {% if v.informe_tecnico %}
+                            <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}"
+                                class="btn btn-sm btn-outline-danger shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
+                                onclick="event.stopPropagation();">
+                                <i class="fa-solid fa-file-pdf me-1"></i>PDF
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">Completada</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">{{ mensaje_vacio }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endmacro %}
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-dark border-0 p-0">
+            <ul class="nav nav-tabs card-header-tabs" id="gvTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold small" id="agendadas-tab" data-bs-toggle="tab" data-bs-target="#tab_agendadas" role="tab">
+                        <i class="fa-solid fa-calendar-check me-1 text-primary"></i>Visitas Agendadas <span class="badge bg-primary ms-1">{{ visitas_agendadas|length }}</span>
+                    </button>
+                </li>
+                {% if usuario.rol == 'tecnico' %}
+                <li class="nav-item">
+                    <button class="nav-link fw-bold small" id="fallas-pend-tab" data-bs-toggle="tab" data-bs-target="#tab_fallas_pend" role="tab">
+                        <i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i>Fallas Reportadas <span class="badge bg-warning text-dark ms-1">{{ fallas_pendientes|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold small" id="fallas-real-tab" data-bs-toggle="tab" data-bs-target="#tab_fallas_real" role="tab">
+                        <i class="fa-solid fa-check-circle me-1 text-success"></i>Fallas Realizadas <span class="badge bg-success ms-1">{{ fallas_realizadas|length }}</span>
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="card-body p-0 tab-content">
+            <div class="tab-pane fade show active" id="tab_agendadas" role="tabpanel">
+                {{ tabla_visitas(visitas_agendadas, 'No hay visitas agendadas.') }}
+            </div>
+            {% if usuario.rol == 'tecnico' %}
+            <div class="tab-pane fade" id="tab_fallas_pend" role="tabpanel">
+                {{ tabla_visitas(fallas_pendientes, 'No hay fallas pendientes.') }}
+            </div>
+            <div class="tab-pane fade" id="tab_fallas_real" role="tabpanel">
+                {{ tabla_visitas(fallas_realizadas, 'No hay fallas realizadas.') }}
+            </div>
+            {% endif %}
         </div>
     </div>
-
-    {% if paginacion and paginacion.pages > 1 %}
-    <nav aria-label="Navegación de visitas" class="mt-4">
-        <ul class="pagination justify-content-center shadow-sm">
-            <li class="page-item {{ 'disabled' if not paginacion.has_prev }}">
-                <a class="page-link rounded-start-pill px-3"
-                    href="{{ url_for('gestor_visitas', user_id=usuario.id, page=paginacion.prev_num, tipo_filtro=request.args.get('tipo_filtro', ''), fecha_inicio=request.args.get('fecha_inicio', ''), fecha_fin=request.args.get('fecha_fin', '')) if paginacion.has_prev else '#' }}">
-                    <i class="bi bi-chevron-left me-1"></i>Anterior
-                </a>
-            </li>
-            {% for p in paginacion.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-            {% if p %}
-            <li class="page-item {{ 'active' if p == paginacion.page }}">
-                <a class="page-link" href="{{ url_for('gestor_visitas', user_id=usuario.id, page=p, tipo_filtro=request.args.get('tipo_filtro', ''), fecha_inicio=request.args.get('fecha_inicio', ''), fecha_fin=request.args.get('fecha_fin', '')) }}">{{ p }}</a>
-            </li>
-            {% else %}
-            <li class="page-item disabled"><span class="page-link">...</span></li>
-            {% endif %}
-            {% endfor %}
-            <li class="page-item {{ 'disabled' if not paginacion.has_next }}">
-                <a class="page-link rounded-end-pill px-3"
-                    href="{{ url_for('gestor_visitas', user_id=usuario.id, page=paginacion.next_num, tipo_filtro=request.args.get('tipo_filtro', ''), fecha_inicio=request.args.get('fecha_inicio', ''), fecha_fin=request.args.get('fecha_fin', '')) if paginacion.has_next else '#' }}">
-                    Siguiente<i class="bi bi-chevron-right ms-1"></i>
-                </a>
-            </li>
-        </ul>
-    </nav>
-    {% endif %}
 </div>
 
 <!-- Modal Detalle de Visita -->
@@ -380,10 +376,11 @@ document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { n
 </script>
 <style>
 .table-warning-subtle { background-color: rgba(255, 193, 7, 0.05); }
-.separator-row td { background-color: rgba(25, 135, 84, 0.08) !important; border-top: 2px solid rgba(25, 135, 84, 0.3) !important; padding: 0.5rem 1rem !important; }
-.separator-row:hover td { background-color: rgba(25, 135, 84, 0.12) !important; }
-.separator-row td hr { border-color: #198754 !important; opacity: 0.25; }
+.nav-tabs .nav-link { color: #adb5bd; border: none; padding: 0.65rem 1rem; }
+.nav-tabs .nav-link.active { border: none; border-bottom: 3px solid #0d6efd; color: #fff; background: none; }
+.nav-tabs .nav-link .badge { font-size: 0.65rem; vertical-align: middle; }
 @media (max-width: 576px) {
+    .nav-tabs .nav-link { font-size: 0.7rem; padding: 0.5rem 0.6rem; }
     .table td:nth-child(2) { max-width: 80px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .table td:nth-child(4),
     .table td:nth-child(5) { font-size: 0.65rem; }

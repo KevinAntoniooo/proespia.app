@@ -517,67 +517,74 @@ def reporte_visita_pdf(visita_id, user_id):
         flash(f'Error al generar PDF: {str(e)}', 'danger')
         return redirect(url_for('gestor_visitas', user_id=user_id))
 
-# RUTA GESTOR DE VISITAS (para técnico)
+# RUTA GESTOR DE VISITAS (con tabs: agendadas, fallas pendientes, fallas realizadas)
 @app.route('/gestor_visitas/<int:user_id>')
 @login_required
 def gestor_visitas(user_id):
     usuario = Usuario.query.get_or_404(user_id)
-    page = request.args.get('page', 1, type=int)
-
-    if usuario.rol in ['admin', 'super_su']:
-        query = VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None))
-        tecnico_id = request.args.get('tecnico_id', type=int)
-        if tecnico_id:
-            query = query.filter_by(usuario_id=tecnico_id)
-    else:
-        # Técnico ve sus visitas asignadas + fallas (sin filtrar por estado)
-        query = VisitaProgramada.query.filter(
-            or_(
-                VisitaProgramada.usuario_id == user_id,
-                VisitaProgramada.falla_id.isnot(None)
-            )
-        )
-
-    tipo_filtro = request.args.get('tipo_filtro', 'todas')
-    if tipo_filtro == 'pendientes':
-        query = query.filter_by(estado='Pendiente')
-    elif tipo_filtro == 'realizadas':
-        query = query.filter_by(estado='Realizada')
-    elif tipo_filtro == 'falla_critica':
-        query = query.filter(VisitaProgramada.falla_id.isnot(None), VisitaProgramada.prioridad == 1)
-    elif tipo_filtro == 'falla_normal':
-        query = query.filter(VisitaProgramada.falla_id.isnot(None), VisitaProgramada.prioridad != 1)
-    elif tipo_filtro == 'visita_agendada':
-        query = query.filter(VisitaProgramada.falla_id.is_(None))
 
     inicio = request.args.get('fecha_inicio')
     fin = request.args.get('fecha_fin')
+    filtros_fecha = []
     if inicio:
-        query = query.filter(VisitaProgramada.fecha_programada >= f"{inicio} 00:00:00")
+        filtros_fecha.append(VisitaProgramada.fecha_programada >= f"{inicio} 00:00:00")
     if fin:
-        query = query.filter(VisitaProgramada.fecha_programada <= f"{fin} 23:59:59")
+        filtros_fecha.append(VisitaProgramada.fecha_programada <= f"{fin} 23:59:59")
 
-    query = query.order_by(
-        case((VisitaProgramada.estado == 'Pendiente', 0), (VisitaProgramada.estado == 'Realizada', 2), else_=1),
-        VisitaProgramada.prioridad.asc(),
-        VisitaProgramada.fecha_programada.desc()
-    )
-    paginado = query.paginate(page=page, per_page=15, error_out=False)
-
-    total_pendientes = VisitaProgramada.query.filter(
-        VisitaProgramada.estado == 'Pendiente',
-        or_(
-            VisitaProgramada.usuario_id == current_user.id,
-            VisitaProgramada.falla_id.isnot(None)
-        )
-    ).count() if current_user.rol == 'tecnico' else VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None), VisitaProgramada.estado == 'Pendiente').count()
     tecnicos = Usuario.query.filter_by(rol='tecnico').all() if usuario.rol in ['admin', 'super_su'] else []
 
+    if usuario.rol in ['admin', 'super_su']:
+        q_agendadas = VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None))
+        tecnico_id = request.args.get('tecnico_id', type=int)
+        if tecnico_id:
+            q_agendadas = q_agendadas.filter_by(usuario_id=tecnico_id)
+        for f in filtros_fecha:
+            q_agendadas = q_agendadas.filter(f)
+        visitas_agendadas = q_agendadas.order_by(
+            case((VisitaProgramada.estado == 'Pendiente', 0), (VisitaProgramada.estado == 'Realizada', 2), else_=1),
+            VisitaProgramada.prioridad.asc(),
+            VisitaProgramada.fecha_programada.desc()
+        ).all()
+        fallas_pendientes = []
+        fallas_realizadas = []
+    else:
+        q_agendadas = VisitaProgramada.query.filter(
+            VisitaProgramada.falla_id.is_(None),
+            VisitaProgramada.usuario_id == user_id
+        )
+        q_fallas_pend = VisitaProgramada.query.filter(
+            VisitaProgramada.falla_id.isnot(None),
+            VisitaProgramada.estado == 'Pendiente'
+        )
+        q_fallas_real = VisitaProgramada.query.filter(
+            VisitaProgramada.falla_id.isnot(None),
+            VisitaProgramada.estado == 'Realizada'
+        )
+        for f in filtros_fecha:
+            q_agendadas = q_agendadas.filter(f)
+            q_fallas_pend = q_fallas_pend.filter(f)
+            q_fallas_real = q_fallas_real.filter(f)
+        visitas_agendadas = q_agendadas.order_by(
+            case((VisitaProgramada.estado == 'Pendiente', 0), (VisitaProgramada.estado == 'Realizada', 2), else_=1),
+            VisitaProgramada.prioridad.asc(),
+            VisitaProgramada.fecha_programada.desc()
+        ).all()
+        fallas_pendientes = q_fallas_pend.order_by(
+            VisitaProgramada.prioridad.asc(),
+            VisitaProgramada.fecha_programada.asc()
+        ).all()
+        fallas_realizadas = q_fallas_real.order_by(
+            VisitaProgramada.fecha_programada.desc()
+        ).all()
+
+    total_pendientes = sum(1 for v in visitas_agendadas if v.estado == 'Pendiente') + len(fallas_pendientes)
+
     return render_template('gestor_visitas.html', usuario=usuario,
-                           visitas=paginado.items, paginacion=paginado,
+                           visitas_agendadas=visitas_agendadas,
+                           fallas_pendientes=fallas_pendientes,
+                           fallas_realizadas=fallas_realizadas,
                            total_pendientes=total_pendientes,
-                           tecnicos=tecnicos,
-                           hoy_iso=date.today().isoformat())
+                           tecnicos=tecnicos)
 
 # ==========================================
 # 4. GESTIÓN DE CLIENTES (SEDES) Y EQUIPOS
