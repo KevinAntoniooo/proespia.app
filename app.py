@@ -96,13 +96,19 @@ def inject_globals():
             ).count()
             if current_user.rol in ['admin', 'super_su']:
                 ctx['pendientes_visitas'] = VisitaProgramada.query.filter(
-                    VisitaProgramada.estado == 'Pendiente'
+                    VisitaProgramada.estado == 'Pendiente',
+                    VisitaProgramada.falla_id.is_(None)
                 ).count()
-            else:
+            elif current_user.rol == 'tecnico':
                 ctx['pendientes_visitas'] = VisitaProgramada.query.filter(
                     VisitaProgramada.estado == 'Pendiente',
-                    VisitaProgramada.usuario_id == current_user.id
+                    or_(
+                        VisitaProgramada.usuario_id == current_user.id,
+                        VisitaProgramada.falla_id.isnot(None)
+                    )
                 ).count()
+            else:
+                ctx['pendientes_visitas'] = 0
     except Exception:
         pass
     return ctx
