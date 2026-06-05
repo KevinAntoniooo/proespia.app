@@ -26,11 +26,11 @@
                 </div>
                 <div class="col-6 col-md-3">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
-                    <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_inicio', hoy_iso) }}">
+                    <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_inicio', '') }}">
                 </div>
                 <div class="col-6 col-md-3">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Hasta:</label>
-                    <input type="date" name="fecha_fin" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_fin', hoy_iso) }}">
+                    <input type="date" name="fecha_fin" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_fin', '') }}">
                 </div>
                 <div class="col-12 col-md-4 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm">
