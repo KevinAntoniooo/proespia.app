@@ -373,7 +373,7 @@ def finalizar_visita(visita_id):
         db.session.rollback()
         flash(f'Error al guardar el estado: {str(e)}', 'danger')
     
-    return redirect(url_for('dashboard', user_id=visita.usuario_id))
+    return redirect(request.referrer or url_for('gestor_visitas', user_id=visita.usuario_id))
 
 @app.route('/agenda/finalizar_cotizacion/<int:visita_id>', methods=['POST'])
 @login_required
