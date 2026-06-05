@@ -19,6 +19,9 @@
                         <option value="todas" {% if request.args.get('tipo_filtro') == 'todas' or not request.args.get('tipo_filtro') %}selected{% endif %}>Todas</option>
                         <option value="pendientes" {% if request.args.get('tipo_filtro') == 'pendientes' %}selected{% endif %}>Pendientes</option>
                         <option value="realizadas" {% if request.args.get('tipo_filtro') == 'realizadas' %}selected{% endif %}>Realizadas</option>
+                        <option value="falla_critica" {% if request.args.get('tipo_filtro') == 'falla_critica' %}selected{% endif %}>🔴 Falla Crítica</option>
+                        <option value="falla_normal" {% if request.args.get('tipo_filtro') == 'falla_normal' %}selected{% endif %}>🔵 Falla Normal</option>
+                        <option value="visita_agendada" {% if request.args.get('tipo_filtro') == 'visita_agendada' %}selected{% endif %}>📅 Visita Agendada</option>
                     </select>
                 </div>
                 <div class="col-6 col-md-3">

@@ -544,6 +544,12 @@ def gestor_visitas(user_id):
         query = query.filter_by(estado='Pendiente')
     elif tipo_filtro == 'realizadas':
         query = query.filter_by(estado='Realizada')
+    elif tipo_filtro == 'falla_critica':
+        query = query.filter(VisitaProgramada.falla_id.isnot(None), VisitaProgramada.prioridad == 1)
+    elif tipo_filtro == 'falla_normal':
+        query = query.filter(VisitaProgramada.falla_id.isnot(None), VisitaProgramada.prioridad != 1)
+    elif tipo_filtro == 'visita_agendada':
+        query = query.filter(VisitaProgramada.falla_id.is_(None))
 
     inicio = request.args.get('fecha_inicio')
     fin = request.args.get('fecha_fin')
