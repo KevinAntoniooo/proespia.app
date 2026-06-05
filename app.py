@@ -544,8 +544,18 @@ def gestor_visitas(user_id):
             VisitaProgramada.prioridad.asc(),
             VisitaProgramada.fecha_programada.desc()
         ).all()
+
+        q_realizadas = VisitaProgramada.query.filter(
+            VisitaProgramada.estado == 'Realizada',
+            VisitaProgramada.falla_id.is_(None)
+        )
+        if tecnico_id:
+            q_realizadas = q_realizadas.filter_by(usuario_id=tecnico_id)
+        for f in filtros_fecha:
+            q_realizadas = q_realizadas.filter(f)
+        visitas_realizadas = q_realizadas.order_by(VisitaProgramada.fecha_programada.desc()).all()
+
         fallas_pendientes = []
-        fallas_realizadas = []
     else:
         q_agendadas = VisitaProgramada.query.filter(
             VisitaProgramada.falla_id.is_(None),
@@ -555,16 +565,18 @@ def gestor_visitas(user_id):
             VisitaProgramada.falla_id.isnot(None),
             VisitaProgramada.estado == 'Pendiente'
         )
-        q_fallas_real = VisitaProgramada.query.filter(
-            VisitaProgramada.falla_id.isnot(None),
-            VisitaProgramada.estado == 'Realizada'
+        q_realizadas = VisitaProgramada.query.filter(
+            VisitaProgramada.estado == 'Realizada',
+            or_(
+                VisitaProgramada.usuario_id == user_id,
+                VisitaProgramada.falla_id.isnot(None)
+            )
         )
         for f in filtros_fecha:
             q_agendadas = q_agendadas.filter(f)
             q_fallas_pend = q_fallas_pend.filter(f)
-            q_fallas_real = q_fallas_real.filter(f)
+            q_realizadas = q_realizadas.filter(f)
         visitas_agendadas = q_agendadas.order_by(
-            case((VisitaProgramada.estado == 'Pendiente', 0), (VisitaProgramada.estado == 'Realizada', 2), else_=1),
             VisitaProgramada.prioridad.asc(),
             VisitaProgramada.fecha_programada.desc()
         ).all()
@@ -572,16 +584,16 @@ def gestor_visitas(user_id):
             VisitaProgramada.prioridad.asc(),
             VisitaProgramada.fecha_programada.asc()
         ).all()
-        fallas_realizadas = q_fallas_real.order_by(
+        visitas_realizadas = q_realizadas.order_by(
             VisitaProgramada.fecha_programada.desc()
         ).all()
 
-    total_pendientes = sum(1 for v in visitas_agendadas if v.estado == 'Pendiente') + len(fallas_pendientes)
+    total_pendientes = len(visitas_agendadas) + len(fallas_pendientes)
 
     return render_template('gestor_visitas.html', usuario=usuario,
                            visitas_agendadas=visitas_agendadas,
                            fallas_pendientes=fallas_pendientes,
-                           fallas_realizadas=fallas_realizadas,
+                           visitas_realizadas=visitas_realizadas,
                            total_pendientes=total_pendientes,
                            tecnicos=tecnicos)
 

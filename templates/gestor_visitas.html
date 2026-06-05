@@ -96,9 +96,10 @@
                     <td class="fw-bold small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
                     <td>{% if es_falla %}
                         <span class="badge bg-danger bg-opacity-10 text-danger py-1 px-2" style="font-size:0.7rem;">Falla</span>
+                        {% elif v.falla_id %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger py-1 px-2" style="font-size:0.7rem;">Falla</span>
                         {% else %}
                         <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span>
-                        {% if v.falla_id %}&nbsp;<span class="badge bg-danger bg-opacity-10 text-danger" style="font-size:0.6rem;">Falla</span>{% endif %}
                         {% endif %}
                     </td>
                     <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
@@ -157,12 +158,12 @@
                         <i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i>Fallas Reportadas <span class="badge bg-warning text-dark ms-1">{{ fallas_pendientes|length }}</span>
                     </button>
                 </li>
+                {% endif %}
                 <li class="nav-item">
-                    <button class="nav-link fw-bold small" id="fallas-real-tab" data-bs-toggle="tab" data-bs-target="#tab_fallas_real" role="tab">
-                        <i class="fa-solid fa-check-circle me-1 text-success"></i>Fallas Realizadas <span class="badge bg-success ms-1">{{ fallas_realizadas|length }}</span>
+                    <button class="nav-link fw-bold small" id="realizadas-tab" data-bs-toggle="tab" data-bs-target="#tab_realizadas" role="tab">
+                        <i class="fa-solid fa-check-circle me-1 text-success"></i>Realizadas <span class="badge bg-success ms-1">{{ visitas_realizadas|length }}</span>
                     </button>
                 </li>
-                {% endif %}
             </ul>
         </div>
         <div class="card-body p-0 tab-content">
@@ -173,10 +174,10 @@
             <div class="tab-pane fade" id="tab_fallas_pend" role="tabpanel">
                 {{ tabla_visitas(fallas_pendientes, 'No hay fallas pendientes.', es_falla=True) }}
             </div>
-            <div class="tab-pane fade" id="tab_fallas_real" role="tabpanel">
-                {{ tabla_visitas(fallas_realizadas, 'No hay fallas realizadas.', es_falla=True) }}
-            </div>
             {% endif %}
+            <div class="tab-pane fade" id="tab_realizadas" role="tabpanel">
+                {{ tabla_visitas(visitas_realizadas, 'No hay visitas realizadas.') }}
+            </div>
         </div>
     </div>
 </div>
