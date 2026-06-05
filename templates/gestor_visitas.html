@@ -71,7 +71,14 @@
                         data-prioridad="{{ v.prioridad or 3 }}"
                         data-falla-id="{{ v.falla_id or '' }}">
                         <td class="ps-2 ps-sm-4">
-                            {% if v.prioridad == 1 %}
+                            {% if v.estado == 'Realizada' %}
+                            <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-success rounded-circle shadow-sm" style="width:30px;height:30px;">
+                                <i class="fa-solid fa-check text-white" style="font-size:0.8rem;"></i>
+                            </span>
+                            <span class="badge bg-success shadow-sm d-none d-sm-inline-block px-3">
+                                <i class="fa-solid fa-check-circle me-1"></i>Realizada
+                            </span>
+                            {% elif v.prioridad == 1 %}
                             <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-danger rounded-circle shadow-sm" style="width:30px;height:30px;">
                                 <i class="fa-solid fa-bolt text-white" style="font-size:0.8rem;"></i>
                             </span>
@@ -84,13 +91,6 @@
                             </span>
                             <span class="badge bg-warning text-dark shadow-sm d-none d-sm-inline-block px-3">
                                 <i class="fa-solid fa-clock me-1"></i>Pendiente
-                            </span>
-                            {% else %}
-                            <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-success rounded-circle shadow-sm" style="width:30px;height:30px;">
-                                <i class="fa-solid fa-check text-white" style="font-size:0.8rem;"></i>
-                            </span>
-                            <span class="badge bg-success shadow-sm d-none d-sm-inline-block px-3">
-                                <i class="fa-solid fa-check-circle me-1"></i>Realizada
                             </span>
                             {% endif %}
                         </td>
