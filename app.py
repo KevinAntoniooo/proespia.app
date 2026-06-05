@@ -565,11 +565,10 @@ def gestor_visitas(user_id):
     paginado = query.paginate(page=page, per_page=15, error_out=False)
 
     total_pendientes = VisitaProgramada.query.filter(
+        VisitaProgramada.estado == 'Pendiente',
         or_(
             VisitaProgramada.usuario_id == current_user.id,
-            and_(
-                VisitaProgramada.falla_id.isnot(None),
-                VisitaProgramada.estado == 'Pendiente')
+            VisitaProgramada.falla_id.isnot(None)
         )
     ).count() if current_user.rol == 'tecnico' else VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None), VisitaProgramada.estado == 'Pendiente').count()
     tecnicos = Usuario.query.filter_by(rol='tecnico').all() if usuario.rol in ['admin', 'super_su'] else []
