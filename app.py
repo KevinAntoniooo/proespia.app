@@ -549,7 +549,8 @@ def gestor_visitas(user_id):
     else:
         q_agendadas = VisitaProgramada.query.filter(
             VisitaProgramada.falla_id.is_(None),
-            VisitaProgramada.usuario_id == user_id
+            VisitaProgramada.usuario_id == user_id,
+            VisitaProgramada.estado == 'Pendiente'
         )
         q_fallas_pend = VisitaProgramada.query.filter(
             VisitaProgramada.falla_id.isnot(None),
