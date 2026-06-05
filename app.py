@@ -286,15 +286,17 @@ def dashboard(user_id):
             ~Bitacora.tipo_visita.ilike('%RESUELTA%')
         ).order_by(Bitacora.fecha.desc()).all()
 
-        # --- Visitas vencidas: pasar a "Vencida" las Pendientes con fecha pasada ---
+        # --- Visitas vencidas: pasar a "Vencida" las Pendientes con fecha pasada (excluye fallas) ---
         VisitaProgramada.query.filter(
             VisitaProgramada.fecha_programada < inicio_hoy,
-            VisitaProgramada.estado == 'Pendiente'
+            VisitaProgramada.estado == 'Pendiente',
+            VisitaProgramada.falla_id.is_(None)
         ).update({VisitaProgramada.estado: 'Vencida'}, synchronize_session=False)
-        # Eliminar Vencidas con más de 3 días de antigüedad
+        # Eliminar Vencidas con más de 3 días de antigüedad (excluye fallas)
         hace_3_dias = datetime.combine(hoy_date - timedelta(days=3), time.min)
         VisitaProgramada.query.filter(
             VisitaProgramada.estado == 'Vencida',
+            VisitaProgramada.falla_id.is_(None),
             VisitaProgramada.fecha_programada < hace_3_dias
         ).delete(synchronize_session=False)
         db.session.commit()
@@ -2604,7 +2606,12 @@ with app.app_context():
             ~Bitacora.tipo_visita.ilike('%RESUELTA%')
         ).all()
         for fb in fallas_existentes:
-            if not VisitaProgramada.query.filter_by(falla_id=fb.id).first():
+            existente = VisitaProgramada.query.filter_by(falla_id=fb.id).first()
+            if existente:
+                if existente.estado == 'Vencida':
+                    existente.estado = 'Pendiente'
+                    existente.fecha_programada = datetime.now()
+            else:
                 visita = VisitaProgramada(
                     cliente_id=fb.cliente_id,
                     usuario_id=fb.usuario_id or 1,
@@ -2613,7 +2620,7 @@ with app.app_context():
                     estado='Pendiente',
                     prioridad=fb.prioridad or 3,
                     falla_id=fb.id,
-                    fecha_programada=fb.fecha
+                    fecha_programada=datetime.now()
                 )
                 db.session.add(visita)
         db.session.commit()
