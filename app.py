@@ -530,14 +530,11 @@ def gestor_visitas(user_id):
         if tecnico_id:
             query = query.filter_by(usuario_id=tecnico_id)
     else:
-        # Técnico ve sus visitas asignadas + fallas pendientes
+        # Técnico ve sus visitas asignadas + fallas (sin filtrar por estado)
         query = VisitaProgramada.query.filter(
             or_(
                 VisitaProgramada.usuario_id == user_id,
-                and_(
-                    VisitaProgramada.falla_id.isnot(None),
-                    VisitaProgramada.estado == 'Pendiente'
-                )
+                VisitaProgramada.falla_id.isnot(None)
             )
         )
 
