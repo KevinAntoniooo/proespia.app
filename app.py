@@ -2597,6 +2597,31 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
+    # Backfill: crear VisitaProgramada para fallas existentes de Bitácora
+    try:
+        fallas_existentes = Bitacora.query.filter(
+            Bitacora.tipo_visita.ilike('%Falla%'),
+            ~Bitacora.tipo_visita.ilike('%RESUELTA%')
+        ).all()
+        for fb in fallas_existentes:
+            if not VisitaProgramada.query.filter_by(falla_id=fb.id).first():
+                visita = VisitaProgramada(
+                    cliente_id=fb.cliente_id,
+                    usuario_id=fb.usuario_id or 1,
+                    tipo_trabajo='Reparación',
+                    descripcion=f"[Falla desde Bitácora] {fb.descripcion}",
+                    estado='Pendiente',
+                    prioridad=fb.prioridad or 3,
+                    falla_id=fb.id,
+                    fecha_programada=fb.fecha
+                )
+                db.session.add(visita)
+        db.session.commit()
+        cnt = fallas_existentes.count if hasattr(fallas_existentes, 'count') else len(fallas_existentes)
+        print(f"Backfill: {cnt} fallas de Bitácora procesadas")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Backfill error: {e}")
     # Crear admin por defecto si no hay usuarios
     if not Usuario.query.first():
         admin = Usuario(username='admin', nombre='Administrador', rol='admin')
