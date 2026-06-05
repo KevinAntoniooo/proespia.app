@@ -546,7 +546,11 @@ def gestor_visitas(user_id):
     if fin:
         query = query.filter(VisitaProgramada.fecha_programada <= f"{fin} 23:59:59")
 
-    query = query.order_by(VisitaProgramada.prioridad.asc(), VisitaProgramada.fecha_programada.desc())
+    query = query.order_by(
+        case((VisitaProgramada.estado == 'Pendiente', 0), (VisitaProgramada.estado == 'Realizada', 2), else_=1),
+        VisitaProgramada.prioridad.asc(),
+        VisitaProgramada.fecha_programada.desc()
+    )
     paginado = query.paginate(page=page, per_page=15, error_out=False)
 
     total_pendientes = VisitaProgramada.query.filter(
