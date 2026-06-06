@@ -6,6 +6,26 @@
     <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Gestión de Personal</h2>
 </div>
 
+<ul class="nav nav-pills nav-justified mb-4" id="usersTab" role="tablist" style="background:#f1f5f9;border-radius:14px;padding:6px;">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="tab-personal-btn" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab">
+            <i class="fa-solid fa-users-gear me-1"></i> Personal Activo
+            <span class="badge bg-dark ms-1">{{ usuarios|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold position-relative" id="tab-pendientes-btn" data-bs-toggle="tab" data-bs-target="#tab-pendientes" type="button" role="tab">
+            <i class="fa-solid fa-user-clock me-1"></i> Pendientes
+            {% if pendientes %}
+            <span class="badge bg-warning text-dark ms-1">{{ pendientes|length }}</span>
+            {% endif %}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="usersTabContent">
+
+<div class="tab-pane fade show active" id="tab-personal" role="tabpanel">
 <div class="row align-items-center mb-3">
     <div class="col-md-8 col-lg-6">
         <div class="d-flex align-items-center gap-2">
@@ -14,8 +34,8 @@
                     <span class="input-group-text bg-primary text-white border-0 shadow-sm">
                         <i class="bi bi-search"></i>
                     </span>
-                    <input type="text" id="buscadorUsuarios" class="form-control shadow-sm" 
-                           placeholder="Buscar por nombre, usuario o rol..." 
+                    <input type="text" id="buscadorUsuarios" class="form-control shadow-sm"
+                           placeholder="Buscar por nombre, usuario o rol..."
                            onkeyup="filtrarUsuarios()">
                 </div>
             </div>
@@ -39,8 +59,9 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Nombre Completo</th>
-                        <th class="d-none d-md-table-cell">Nombre de Usuario</th>
+                        <th class="d-none d-md-table-cell">Usuario / Correo</th>
                         <th>Rol</th>
+                        <th>Estado</th>
                         <th class="d-none d-lg-table-cell">Ubicación</th>
                         <th class="d-none d-lg-table-cell">Asignación</th>
                         <th class="text-center">Acciones</th>
@@ -48,12 +69,25 @@
                 </thead>
                 <tbody id="tablaUsuarios">
                     {% for u in usuarios %}
+                    {% set is_sa = (u.correo or '')|lower == super_admin_correo %}
                     <tr class="fila-usuario">
-                        <td class="fw-bold">{{ u.nombre }}</td>
-                        <td class="d-none d-md-table-cell"><span class="text-muted">@</span>{{ u.username }}</td>
+                        <td class="fw-bold">
+                            {{ u.nombre }}
+                            {% if is_sa %}<i class="fa-solid fa-crown text-warning ms-1" title="Súper Administrador"></i>{% endif %}
+                            {% if u.google_id %}<i class="fa-brands fa-google text-primary ms-1" title="Cuenta Google"></i>{% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell">
+                            <div class="small fw-semibold"><span class="text-muted">@</span>{{ u.username or '—' }}</div>
+                            <div class="small text-muted">{{ u.correo or '' }}</div>
+                        </td>
                         <td>
-                            <span class="badge {% if u.rol == 'admin' %}bg-dark{% elif u.rol == 'tecnico' %}bg-primary{% else %}bg-info text-dark{% endif %} text-uppercase">
+                            <span class="badge {% if u.rol == 'admin' or u.rol == 'super_su' %}bg-dark{% elif u.rol == 'tecnico' %}bg-primary{% elif u.rol == 'Pendiente' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} text-uppercase">
                                 {{ u.rol }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if u.estado == 'Activo' %}bg-success{% else %}bg-secondary{% endif %} rounded-pill">
+                                {{ u.estado or 'Activo' }}
                             </span>
                         </td>
                         <td class="d-none d-lg-table-cell"><span class="small text-muted">{{ u.rel_ubicacion.nombre if u.rel_ubicacion else '—' }}</span></td>
@@ -71,9 +105,18 @@
                                 <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ u.id }}" title="Editar Perfil">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
+                                {% if not is_sa %}
+                                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#estadoModal{{ u.id }}" title="Activar / Desactivar">
+                                    <i class="fa-solid fa-toggle-{% if u.estado == 'Activo' %}on{% else %}off{% endif %}"></i>
+                                </button>
                                 <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmarBorrarUser{{ u.id }}" title="Dar de baja">
                                     <i class="fa-solid fa-user-xmark"></i>
                                 </button>
+                                {% else %}
+                                <span class="badge bg-warning text-dark" style="font-size:0.65rem;padding:0.4em 0.6em;">
+                                    <i class="fa-solid fa-shield-halved me-1"></i>INMUNE
+                                </span>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -84,35 +127,115 @@
     </div>
 </div>
 
+<div class="tab-pane fade" id="tab-pendientes" role="tabpanel">
+    {% if pendientes %}
+    <div class="alert alert-warning border-0 rounded-3 d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="fa-solid fa-user-clock fa-lg"></i>
+        <div>
+            <strong>{{ pendientes|length }} usuario(s) en trámite de activación.</strong>
+            Asígnales un rol operativo y se habilitarán automáticamente.
+        </div>
+    </div>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-warning text-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th class="d-none d-md-table-cell">Correo</th>
+                        <th class="d-none d-md-table-cell">Origen</th>
+                        <th>Registrado</th>
+                        <th>Asignar Rol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pendientes %}
+                    <tr>
+                        <td class="fw-bold">
+                            {{ p.nombre }}
+                            {% if p.google_id %}<i class="fa-brands fa-google text-primary ms-1" title="Vino por Google"></i>{% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell"><span class="small">{{ p.correo or p.username }}</span></td>
+                        <td class="d-none d-md-table-cell">
+                            {% if p.google_id %}<span class="badge bg-light text-dark border">Google</span>{% else %}<span class="badge bg-light text-dark border">Correo</span>{% endif %}
+                        </td>
+                        <td class="small text-muted">{{ p.created_at.strftime('%d/%m %H:%M') if p.created_at else '—' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('activar_usuario', target_id=p.id, admin_id=usuario.id) }}" class="d-flex gap-2 align-items-center">
+                                <select name="rol" class="form-select form-select-sm" style="max-width:160px;" required>
+                                    <option value="">Rol…</option>
+                                    <option value="operador">Operador</option>
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                                <button type="submit" class="btn btn-success btn-sm fw-bold">
+                                    <i class="fa-solid fa-check me-1"></i>Activar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+        <i class="fa-solid fa-user-check fa-3x text-success mb-3" style="opacity:0.6;"></i>
+        <h5 class="fw-bold mb-1">Sin usuarios pendientes</h5>
+        <p class="text-muted small mb-0">Todos los registros están siendo atendidos. Las nuevas inscripciones aparecerán aquí automáticamente.</p>
+    </div>
+    {% endif %}
+</div>
+
+</div>
+</div>
+
 {% for u in usuarios %}
+{% set is_sa = (u.correo or '')|lower == super_admin_correo %}
 <div class="modal fade" id="editModal{{ u.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title">Editar Usuario: {{ u.nombre }}</h5>
+                <h5 class="modal-title">
+                    {% if is_sa %}<i class="fa-solid fa-crown me-1"></i>{% endif %}
+                    Editar Usuario: {{ u.nombre }}
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/usuarios/actualizar_completo/{{ u.id }}/{{ usuario.id }}" method="POST">
                 <div class="modal-body">
+                    {% if is_sa %}
+                    <div class="alert alert-warning py-2 small mb-3">
+                        <i class="fa-solid fa-shield-halved me-1"></i>
+                        Súper Administrador: solo tú puedes editar tu nombre y username. El resto está protegido.
+                    </div>
+                    {% endif %}
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre Completo</label>
                         <input type="text" name="nombre" class="form-control" value="{{ u.nombre }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Username</label>
-                        <input type="text" name="username" class="form-control" value="{{ u.username }}" required>
+                        <input type="text" name="username" class="form-control" value="{{ u.username or '' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Correo Electrónico</label>
+                        <input type="email" name="correo" class="form-control" value="{{ u.correo or '' }}" {% if is_sa %}readonly{% endif %} placeholder="usuario@empresa.cl">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nueva Contraseña</label>
                         <input type="password" name="password" class="form-control" placeholder="{% if u.id == usuario.id %}Dejar en blanco para no cambiar{% else %}Solo puedes cambiar tu propia contraseña{% endif %}" {% if u.id != usuario.id %}disabled{% endif %}>
+                        {% if u.google_id %}<small class="text-muted d-block mt-1"><i class="fa-brands fa-google me-1"></i>Este usuario también puede ingresar con Google.</small>{% endif %}
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Rol</label>
-                        <select name="rol" class="form-select text-uppercase" onchange="toggleUbicacionEdit(this, '{{ u.id }}')">
-                            <option value="admin" {% if u.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                        <select name="rol" class="form-select text-uppercase" onchange="toggleUbicacionEdit(this, '{{ u.id }}')" {% if is_sa %}disabled{% endif %}>
+                            <option value="admin" {% if u.rol in ['admin','super_su'] %}selected{% endif %}>Administrador</option>
                             <option value="operador" {% if u.rol == 'operador' %}selected{% endif %}>Operador</option>
                             <option value="tecnico" {% if u.rol == 'tecnico' %}selected{% endif %}>Técnico</option>
                         </select>
+                        {% if is_sa %}<small class="text-muted d-block mt-1"><i class="fa-solid fa-lock me-1"></i>El rol del Súper Administrador es inmutable.</small>{% endif %}
                     </div>
                     <div class="mb-3 ubicacion-field" id="ubicacionEditField{{ u.id }}">
                         <label class="form-label fw-bold">Ubicación de Stock</label>
@@ -141,6 +264,30 @@
     </div>
 </div>
 
+{% if not is_sa %}
+<div class="modal fade" id="estadoModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('cambiar_estado_usuario', target_id=u.id, admin_id=usuario.id) }}">
+                <div class="modal-body text-center p-4">
+                    <i class="fa-solid fa-toggle-{% if u.estado == 'Activo' %}on text-success{% else %}off text-secondary{% endif %} fa-3x mb-2"></i>
+                    <h5 class="fw-bold">Cambiar estado</h5>
+                    <p class="text-muted small mb-3">{{ u.nombre }} está actualmente <strong>{{ u.estado or 'Activo' }}</strong>.</p>
+                    <select name="estado" class="form-select mb-3" required>
+                        <option value="Activo" {% if u.estado == 'Activo' %}selected{% endif %}>Activo</option>
+                        <option value="Inactivo" {% if u.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                    </select>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Aplicar cambio</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="modal fade" id="confirmarBorrarUser{{ u.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-danger">
@@ -148,9 +295,12 @@
                 <i class="bi bi-exclamation-octagon text-danger fs-1"></i>
                 <h5 class="fw-bold mt-3">¿Eliminar acceso?</h5>
                 <p class="text-muted small">El usuario <strong>{{ u.username }}</strong> perderá el acceso al sistema.</p>
-                
+
                 {% if u.id == usuario.id %}
                 <div class="alert alert-warning py-1 small">No puedes auto-eliminarte.</div>
+                <button class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Cerrar</button>
+                {% elif is_sa %}
+                <div class="alert alert-warning py-1 small"><i class="fa-solid fa-shield-halved me-1"></i>El Súper Administrador es INMUNE.</div>
                 <button class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Cerrar</button>
                 {% else %}
                 <div class="d-grid gap-2">
@@ -180,6 +330,10 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nombre de Usuario</label>
                         <input type="text" name="username" class="form-control" placeholder="Ej: k.seguridad" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Correo (opcional)</label>
+                        <input type="email" name="correo" class="form-control" placeholder="usuario@empresa.cl">
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Contraseña</label>
@@ -224,6 +378,18 @@
 @media (max-width: 767px) {
     .table td:first-child { font-size: 0.85rem; }
 }
+#usersTab .nav-link {
+    color: #475569;
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: all 0.25s ease;
+}
+#usersTab .nav-link.active {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(15,23,42,0.25);
+}
+#usersTab .nav-link:not(.active):hover { background: #e2e8f0; }
 </style>
 <script>
 function filtrarUsuarios() {
@@ -241,7 +407,6 @@ function toggleUbicacionNuevo(select) {
     var tipoField = document.getElementById('tipoAsignacionNuevoField');
     var isTecnico = select.value === 'tecnico';
     field.style.display = isTecnico ? '' : 'none';
-    // tipo_asignacion solo si es técnico Y tiene vehículo seleccionado
     if (isTecnico) {
         var ubiSelect = field.querySelector('select[name="ubicacion_id"]');
         if (ubiSelect) {
@@ -262,7 +427,6 @@ function toggleUbicacionEdit(select, userId) {
     var tipoField = document.getElementById('tipoAsignacionEditField' + userId);
     var isTecnico = select.value === 'tecnico';
     field.style.display = isTecnico ? '' : 'none';
-    // tipo_asignacion solo si es técnico Y tiene vehículo seleccionado
     if (isTecnico) {
         var ubiSelect = field.querySelector('select[name="ubicacion_id"]');
         if (ubiSelect) {
@@ -282,12 +446,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("buscadorUsuarios");
     if(input) input.value = "";
 
-    // Inicializar visibilidad en modales de edición
     document.querySelectorAll('[id^="editModal"]').forEach(function(modal) {
         var select = modal.querySelector('select[name="rol"]');
-        if (select) select.onchange();
+        if (select && !select.disabled) select.onchange();
     });
-    // Inicializar visibilidad en modal nuevo
     var selectNuevo = document.querySelector('#nuevoUserModal select[name="rol"]');
     if (selectNuevo) toggleUbicacionNuevo(selectNuevo);
 });

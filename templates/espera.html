@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="light">
+    <title>Cuenta en Activación · PRO ESPÍA</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon-icon.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            color-scheme: light;
+            --bg-deep: #0b1220;
+            --bg-mid: #0f172a;
+            --bg-card: rgba(255, 255, 255, 0.96);
+            --accent: #dc2626;
+            --accent-2: #b91c1c;
+            --text: #0f172a;
+            --text-soft: #475569;
+            --border: #e2e8f0;
+            --shadow: 0 20px 50px rgba(15, 23, 42, 0.35);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Fira Sans', system-ui, -apple-system, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at 10% -10%, rgba(220, 38, 38, 0.25), transparent 60%),
+                radial-gradient(900px 500px at 110% 110%, rgba(99, 102, 241, 0.22), transparent 55%),
+                linear-gradient(135deg, var(--bg-deep), var(--bg-mid));
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .stage {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+            animation: rise 0.6s ease-out;
+        }
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(18px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .logo-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-mark {
+            width: 92px;
+            height: 92px;
+            border-radius: 26px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            box-shadow: 0 14px 40px rgba(220, 38, 38, 0.45), inset 0 0 0 1px rgba(255,255,255,0.12);
+            position: relative;
+        }
+        .logo-mark::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 30px;
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            animation: pulse 2.6s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.08); opacity: 0; }
+        }
+        .logo-mark i { color: #fff; font-size: 2.3rem; }
+        .brand {
+            color: #f8fafc;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .brand small {
+            display: block;
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+            margin-top: 4px;
+        }
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            width: 100%;
+            border-radius: 24px;
+            padding: 32px 28px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #dc2626, #f59e0b, #6366f1);
+        }
+        .icon-pill {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #fef3c7;
+            color: #d97706;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 18px;
+            font-size: 1.6rem;
+        }
+        h1 {
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+        p.lead {
+            color: var(--text-soft);
+            font-size: 0.95rem;
+            line-height: 1.55;
+            margin-bottom: 22px;
+        }
+        .user-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 22px;
+        }
+        .user-chip i { color: var(--accent); }
+        .info-list {
+            text-align: left;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 24px;
+        }
+        .info-list li {
+            list-style: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 6px 0;
+            color: var(--text-soft);
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+        .info-list i {
+            color: var(--accent);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+        .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(220, 38, 38, 0.32);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(220, 38, 38, 0.42);
+        }
+        .btn-logout:active { transform: translateY(0); }
+        .footer {
+            color: #64748b;
+            font-size: 0.72rem;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        .footer strong { color: #cbd5e1; }
+        @media (max-width: 480px) {
+            .card { padding: 26px 22px; border-radius: 20px; }
+            h1 { font-size: 1.25rem; }
+            p.lead { font-size: 0.9rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .logo-mark::after { animation: none; }
+            .stage { animation: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="stage" role="main">
+        <header class="logo-wrap">
+            <div class="logo-mark" aria-hidden="true">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="brand">
+                PRO ESPÍA
+                <small>Central de Seguridad</small>
+            </div>
+        </header>
+
+        <section class="card" aria-labelledby="espera-titulo">
+            <div class="icon-pill" aria-hidden="true">
+                <i class="fa-solid fa-hourglass-half"></i>
+            </div>
+            <h1 id="espera-titulo">Cuenta Registrada</h1>
+            <p class="lead">
+                Tu rol está en trámite de activación.<br>
+                Por favor, contacta a la <strong>jefatura en Rancagua</strong> para habilitar tus permisos operativos.
+            </p>
+
+            {% if usuario %}
+            <div class="user-chip" aria-label="Usuario en espera">
+                <i class="fa-solid fa-user-clock"></i>
+                <span>{{ usuario.nombre }} · @{{ usuario.username }}</span>
+            </div>
+            {% endif %}
+
+            <ul class="info-list">
+                <li><i class="fa-solid fa-circle-check"></i> Tus datos fueron recibidos correctamente.</li>
+                <li><i class="fa-solid fa-circle-check"></i> La activación es manual y la realiza el administrador principal.</li>
+                <li><i class="fa-solid fa-circle-check"></i> Una vez habilitado, podrás ingresar con tu correo y contraseña.</li>
+            </ul>
+
+            <a class="btn-logout" href="{{ url_for('logout') }}" role="button">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                Cerrar Sesión
+            </a>
+        </section>
+
+        <p class="footer">
+            <strong>PRO ESPÍA LTDA</strong> · Seguridad Electrónica · Rancagua, Chile
+        </p>
+    </main>
+</body>
+</html>

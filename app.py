@@ -1,12 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, Response, jsonify, send_file, session
-from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgramada, CategoriaItem, Ubicacion, ProductoStock, MovimientoStock, Vehiculo, Herramienta, ChecklistSemanal, PushSubscription, Notificacion, SolicitudCombustible
+from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgramada, CategoriaItem, Ubicacion, ProductoStock, MovimientoStock, Vehiculo, Herramienta, ChecklistSemanal, PushSubscription, Notificacion, SolicitudCombustible, RegistroIP, SUPER_ADMIN_CORREO
 from datetime import datetime, time, timedelta, date
 from sqlalchemy.exc import IntegrityError
-from fpdf import FPDF  
+from fpdf import FPDF
 from sqlalchemy import func, case, or_, and_
 import io
 import unicodedata
 import os
+import re
+import secrets
+import functools
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,6 +17,10 @@ from models import get_fernet
 import json
 import locale
 import time
+try:
+    import requests
+except ImportError:
+    requests = None
 
 os.environ['TZ'] = 'America/Santiago'
 if hasattr(time, 'tzset'):
@@ -74,12 +81,113 @@ db.init_app(app)
 # 1. CONFIGURACIÓN DE FLASK-LOGIN (Ahora app ya existe)
 # ==========================================
 login_manager = LoginManager()
-login_manager.init_app(app) # <--- AHORA SÍ FUNCIONA
-login_manager.login_view = 'login' 
+login_manager.init_app(app) # <--- AHORA S�? FUNCIONA
+login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
+
+@login_manager.unauthorized_handler
+def _unauth():
+    if current_user.is_authenticated:
+        return redirect(url_for('espera'))
+    return redirect(url_for('login'))
+
+# ==========================================
+# 1.1 HELPERS DE AUTENTICACIÓN Y SEGURIDAD
+# ==========================================
+RUTAS_LIBRES = {'login', 'registro', 'login_google', 'login_google_callback',
+                'olvido_contrasena', 'restablecer_password', 'static', 'service_worker',
+                'manifest_json'}
+
+def get_client_ip():
+    fwd = request.headers.get('X-Forwarded-For', '')
+    if fwd:
+        return fwd.split(',')[0].strip()
+    return request.remote_addr or '0.0.0.0'
+
+def throttling_ip(ip, ventana_minutos=15, max_intentos=3):
+    """Incrementa / limpia / bloquea según la cantidad de registros por IP."""
+    from datetime import timedelta as _td
+    ahora = datetime.now()
+    limite = ahora - _td(minutes=ventana_minutos)
+    registro = RegistroIP.query.filter_by(ip_address=ip).first()
+    if not registro:
+        registro = RegistroIP(ip_address=ip, intentos=1, ultima_accion=ahora)
+        db.session.add(registro)
+        db.session.commit()
+        return True
+    if registro.ultima_accion < limite:
+        registro.intentos = 1
+        registro.ultima_accion = ahora
+        db.session.commit()
+        return True
+    if registro.intentos >= max_intentos:
+        return False
+    registro.intentos += 1
+    registro.ultima_accion = ahora
+    db.session.commit()
+    return True
+
+def reset_throttling_ip(ip):
+    RegistroIP.query.filter_by(ip_address=ip).delete()
+    db.session.commit()
+
+def correo_valido(correo):
+    if not correo:
+        return False
+    return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", correo.strip()))
+
+def es_super_admin_email(correo):
+    return (correo or '').strip().lower() == SUPER_ADMIN_CORREO
+
+def require_active_user(view):
+    """Decorador: bloquea acceso al dashboard a Pendientes / Inactivos."""
+    @functools.wraps(view)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        if not current_user.puede_acceder():
+            return redirect(url_for('espera'))
+        return view(*args, **kwargs)
+    return wrapper
+
+def requiere_admin(view):
+    @functools.wraps(view)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        if current_user.rol not in ('admin', 'super_su'):
+            flash('Acceso restringido a administradores.', 'danger')
+            return redirect(url_for('dashboard', user_id=current_user.id))
+        if not current_user.puede_acceder():
+            return redirect(url_for('espera'))
+        return view(*args, **kwargs)
+    return wrapper
+
+def obtener_google_config():
+    return {
+        'client_id': os.environ.get('GOOGLE_CLIENT_ID', ''),
+        'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET', ''),
+        'redirect_uri': url_for('login_google_callback', _external=True),
+    }
+
+@app.before_request
+def _muro_contencion_global():
+    """Si el usuario está autenticado pero es Pendiente / Inactivo,
+    solo puede acceder a /espera, /logout y a endpoints públicos."""
+    if not current_user.is_authenticated:
+        return None
+    if current_user.puede_acceder():
+        return None
+    endpoint = request.endpoint or ''
+    permitidos = {'espera', 'logout', 'static', 'service_worker', 'manifest_json'}
+    if endpoint in permitidos:
+        return None
+    if endpoint.startswith('static'):
+        return None
+    return redirect(url_for('espera'))
 
 def vapid_public_b64():
     """La clave pública ya está en formato raw base64url que necesita el navegador."""
@@ -156,48 +264,280 @@ def manifest_json():
 def login():
     # 1. Redirección automática si ya hay sesión activa
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        if current_user.puede_acceder():
+            return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('espera'))
 
     if request.method == 'POST':
         usuario_ingresado = request.form.get('usuario', '').strip()
         password_ingresado = request.form.get('password', '')
         remember = True if request.form.get('remember') else False
 
-        # 2. Buscamos al usuario
-        user = Usuario.query.filter_by(username=usuario_ingresado).first()
+        user = Usuario.query.filter(
+            or_(
+                Usuario.username == usuario_ingresado.lower(),
+                func.lower(Usuario.correo) == usuario_ingresado.lower()
+            )
+        ).first()
 
-        # 3. VERIFICACIÓN DE SEGURIDAD
-        # Usamos el método del modelo que internamente usa check_password_hash
         if user and user.check_password(password_ingresado):
-            
-            login_user(user, remember=remember) 
-
-            if remember:
-                session.permanent = True
-            else:
-                session.permanent = False
-
+            if user.estado != 'Activo':
+                flash('Cuenta desactivada. Contacta a la jefatura.', 'warning')
+                return redirect(url_for('login'))
+            login_user(user, remember=remember)
+            session.permanent = bool(remember)
+            if not user.puede_acceder():
+                flash('Tu cuenta está en trámite de activación.', 'info')
+                return redirect(url_for('espera'))
             flash(f'Bienvenido de nuevo, {user.nombre}', 'success')
             return redirect(url_for('dashboard', user_id=user.id))
-        
+
+        flash('Credenciales incorrectas. Por favor, verifique sus datos.', 'warning')
+
+    google_cfg = obtener_google_config()
+    return render_template('login.html', google_client_id=google_cfg['client_id'])
+
+# ==========================================
+# 3.1 REGISTRO DE NUEVOS USUARIOS (CORREO + CONTRASEÑA)
+# ==========================================
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if current_user.is_authenticated:
+        return redirect(url_for('espera') if not current_user.puede_acceder() else url_for('dashboard', user_id=current_user.id))
+
+    if request.method == 'POST':
+        ip = get_client_ip()
+        if not throttling_ip(ip):
+            return jsonify({'ok': False, 'msg': 'Demasiados intentos desde tu red. Intenta en 15 minutos.'}), 429
+
+        # Acepta form data o JSON
+        if request.is_json:
+            data = request.get_json(silent=True) or {}
         else:
-            # Por seguridad, es mejor no decir si falló el usuario o la clave específicamente
-            flash('Crendenciales incorrectas. Por favor, verifique sus datos.', 'warning')
-            
-    return render_template('login.html')
+            data = request.form
+        nombre = (data.get('nombre') or '').strip()
+        correo = (data.get('correo') or '').strip().lower()
+        password = data.get('password') or ''
+        password2 = data.get('password2') or ''
+
+        if not nombre or not correo or not password:
+            return jsonify({'ok': False, 'msg': 'Todos los campos son obligatorios.'}), 400
+        if not correo_valido(correo):
+            return jsonify({'ok': False, 'msg': 'El correo no es válido.'}), 400
+        if len(password) < 6:
+            return jsonify({'ok': False, 'msg': 'La contraseña debe tener al menos 6 caracteres.'}), 400
+        if password != password2:
+            return jsonify({'ok': False, 'msg': 'Las contraseñas no coinciden.'}), 400
+
+        existente = Usuario.query.filter(func.lower(Usuario.correo) == correo).first()
+        if existente:
+            return jsonify({'ok': False, 'msg': 'Este correo ya está registrado.'}), 409
+
+        try:
+            username = correo.split('@')[0]
+            base_username = re.sub(r'[^a-z0-9._-]', '', username.lower()) or 'usuario'
+            username_unico = base_username
+            i = 1
+            while Usuario.query.filter_by(username=username_unico).first():
+                username_unico = f"{base_username}{i}"
+                i += 1
+
+            rol_inicial = 'admin' if correo == SUPER_ADMIN_CORREO else 'Pendiente'
+
+            nuevo = Usuario(
+                nombre=nombre,
+                username=username_unico,
+                correo=correo,
+                rol=rol_inicial,
+                estado='Activo',
+            )
+            nuevo.set_password(password)
+            db.session.add(nuevo)
+            db.session.commit()
+
+            reset_throttling_ip(ip)
+            login_user(nuevo)
+
+            if nuevo.rol == 'Pendiente':
+                return jsonify({'ok': True, 'redirect': url_for('espera')})
+            return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=nuevo.id)})
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify({'ok': False, 'msg': 'Conflicto de datos. Intenta con otro correo.'}), 409
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error en registro: {e}")
+            return jsonify({'ok': False, 'msg': 'Error técnico al registrar. Intenta más tarde.'}), 500
+
+    google_cfg = obtener_google_config()
+    return render_template('registro.html', google_client_id=google_cfg['client_id'])
+
+# ==========================================
+# 3.2 LOGIN CON GOOGLE OAUTH 2.0 (verificación de ID Token)
+# ==========================================
+@app.route('/login/google', methods=['POST'])
+def login_google():
+    ip = get_client_ip()
+    if not throttling_ip(ip):
+        return jsonify({'ok': False, 'msg': 'Demasiados intentos. Intenta en 15 minutos.'}), 429
+
+    credential = (request.get_json() or {}).get('credential', '')
+    if not credential:
+        return jsonify({'ok': False, 'msg': 'Token de Google no recibido.'}), 400
+
+    cfg = obtener_google_config()
+    if not cfg['client_id'] or not requests:
+        return jsonify({'ok': False, 'msg': 'Google Login no configurado en el servidor.'}), 501
+
+    try:
+        r = requests.get(
+            'https://oauth2.googleapis.com/tokeninfo',
+            params={'id_token': credential},
+            timeout=6
+        )
+        if r.status_code != 200:
+            return jsonify({'ok': False, 'msg': 'Token de Google inválido.'}), 401
+        info = r.json()
+    except Exception as e:
+        print(f"Error validando Google: {e}")
+        return jsonify({'ok': False, 'msg': 'No se pudo verificar Google en este momento.'}), 502
+
+    google_id = info.get('sub')
+    correo = (info.get('email') or '').strip().lower()
+    nombre = info.get('name') or (correo.split('@')[0] if correo else 'Usuario Google')
+    correo_verificado = info.get('email_verified') in ('true', True, 1)
+
+    if not google_id or not correo or not correo_verificado:
+        return jsonify({'ok': False, 'msg': 'Cuenta de Google no verificada.'}), 401
+
+    if not cfg['client_id'] or info.get('aud') != cfg['client_id']:
+        return jsonify({'ok': False, 'msg': 'Token de Google no autorizado para esta app.'}), 401
+
+    user = Usuario.query.filter(
+        or_(
+            func.lower(Usuario.correo) == correo,
+            Usuario.google_id == google_id
+        )
+    ).first()
+
+    if not user:
+        try:
+            username_base = re.sub(r'[^a-z0-9._-]', '', correo.split('@')[0].lower()) or 'guser'
+            username = username_base
+            i = 1
+            while Usuario.query.filter_by(username=username).first():
+                username = f"{username_base}{i}"
+                i += 1
+            rol_inicial = 'admin' if correo == SUPER_ADMIN_CORREO else 'Pendiente'
+            user = Usuario(
+                nombre=nombre,
+                username=username,
+                correo=correo,
+                google_id=google_id,
+                rol=rol_inicial,
+                estado='Activo',
+            )
+            db.session.add(user)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error creando usuario Google: {e}")
+            return jsonify({'ok': False, 'msg': 'No se pudo crear la cuenta con Google.'}), 500
+
+    elif not user.google_id:
+        user.google_id = google_id
+        db.session.commit()
+
+    if user.estado != 'Activo':
+        return jsonify({'ok': False, 'msg': 'Cuenta desactivada. Contacta a la jefatura.'}), 403
+
+    reset_throttling_ip(ip)
+    login_user(user)
+    if user.rol == 'Pendiente':
+        return jsonify({'ok': True, 'redirect': url_for('espera')})
+    return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=user.id)})
+
+@app.route('/login/google/callback')
+def login_google_callback():
+    return redirect(url_for('login'))
+
+# ==========================================
+# 3.3 RECUPERACIÓN DE CONTRASEÑA
+# ==========================================
+@app.route('/olvido_contrasena', methods=['GET', 'POST'])
+def olvido_contrasena():
+    if request.method == 'POST':
+        correo = (request.form.get('correo') or '').strip().lower()
+        if not correo_valido(correo):
+            flash('Ingresa un correo válido.', 'warning')
+            return redirect(url_for('olvido_contrasena'))
+
+        user = Usuario.query.filter(func.lower(Usuario.correo) == correo).first()
+        if user and not user.google_id:
+            token = secrets.token_urlsafe(32)
+            user.token_recuperacion = token
+            db.session.commit()
+            enlace = url_for('restablecer_password', token=token, _external=True)
+            print(f"\n==================================================")
+            print(f"[RECUPERACIÓN DE CONTRASEÑA]")
+            print(f"Usuario: {user.nombre} <{user.correo}>")
+            print(f"Enlace:  {enlace}")
+            print(f"==================================================\n")
+
+        flash('Si el correo existe en el sistema, te enviamos un enlace de recuperación.', 'info')
+        return redirect(url_for('login'))
+
+    return render_template('olvido_contrasena.html')
+
+@app.route('/restablecer_password/<token>', methods=['GET', 'POST'])
+def restablecer_password(token):
+    user = Usuario.query.filter_by(token_recuperacion=token).first()
+    if not user:
+        flash('El enlace de recuperación es inválido o ya fue utilizado.', 'danger')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        nueva = request.form.get('password') or ''
+        nueva2 = request.form.get('password2') or ''
+        if len(nueva) < 6:
+            flash('La nueva contraseña debe tener al menos 6 caracteres.', 'warning')
+            return redirect(url_for('restablecer_password', token=token))
+        if nueva != nueva2:
+            flash('Las contraseñas no coinciden.', 'warning')
+            return redirect(url_for('restablecer_password', token=token))
+
+        user.set_password(nueva)
+        user.token_recuperacion = None
+        db.session.commit()
+        flash('Contraseña actualizada con éxito. Ya puedes iniciar sesión.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('restablecer_password.html', token=token, user=user)
+
+# ==========================================
+# 3.4 MURO DE CONTENCIÓN (/espera) — CSS PURO
+# ==========================================
+@app.route('/espera')
+def espera():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
+    if current_user.puede_acceder():
+        return redirect(url_for('dashboard', user_id=current_user.id))
+    return render_template('espera.html', usuario=current_user)
 
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user() # Esto destruye la sesión y la cookie de "Recordarme"
-    return redirect(url_for('login')) # Ahora sí te mandará al formulario vacío
+    logout_user()
+    return redirect(url_for('login'))
+
 # ==========================================
 # 4. DASHBOARD PRINCIPAL
 # ==========================================
 from datetime import datetime, time, date
 
 @app.route('/dashboard/<int:user_id>')
-@login_required
+@require_active_user
 def dashboard(user_id):
     # Usamos la forma moderna para obtener el usuario
     usuario = db.session.get(Usuario, user_id)
@@ -1129,93 +1469,142 @@ def verificar_clave_admin():
 # 7. GESTIÓN DE USUARIOS (SOLO PARA ADMINISTRADORES)
 # ==========================================
 @app.route('/usuarios/<int:user_id>', methods=['GET', 'POST'])
-@login_required
+@requiere_admin
 def gestionar_usuarios(user_id):
-    # Obtener el usuario administrador para el contexto de la página
     usuario_admin = db.session.get(Usuario, user_id)
-    
+
     if request.method == 'POST':
         nombre = request.form.get('nombre')
-        username = request.form.get('username').strip().lower()
+        username = (request.form.get('username') or '').strip().lower()
+        correo = (request.form.get('correo') or '').strip().lower() or None
         rol = request.form.get('rol')
         ubicacion_id = request.form.get('ubicacion_id') or None
         password_plana = request.form.get('password')
         tipo_asignacion = request.form.get('tipo_asignacion', 'acompanante')
 
+        if not nombre or not username or not password_plana:
+            flash('Nombre, usuario y contraseña son obligatorios.', 'danger')
+            return redirect(url_for('gestionar_usuarios', user_id=user_id))
+
+        if correo:
+            dup = Usuario.query.filter(func.lower(Usuario.correo) == correo).first()
+            if dup:
+                flash('Ya existe un usuario con ese correo.', 'danger')
+                return redirect(url_for('gestionar_usuarios', user_id=user_id))
+
         try:
             nuevo = Usuario(
                 nombre=nombre,
                 username=username,
+                correo=correo,
                 rol=rol,
+                estado='Activo',
                 ubicacion_id=int(ubicacion_id) if ubicacion_id else None,
                 tipo_asignacion=tipo_asignacion
             )
-            
-            # Si la clave existe (no es None), la encriptamos
-            if password_plana:
-                nuevo.set_password(password_plana)
-            else:
-                flash("La contraseña es obligatoria para nuevos usuarios.", "danger")
-                return redirect(url_for('gestionar_usuarios', user_id=user_id))
-
+            nuevo.set_password(password_plana)
             db.session.add(nuevo)
             db.session.commit()
             flash(f'Personal "{nombre}" registrado correctamente.', 'success')
-            
+        except IntegrityError:
+            db.session.rollback()
+            flash('Conflicto: el nombre de usuario ya existe.', 'danger')
         except Exception as e:
             db.session.rollback()
             print(f"Error técnico al registrar: {e}")
-            flash('Error: No se pudo completar el registro. El usuario podría ya existir.', 'danger')
-            
+            flash('No se pudo completar el registro.', 'danger')
         return redirect(url_for('gestionar_usuarios', user_id=user_id))
 
-    # Lógica para mostrar la tabla (GET)
-    usuarios = Usuario.query.all()
+    usuarios = Usuario.query.order_by(Usuario.rol.asc(), Usuario.nombre.asc()).all()
+    pendientes = Usuario.query.filter_by(rol='Pendiente').order_by(Usuario.created_at.desc()).all()
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre.asc()).all()
-    return render_template('usuarios.html', usuarios=usuarios, usuario=usuario_admin, ubicaciones=ubicaciones)
+    return render_template('usuarios.html',
+                           usuarios=usuarios,
+                           pendientes=pendientes,
+                           usuario=usuario_admin,
+                           ubicaciones=ubicaciones,
+                           super_admin_correo=SUPER_ADMIN_CORREO)
+
+# ==========================================
+# 7.1 ACTIVAR / CAMBIAR ROL DE USUARIO (PENDIENTE → OPERATIVO)
+# ==========================================
+@app.route('/usuarios/activar/<int:target_id>/<int:admin_id>', methods=['POST'])
+@requiere_admin
+def activar_usuario(target_id, admin_id):
+    u_target = Usuario.query.get_or_404(target_id)
+    if u_target.es_super_admin():
+        flash('El Súper Administrador es inmune. No se puede modificar.', 'danger')
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+    nuevo_rol = request.form.get('rol')
+    if nuevo_rol not in ('admin', 'tecnico', 'operador'):
+        flash('Rol no permitido.', 'danger')
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+    u_target.rol = nuevo_rol
+    u_target.estado = 'Activo'
+    db.session.commit()
+    flash(f'{u_target.nombre} activado como {nuevo_rol.upper()}.', 'success')
+    return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
 @app.route('/usuarios/actualizar_completo/<int:target_id>/<int:admin_id>', methods=['POST'])
-@login_required
+@requiere_admin
 def actualizar_usuario_completo(target_id, admin_id):
     u_target = Usuario.query.get_or_404(target_id)
-    
-    # 1. Capturamos los datos
+
     nuevo_nombre = request.form.get('nombre')
-    nuevo_username = request.form.get('username').strip().lower()
+    nuevo_username = (request.form.get('username') or '').strip().lower()
+    nuevo_correo = (request.form.get('correo') or '').strip().lower() or None
     nuevo_rol = request.form.get('rol')
     nueva_pass = request.form.get('password')
     nueva_ubicacion_id = request.form.get('ubicacion_id') or None
     nuevo_tipo = request.form.get('tipo_asignacion', 'acompanante')
 
-    # 2. VALIDACIÓN DE DUPLICADOS
-    conflicto = Usuario.query.filter(
-        Usuario.username == nuevo_username, 
+    # Inmunidad del súper admin: nadie le cambia correo, rol, ni estado
+    if u_target.es_super_admin():
+        if (nuevo_correo or '').lower() != SUPER_ADMIN_CORREO:
+            flash('El Súper Administrador es inmune. No se puede modificar su correo.', 'danger')
+            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+        if nuevo_rol not in (None, '', 'admin'):
+            flash('El Súper Administrador es inmune. No se puede cambiar su rol.', 'danger')
+            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+    conflicto_user = Usuario.query.filter(
+        Usuario.username == nuevo_username,
         Usuario.id != target_id
     ).first()
-
-    if conflicto:
-        flash(f'Error: El nombre de usuario "@{nuevo_username}" ya está asignado.', 'danger')
+    if conflicto_user:
+        flash(f'Error: El usuario "@{nuevo_username}" ya está asignado.', 'danger')
         return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
-    # 3. Intentamos guardar
+    if nuevo_correo and not u_target.es_super_admin():
+        dup_correo = Usuario.query.filter(
+            func.lower(Usuario.correo) == nuevo_correo,
+            Usuario.id != target_id
+        ).first()
+        if dup_correo:
+            flash('Ese correo ya está en uso por otro usuario.', 'danger')
+            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
     try:
         u_target.nombre = nuevo_nombre
         u_target.username = nuevo_username
-        u_target.rol = nuevo_rol
+        if not u_target.es_super_admin():
+            u_target.correo = nuevo_correo
+        if not u_target.es_super_admin():
+            u_target.rol = nuevo_rol
         u_target.ubicacion_id = int(nueva_ubicacion_id) if nueva_ubicacion_id else None
         u_target.tipo_asignacion = nuevo_tipo
-        
-        # CAMBIO DE SEGURIDAD: solo el propio usuario puede cambiar su contraseña
-        if nueva_pass and nueva_pass.strip() != "":
+
+        if nueva_pass and nueva_pass.strip():
             if target_id == admin_id:
                 u_target.set_password(nueva_pass)
             else:
                 flash("Solo puedes cambiar tu propia contraseña.", "danger")
                 return redirect(url_for('gestionar_usuarios', user_id=admin_id))
-            
+
         db.session.commit()
         flash(f"Datos de {u_target.nombre} actualizados con éxito", 'success')
-        
     except Exception as e:
         db.session.rollback()
         print(f"Error en actualización: {e}")
@@ -1223,13 +1612,32 @@ def actualizar_usuario_completo(target_id, admin_id):
 
     return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
+@app.route('/usuarios/cambiar_estado/<int:target_id>/<int:admin_id>', methods=['POST'])
+@requiere_admin
+def cambiar_estado_usuario(target_id, admin_id):
+    u_target = Usuario.query.get_or_404(target_id)
+    if u_target.es_super_admin():
+        flash('El Súper Administrador es inmune. No se puede desactivar.', 'danger')
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+    nuevo_estado = request.form.get('estado')
+    if nuevo_estado not in ('Activo', 'Inactivo'):
+        flash('Estado inválido.', 'danger')
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+    u_target.estado = nuevo_estado
+    db.session.commit()
+    flash(f'{u_target.nombre} ahora está {nuevo_estado}.', 'warning' if nuevo_estado == 'Inactivo' else 'success')
+    return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
 @app.route('/usuarios/borrar/<int:target_id>/<int:admin_id>')
-@login_required
+@requiere_admin
 def borrar_usuario(target_id, admin_id):
     if target_id == admin_id:
         flash('No puedes borrar tu propia cuenta', 'danger')
     else:
         u_target = Usuario.query.get_or_404(target_id)
+        if u_target.es_super_admin():
+            flash('El Súper Administrador es inmune. No se puede eliminar.', 'danger')
+            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
         db.session.delete(u_target)
         db.session.commit()
         flash('Usuario eliminado', 'danger')
@@ -2647,6 +3055,140 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
         print(f"Backfill error: {e}")
+    # ==========================================
+    # 12.1 ARQUITECTURA DE AUTENTICACIÓN — MIGRACIONES + SÚPER ADMIN
+    # ==========================================
+    # Migración: nuevas columnas en usuario (correo, google_id, token_recuperacion, estado, created_at)
+    for col_sql, _ in [
+        ("ALTER TABLE usuario ADD COLUMN correo VARCHAR(120)", None),
+        ("CREATE UNIQUE INDEX IF NOT EXISTS ix_usuario_correo ON usuario(correo)", None),
+        ("ALTER TABLE usuario ADD COLUMN google_id VARCHAR(120)", None),
+        ("CREATE UNIQUE INDEX IF NOT EXISTS ix_usuario_google_id ON usuario(google_id)", None),
+        ("ALTER TABLE usuario ADD COLUMN token_recuperacion VARCHAR(200)", None),
+        ("ALTER TABLE usuario ADD COLUMN estado VARCHAR(20)", None),
+        ("ALTER TABLE usuario ADD COLUMN created_at TIMESTAMP", None),
+    ]:
+        try:
+            db.session.execute(db.text(col_sql))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    # SQLite: DROP NOT NULL no soportado vía ALTER. Recreamos via COPY solo si hace falta.
+    try:
+        cols_info = db.session.execute(db.text("PRAGMA table_info(usuario)")).fetchall()
+        # cols_info: (cid, name, type, notnull, dflt_value, pk)
+        info = {c[1]: c for c in cols_info}
+        needs_rebuild = (
+            ('username' in info and info['username'][3] == 1) or
+            ('password' in info and info['password'][3] == 1)
+        )
+        if needs_rebuild:
+            db.session.execute(db.text("ALTER TABLE usuario RENAME TO _usuario_old"))
+            db.session.execute(db.text("""
+                CREATE TABLE usuario (
+                    id INTEGER PRIMARY KEY,
+                    nombre VARCHAR(100) NOT NULL,
+                    username VARCHAR(50),
+                    password VARCHAR(255),
+                    rol VARCHAR(20) DEFAULT 'Pendiente',
+                    ubicacion_id INTEGER,
+                    tipo_asignacion VARCHAR(20) DEFAULT 'acompanante',
+                    correo VARCHAR(120),
+                    google_id VARCHAR(120),
+                    token_recuperacion VARCHAR(200),
+                    estado VARCHAR(20) DEFAULT 'Activo',
+                    created_at TIMESTAMP
+                )
+            """))
+            db.session.execute(db.text("""
+                INSERT INTO usuario (id, nombre, username, password, rol, ubicacion_id, tipo_asignacion,
+                                     correo, google_id, token_recuperacion, estado, created_at)
+                SELECT id, nombre, username, password, rol, ubicacion_id, tipo_asignacion,
+                       correo, google_id, token_recuperacion, estado, created_at
+                FROM _usuario_old
+            """))
+            db.session.execute(db.text("DROP TABLE _usuario_old"))
+            db.session.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_usuario_correo ON usuario(correo)"))
+            db.session.execute(db.text("CREATE UNIQUE INDEX IF NOT EXISTS ix_usuario_google_id ON usuario(google_id)"))
+            db.session.commit()
+            print('Migración: tabla usuario reconstruida (password y username ahora NULLable).')
+        else:
+            db.session.rollback()
+    except Exception as e:
+        db.session.rollback()
+        print(f'Migración rebuild usuario: {e}')
+
+    # Backfill: poblar `correo` desde `username` para usuarios legacy
+    try:
+        db.session.execute(db.text(
+            "UPDATE usuario SET correo = LOWER(username) || '@proespia.local' WHERE correo IS NULL OR correo = ''"
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # Backfill: asignar estado 'Activo' y created_at a usuarios legacy
+    try:
+        db.session.execute(db.text(
+            "UPDATE usuario SET estado = 'Activo' WHERE estado IS NULL OR estado = ''"
+        ))
+        db.session.execute(db.text(
+            "UPDATE usuario SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # Súper Admin obligatorio: si la tabla está vacía, sembrar kevix0813@yahoo.es / ProEspia2026
+    total_usuarios = Usuario.query.count()
+    if total_usuarios == 0:
+        try:
+            sa = Usuario(
+                nombre='Kevin (Súper Admin)',
+                username='kevix0813',
+                correo=SUPER_ADMIN_CORREO,
+                rol='admin',
+                estado='Activo',
+            )
+            sa.set_password('ProEspia2026')
+            db.session.add(sa)
+            db.session.commit()
+            print('=' * 60)
+            print('SÚPER ADMIN CREADO AUTOMÁTICAMENTE')
+            print(f'  Correo: {SUPER_ADMIN_CORREO}')
+            print('  Clave:  ProEspia2026 (cámbiala al primer ingreso)')
+            print('=' * 60)
+        except Exception as e:
+            db.session.rollback()
+            print(f'Error creando súper admin: {e}')
+    else:
+        # Garantizar que kevix0813@yahoo.es exista siempre, con rol admin y estado Activo
+        sa = Usuario.query.filter(func.lower(Usuario.correo) == SUPER_ADMIN_CORREO).first()
+        if not sa:
+            try:
+                sa = Usuario(
+                    nombre='Kevin (Súper Admin)',
+                    username='kevix0813',
+                    correo=SUPER_ADMIN_CORREO,
+                    rol='admin',
+                    estado='Activo',
+                )
+                sa.set_password('ProEspia2026')
+                db.session.add(sa)
+                db.session.commit()
+                print('Súper Admin insertado (la tabla no estaba vacía).')
+            except Exception as e:
+                db.session.rollback()
+                print(f'Error insertando súper admin: {e}')
+        else:
+            sa.rol = 'admin'
+            sa.estado = 'Activo'
+            if not sa.correo:
+                sa.correo = SUPER_ADMIN_CORREO
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
     # Crear admin por defecto si no hay usuarios
     if not Usuario.query.first():
         admin = Usuario(username='admin', nombre='Administrador', rol='admin')

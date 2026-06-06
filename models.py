@@ -7,32 +7,60 @@ import base64
 import hashlib
 db = SQLAlchemy()
 
+SUPER_ADMIN_CORREO = 'kevix0813@yahoo.es'
+
 def get_fernet(app):
     raw = app.config['SECRET_KEY'].encode()
     key = base64.urlsafe_b64encode(hashlib.sha256(raw).digest())
     return Fernet(key)
 
+class RegistroIP(db.Model):
+    __tablename__ = 'registro_ip'
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(64), nullable=False, index=True)
+    intentos = db.Column(db.Integer, default=1, nullable=False)
+    ultima_accion = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
 class Usuario(db.Model, UserMixin):
     def set_password(self, password):
         """Transforma la clave plana en un hash seguro."""
+        if not password:
+            return
         self.password = generate_password_hash(password)
 
     def check_password(self, password):
         """Compara la clave ingresada con el hash guardado."""
-        return check_password_hash(self.password, password)
+        if not self.password:
+            return False
+        try:
+            return check_password_hash(self.password, password)
+        except Exception:
+            return False
+
+    def es_super_admin(self):
+        try:
+            return (self.correo or '').strip().lower() == SUPER_ADMIN_CORREO
+        except Exception:
+            return False
+
+    def puede_acceder(self):
+        return self.rol in ['admin', 'super_su', 'tecnico', 'operador'] and self.estado == 'Activo'
+
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    rol = db.Column(db.String(20), default='tecnico')
+    username = db.Column(db.String(50), unique=True, nullable=True)
+    correo = db.Column(db.String(120), unique=True, nullable=True, index=True)
+    password = db.Column(db.String(255), nullable=True)
+    google_id = db.Column(db.String(120), unique=True, nullable=True, index=True)
+    token_recuperacion = db.Column(db.String(200), nullable=True)
+    rol = db.Column(db.String(20), default='Pendiente')
+    estado = db.Column(db.String(20), default='Activo')
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion_bodega.id'), nullable=True)
-    tipo_asignacion = db.Column(db.String(20), default='acompanante')  # 'a_cargo' o 'acompanante'
+    tipo_asignacion = db.Column(db.String(20), default='acompanante')
+    created_at = db.Column(db.DateTime, nullable=True)
 
-    rel_ubicacion = db.relationship('Ubicacion', backref='usuarios_asignados') 
-    
-    # RELACIÓN DE USUARIO A BITÁCORA
-    # Cambiamos el backref a 'rel_usuario' para que coincida con tu HTML
-    entradas_bitacora = db.relationship('Bitacora', backref='rel_usuario', lazy=True) 
+    rel_ubicacion = db.relationship('Ubicacion', backref='usuarios_asignados')
+    entradas_bitacora = db.relationship('Bitacora', backref='rel_usuario', lazy=True)
 
 class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
