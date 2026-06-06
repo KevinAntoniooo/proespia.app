@@ -903,7 +903,7 @@ def nueva_entrada(user_id):
                 cliente_id=int(c_id),
                 usuario_id=current_user.id,
                 tipo_trabajo='Reparación',
-                descripcion=f"[Falla desde Bitácora] {desc}",
+                descripcion=desc,
                 estado='Pendiente',
                 prioridad=prioridad_final,
                 falla_id=nueva.id,
