@@ -1205,10 +1205,13 @@ def actualizar_usuario_completo(target_id, admin_id):
         u_target.ubicacion_id = int(nueva_ubicacion_id) if nueva_ubicacion_id else None
         u_target.tipo_asignacion = nuevo_tipo
         
-        # CAMBIO DE SEGURIDAD AQUÍ:
-        # Solo actualizamos la contraseña si el admin escribió algo en el campo
+        # CAMBIO DE SEGURIDAD: solo el propio usuario puede cambiar su contraseña
         if nueva_pass and nueva_pass.strip() != "":
-            u_target.set_password(nueva_pass) # <--- USAMOS EL MÉTODO DE HASHING
+            if target_id == admin_id:
+                u_target.set_password(nueva_pass)
+            else:
+                flash("Solo puedes cambiar tu propia contraseña.", "danger")
+                return redirect(url_for('gestionar_usuarios', user_id=admin_id))
             
         db.session.commit()
         flash(f"Datos de {u_target.nombre} actualizados con éxito", 'success')

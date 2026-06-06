@@ -104,7 +104,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nueva Contraseña</label>
-                        <input type="password" name="password" class="form-control" placeholder="Dejar en blanco para no cambiar">
+                        <input type="password" name="password" class="form-control" placeholder="{% if u.id == usuario.id %}Dejar en blanco para no cambiar{% else %}Solo puedes cambiar tu propia contraseña{% endif %}" {% if u.id != usuario.id %}disabled{% endif %}>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Rol</label>
