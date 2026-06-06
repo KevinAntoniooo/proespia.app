@@ -2546,10 +2546,13 @@ def marcar_notificacion_leida():
 @login_required
 def eliminar_notificacion():
     datos = request.get_json()
-    n = Notificacion.query.get_or_404(datos.get('id'))
-    if n.usuario_id != current_user.id:
-        return jsonify({'ok': False, 'msg': 'No autorizado'}), 403
-    db.session.delete(n)
+    if datos.get('id') == 'todas':
+        Notificacion.query.filter_by(usuario_id=current_user.id).delete()
+    else:
+        n = Notificacion.query.get_or_404(datos.get('id'))
+        if n.usuario_id != current_user.id:
+            return jsonify({'ok': False, 'msg': 'No autorizado'}), 403
+        db.session.delete(n)
     db.session.commit()
     return jsonify({'ok': True})
 

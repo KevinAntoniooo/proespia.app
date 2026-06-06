@@ -316,6 +316,8 @@
                                         class="fa-regular fa-bell me-1"></i>Notificaciones</small>
                                 <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidas"
                                     style="font-size:0.75rem;color:var(--bs-info);">Marcar todas leídas</button>
+                                <button class="btn btn-link btn-sm p-0 text-decoration-none ms-2" id="borrarTodasNotif"
+                                    style="font-size:0.75rem;color:#dc3545;"><i class="fa-regular fa-trash-can"></i></button>
                             </div>
                             <div id="notifList">
                                 <div class="text-center py-3"><small class="text-muted">Cargando...</small></div>
@@ -449,7 +451,13 @@
         <div class="offcanvas-header border-bottom border-opacity-10" style="border-color:var(--text-muted);">
             <small class="fw-bold" style="color:var(--text-heading);"><i
                     class="fa-regular fa-bell me-1"></i>Notificaciones</small>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" style="filter:invert(.5);"></button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidasMovil"
+                    style="font-size:0.7rem;color:var(--bs-info);">Leídas</button>
+                <button class="btn btn-link btn-sm p-0 text-decoration-none" id="borrarTodasNotifMovil"
+                    style="font-size:0.7rem;color:#dc3545;"><i class="fa-regular fa-trash-can"></i></button>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" style="filter:invert(.5);"></button>
+            </div>
         </div>
         <div class="offcanvas-body" id="notifListMobile" style="padding:0.75rem 1.5rem !important;">
             <div class="text-center py-4"><small class="text-muted">Cargando...</small></div>
@@ -807,6 +815,31 @@
                 }).then(function () { cargarNotificaciones(); });
             });
         }
+
+        function borrarTodasNotif() {
+            fetch('/api/notificaciones/eliminar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: 'todas' })
+            }).then(function () { cargarNotificaciones(); if (typeof cargarNotificacionesMovil === 'function') cargarNotificacionesMovil(); });
+        }
+
+        var btnBorrar = document.getElementById('borrarTodasNotif');
+        if (btnBorrar) btnBorrar.addEventListener('click', function (e) { e.stopPropagation(); borrarTodasNotif(); });
+
+        var btnMarcarMovil = document.getElementById('marcarTodasLeidasMovil');
+        if (btnMarcarMovil) {
+            btnMarcarMovil.addEventListener('click', function () {
+                fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: 'todas' })
+                }).then(function () { cargarNotificacionesMovil(); });
+            });
+        }
+
+        var btnBorrarMovil = document.getElementById('borrarTodasNotifMovil');
+        if (btnBorrarMovil) btnBorrarMovil.addEventListener('click', function () { borrarTodasNotif(); });
 
         // Mobile: al hacer clic en campana mobile, redirigir a una página minimalista
         // Por ahora abrir dropdown desktop via JS o redirigir
