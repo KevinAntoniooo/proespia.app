@@ -1707,14 +1707,40 @@ def cambiar_estado_usuario(target_id, admin_id):
 def borrar_usuario(target_id, admin_id):
     if target_id == admin_id:
         flash('No puedes borrar tu propia cuenta', 'danger')
-    else:
-        u_target = Usuario.query.get_or_404(target_id)
-        if u_target.es_super_admin():
-            flash('El Súper Administrador es inmune. No se puede eliminar.', 'danger')
-            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+    u_target = Usuario.query.get_or_404(target_id)
+    if u_target.es_super_admin():
+        flash('El Súper Administrador es inmune. No se puede eliminar.', 'danger')
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+    try:
+        # Limpiar dependencias que apuntan al usuario (orden: hijos → padres)
+        Notificacion.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        PushSubscription.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        SolicitudCombustible.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        ChecklistSemanal.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        MovimientoStock.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        Boveda.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        VisitaProgramada.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        Bitacora.query.filter_by(usuario_id=target_id).delete(synchronize_session=False)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error limpiando dependencias de usuario {target_id}: {e}")
+        flash(f'No se pudo limpiar el historial del usuario: {str(e)[:120]}', 'danger')
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+    try:
+        nombre = u_target.nombre
         db.session.delete(u_target)
         db.session.commit()
-        flash('Usuario eliminado', 'danger')
+        flash(f'Usuario "{nombre}" eliminado permanentemente.', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error al eliminar usuario {target_id}: {e}")
+        flash(f'No se pudo eliminar el usuario: {str(e)[:120]}', 'danger')
+
     return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 # ==========================================
 # 8. GESTIÓN DE TAREAS PENDIENTES Y RESUELTAS
