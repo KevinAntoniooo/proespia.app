@@ -591,7 +591,8 @@ def gestor_visitas(user_id):
                            fallas_pendientes=fallas_pendientes,
                            visitas_realizadas=visitas_realizadas,
                            total_pendientes=total_pendientes,
-                           tecnicos=tecnicos)
+                           tecnicos=tecnicos,
+                           clientes=Cliente.query.order_by(Cliente.nombre.asc()).all())
 
 # ==========================================
 # 4. GESTIÓN DE CLIENTES (SEDES) Y EQUIPOS

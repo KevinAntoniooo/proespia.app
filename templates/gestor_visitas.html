@@ -23,9 +23,16 @@
                     </select>
                 </div>
                 {% endif %}
-                <div class="col-6 col-md-3">
+                <div class="col-12 col-md-3">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Cliente</label>
-                    <input type="text" id="filtroCliente" class="form-control form-control-sm rounded-3" placeholder="Buscar por nombre..." onkeyup="filtrarPorCliente()" autocomplete="off">
+                    <div class="position-relative">
+                        <input type="text" id="filtroCliente" class="form-control form-control-sm rounded-3" placeholder="Buscar por nombre..." onfocus="mostrarClientesGV()" oninput="filtrarClientesGV()" autocomplete="off">
+                        <div id="cliente-dropdown-gv" class="list-group position-absolute w-100 shadow-sm d-none border" style="z-index: 1050; max-height: 200px; overflow-y: auto; border-radius: 8px; top: 100%;">
+                            {% for c in clientes %}
+                            <button type="button" class="list-group-item list-group-item-action" data-nombre="{{ c.nombre }}" onclick="seleccionarClienteGV(this)">{{ c.nombre }}</button>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
@@ -389,6 +396,39 @@ function filtrarPorCliente() {
         row.style.display = (!texto || cliente.includes(texto)) ? '' : 'none';
     });
 }
+
+function mostrarClientesGV() {
+    document.getElementById('cliente-dropdown-gv').classList.remove('d-none');
+}
+
+function filtrarClientesGV() {
+    var input = document.getElementById('filtroCliente').value.toLowerCase();
+    var items = document.querySelectorAll('#cliente-dropdown-gv .list-group-item');
+    var visible = 0;
+    items.forEach(function(item) {
+        if (item.dataset.nombre.toLowerCase().includes(input)) {
+            item.style.display = 'block';
+            visible++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    document.getElementById('cliente-dropdown-gv').classList.toggle('d-none', visible === 0);
+    filtrarPorCliente();
+}
+
+function seleccionarClienteGV(btn) {
+    document.getElementById('filtroCliente').value = btn.dataset.nombre;
+    document.getElementById('cliente-dropdown-gv').classList.add('d-none');
+    filtrarPorCliente();
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#filtroCliente') && !e.target.closest('#cliente-dropdown-gv')) {
+        var dd = document.getElementById('cliente-dropdown-gv');
+        if (dd) dd.classList.add('d-none');
+    }
+});
 
 document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { new bootstrap.Tooltip(el); });
 </script>
