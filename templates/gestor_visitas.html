@@ -24,14 +24,18 @@
                 </div>
                 {% endif %}
                 <div class="col-6 col-md-3">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Cliente</label>
+                    <input type="text" id="filtroCliente" class="form-control form-control-sm rounded-3" placeholder="Buscar por nombre..." onkeyup="filtrarPorCliente()" autocomplete="off">
+                </div>
+                <div class="col-6 col-md-2">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
                     <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_inicio', '') }}">
                 </div>
-                <div class="col-6 col-md-3">
+                <div class="col-6 col-md-2">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Hasta:</label>
                     <input type="date" name="fecha_fin" class="form-control form-control-sm rounded-3" value="{{ request.args.get('fecha_fin', '') }}">
                 </div>
-                <div class="col-12 col-md-4 d-flex gap-2">
+                <div class="col-12 col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm">
                         <i class="fa-solid fa-filter me-1"></i>Filtrar
                     </button>
@@ -375,6 +379,14 @@ window.confirmarFinalizar = confirmarFinalizar;
 function confirmarFinalizarFromModalGV() {
     var id = document.getElementById('modal-gv-btn-listo').getAttribute('data-visita-id');
     if (id) confirmarFinalizar(id);
+}
+
+function filtrarPorCliente() {
+    var texto = document.getElementById('filtroCliente').value.toLowerCase().trim();
+    document.querySelectorAll('.tab-pane table tbody tr').forEach(function(row) {
+        var cliente = (row.cells[1]?.textContent || '').toLowerCase();
+        row.style.display = (!texto || cliente.includes(texto)) ? '' : 'none';
+    });
 }
 
 document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { new bootstrap.Tooltip(el); });
