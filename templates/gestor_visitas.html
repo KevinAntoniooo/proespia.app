@@ -171,7 +171,7 @@
                 </li>
                 <li class="nav-item">
                     <button class="nav-link fw-bold small" id="realizadas-tab" data-bs-toggle="tab" data-bs-target="#tab_realizadas" role="tab">
-                        <i class="fa-solid fa-check-circle text-success"></i><span class="d-none d-sm-inline ms-1">Realizadas</span> <span class="badge bg-success ms-1">{{ visitas_realizadas|length }}</span>
+                        <i class="fa-solid fa-check-circle text-success"></i><span class="d-none d-sm-inline ms-1">Realizadas</span>
                     </button>
                 </li>
                 {% endif %}
@@ -431,6 +431,15 @@ document.addEventListener('click', function(e) {
 });
 
 document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) { new bootstrap.Tooltip(el); });
+
+// Activar tab desde hash de URL (ej: #tab_fallas_pend, #tab_agendadas)
+(function() {
+    var hash = window.location.hash;
+    if (hash) {
+        var tabBtn = document.querySelector('#gvTabs [data-bs-target="' + hash + '"]');
+        if (tabBtn) new bootstrap.Tab(tabBtn).show();
+    }
+})();
 </script>
 <style>
 .table-warning-subtle { background-color: rgba(255, 193, 7, 0.05); }
