@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% block title %}Mi Perfil · PRO ESPÍA{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0 px-md-2">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold heading-font mb-1" style="color: var(--text-heading);">
+                <i class="fa-solid fa-id-badge me-2 text-info"></i>Mi Perfil
+            </h4>
+            <small style="color: var(--text-muted);">Gestiona tu información personal y seguridad de la cuenta</small>
+        </div>
+        <span class="badge rounded-pill px-3 py-2"
+            style="background:rgba(56,189,248,0.12);color:#38bdf8;border:1px solid rgba(56,189,248,0.25);">
+            <i class="fa-solid fa-user-shield me-1"></i>Cuenta personal
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-lg rounded-3 h-100" style="background:var(--bg-card);">
+                <div class="card-body p-4 text-center">
+                    <div class="position-relative d-inline-block mb-3">
+                        <div class="user-avatar-circle-new shadow-lg"
+                            style="width:96px;height:96px;font-size:2.4rem;background:linear-gradient(135deg,#0ea5e9,#6366f1);">
+                            {{ usuario.nombre[0].upper() }}
+                        </div>
+                        <span class="position-absolute bottom-0 end-0 p-2 rounded-circle border border-3"
+                            style="background:{% if usuario.estado == 'Activo' %}#10b981{% else %}#64748b{% endif %};border-color:var(--bg-card) !important;width:24px;height:24px;">
+                        </span>
+                    </div>
+                    <h5 class="fw-bold mb-1" style="color:var(--text-heading);">{{ usuario.nombre }}</h5>
+                    <p class="small mb-3" style="color:var(--text-muted);">@{{ usuario.username or '—' }}</p>
+
+                    <div class="d-flex flex-wrap gap-2 justify-content-center mb-3">
+                        <span class="badge rounded-pill px-3 py-2 text-uppercase"
+                            style="background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3);">
+                            <i class="fa-solid fa-shield-halved me-1"></i>{{ usuario.rol }}
+                        </span>
+                        <span class="badge rounded-pill px-3 py-2"
+                            style="background:{% if usuario.estado == 'Activo' %}rgba(16,185,129,0.15){% else %}rgba(100,116,139,0.15){% endif %};color:{% if usuario.estado == 'Activo' %}#34d399{% else %}#94a3b8{% endif %};border:1px solid {% if usuario.estado == 'Activo' %}rgba(16,185,129,0.3){% else %}rgba(100,116,139,0.3){% endif %};">
+                            <i class="fa-solid fa-circle me-1" style="font-size:0.55rem;"></i>{{ usuario.estado or 'Activo' }}
+                        </span>
+                    </div>
+
+                    <hr style="border-color:rgba(255,255,255,0.08);">
+
+                    <ul class="list-unstyled text-start small mb-0" style="color:var(--text-muted);">
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom border-opacity-10"
+                            style="border-color:rgba(255,255,255,0.05) !important;">
+                            <span><i class="fa-regular fa-envelope me-2 text-info"></i>Correo</span>
+                            <span class="fw-semibold" style="color:var(--text-heading);">{{ usuario.correo or '—' }}</span>
+                        </li>
+                        {% if usuario.rol == 'tecnico' and usuario.rel_ubicacion %}
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom border-opacity-10"
+                            style="border-color:rgba(255,255,255,0.05) !important;">
+                            <span><i class="fa-solid fa-truck me-2 text-warning"></i>Vehículo</span>
+                            <span class="fw-semibold" style="color:var(--text-heading);">{{ usuario.rel_ubicacion.nombre }}</span>
+                        </li>
+                        {% endif %}
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom border-opacity-10"
+                            style="border-color:rgba(255,255,255,0.05) !important;">
+                            <span><i class="fa-solid fa-user-tag me-2 text-info"></i>Tipo asignación</span>
+                            <span class="fw-semibold text-capitalize" style="color:var(--text-heading);">{{ usuario.tipo_asignacion or 'acompanante' }}</span>
+                        </li>
+                        {% if usuario.created_at %}
+                        <li class="d-flex align-items-center justify-content-between py-2">
+                            <span><i class="fa-regular fa-calendar me-2 text-info"></i>Miembro desde</span>
+                            <span class="fw-semibold" style="color:var(--text-heading);">{{ usuario.created_at.strftime('%d/%m/%Y') }}</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-lg rounded-3" style="background:var(--bg-card);">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="rounded-3 p-2 me-3"
+                                    style="background:rgba(56,189,248,0.12);">
+                                    <i class="fa-solid fa-user-pen fa-lg" style="color:#38bdf8;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0" style="color:var(--text-heading);">Datos Personales</h5>
+                                    <small style="color:var(--text-muted);">Actualiza el nombre con el que te identificarás en el sistema</small>
+                                </div>
+                            </div>
+
+                            <form method="POST" action="{{ url_for('actualizar_perfil_nombre') }}" id="formNombre"
+                                class="needs-validation" novalidate>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small" style="color:var(--text-muted);">
+                                        <i class="fa-regular fa-id-card me-1"></i>Nombre completo
+                                    </label>
+                                    <input type="text" name="nombre" class="form-control form-control-lg"
+                                        value="{{ usuario.nombre }}" maxlength="80" minlength="3" required
+                                        style="background:var(--bg-input);color:var(--text-heading);border:1px solid var(--border-color);">
+                                    <div class="invalid-feedback">Ingresa un nombre válido (mín. 3 caracteres).</div>
+                                    <small class="d-block mt-2" style="color:var(--text-muted);">
+                                        <i class="fa-solid fa-circle-info me-1"></i>Este nombre se mostrará en toda la plataforma.
+                                    </small>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="fa-solid fa-floppy-disk me-2"></i>Guardar nombre
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card border-0 shadow-lg rounded-3" style="background:var(--bg-card);">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="rounded-3 p-2 me-3"
+                                    style="background:rgba(245,158,11,0.12);">
+                                    <i class="fa-solid fa-lock fa-lg" style="color:#f59e0b;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0" style="color:var(--text-heading);">Seguridad</h5>
+                                    <small style="color:var(--text-muted);">Cambia tu contraseña — requerirá tu contraseña actual</small>
+                                </div>
+                            </div>
+
+                            {% if not usuario.password %}
+                            <div class="alert alert-info d-flex align-items-center mb-0" role="alert">
+                                <i class="fa-solid fa-circle-info fa-2x me-3 opacity-50"></i>
+                                <div>
+                                    Esta cuenta fue creada con Google y aún no tiene contraseña local. Si inicias sesión con Google, no necesitas contraseña.
+                                </div>
+                            </div>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('actualizar_perfil_password') }}" id="formPassword"
+                                class="needs-validation" novalidate>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold small" style="color:var(--text-muted);">
+                                            <i class="fa-solid fa-key me-1"></i>Contraseña actual
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" name="password_actual" id="passActual"
+                                                class="form-control" required minlength="1"
+                                                style="background:var(--bg-input);color:var(--text-heading);border:1px solid var(--border-color);">
+                                            <button type="button" class="btn btn-outline-secondary toggle-pass"
+                                                data-target="passActual" style="border-color:var(--border-color);color:var(--text-muted);">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="invalid-feedback">Ingresa tu contraseña actual para continuar.</div>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold small" style="color:var(--text-muted);">
+                                            <i class="fa-solid fa-lock me-1"></i>Nueva contraseña
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" name="password_nueva" id="passNueva"
+                                                class="form-control" required minlength="8" maxlength="128"
+                                                style="background:var(--bg-input);color:var(--text-heading);border:1px solid var(--border-color);">
+                                            <button type="button" class="btn btn-outline-secondary toggle-pass"
+                                                data-target="passNueva" style="border-color:var(--border-color);color:var(--text-muted);">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="invalid-feedback">Mínimo 8 caracteres.</div>
+                                        <div class="password-strength mt-2" id="strengthBar" style="height:6px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;">
+                                            <div id="strengthFill" style="height:100%;width:0%;transition:all 0.3s ease;background:#ef4444;"></div>
+                                        </div>
+                                        <small id="strengthLabel" class="d-block mt-1 small" style="color:var(--text-muted);">
+                                            <i class="fa-solid fa-shield-halved me-1"></i>Fortaleza: <span id="strengthText">—</span>
+                                        </small>
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-semibold small" style="color:var(--text-muted);">
+                                            <i class="fa-solid fa-shield me-1"></i>Confirmar nueva contraseña
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" name="password_confirm" id="passConfirm"
+                                                class="form-control" required minlength="8"
+                                                style="background:var(--bg-input);color:var(--text-heading);border:1px solid var(--border-color);">
+                                            <button type="button" class="btn btn-outline-secondary toggle-pass"
+                                                data-target="passConfirm" style="border-color:var(--border-color);color:var(--text-muted);">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="invalid-feedback">Las contraseñas no coinciden.</div>
+                                    </div>
+                                </div>
+                                <div class="alert mt-3 mb-3 small d-flex align-items-start"
+                                    style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);color:#fbbf24;border-radius:10px;">
+                                    <i class="fa-solid fa-triangle-exclamation mt-1 me-2"></i>
+                                    <div>
+                                        <strong>Importante:</strong> al cambiar tu contraseña se invalidará la sesión actual, deberás volver a iniciar sesión.
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-warning px-4 text-dark">
+                                        <i class="fa-solid fa-shield-halved me-2"></i>Actualizar contraseña
+                                    </button>
+                                </div>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div class="card border-0 shadow-lg rounded-3" style="background:linear-gradient(135deg, rgba(99,102,241,0.08), rgba(56,189,248,0.06));">
+                        <div class="card-body p-3 p-md-4 d-flex align-items-center">
+                            <div class="rounded-3 p-2 p-md-3 me-3 flex-shrink-0"
+                                style="background:rgba(56,189,248,0.15);">
+                                <i class="fa-solid fa-user-shield fa-2x" style="color:#38bdf8;"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold mb-1" style="color:var(--text-heading);">
+                                    <i class="fa-solid fa-circle-info me-1 text-info"></i>Política de privacidad
+                                </h6>
+                                <small style="color:var(--text-muted);">
+                                    Tu contraseña se almacena cifrada con algoritmos de hashing seguros.
+                                    El equipo de administración <strong>no puede</strong> ver ni restablecer tu contraseña —
+                                    si la olvidas, usa la opción <em>"¿Olvidaste tu contraseña?"</em> en la pantalla de inicio de sesión.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.toggle-pass').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const target = document.getElementById(this.dataset.target);
+            const icon = this.querySelector('i');
+            if (target.type === 'password') {
+                target.type = 'text';
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                target.type = 'password';
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        });
+    });
+
+    const passNueva = document.getElementById('passNueva');
+    const passConfirm = document.getElementById('passConfirm');
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+
+    if (passNueva) {
+        passNueva.addEventListener('input', function () {
+            const v = this.value;
+            let score = 0;
+            if (v.length >= 8) score++;
+            if (v.length >= 12) score++;
+            if (/[A-Z]/.test(v)) score++;
+            if (/[0-9]/.test(v)) score++;
+            if (/[^A-Za-z0-9]/.test(v)) score++;
+
+            const levels = [
+                { w: 0, color: '#ef4444', label: '—' },
+                { w: 20, color: '#ef4444', label: 'Muy débil' },
+                { w: 40, color: '#f59e0b', label: 'Débil' },
+                { w: 60, color: '#eab308', label: 'Aceptable' },
+                { w: 80, color: '#10b981', label: 'Buena' },
+                { w: 100, color: '#10b981', label: 'Muy fuerte' }
+            ];
+            const lvl = levels[score];
+            strengthFill.style.width = lvl.w + '%';
+            strengthFill.style.background = lvl.color;
+            strengthText.textContent = lvl.label;
+        });
+    }
+
+    if (passConfirm) {
+        passConfirm.addEventListener('input', function () {
+            if (this.value && this.value !== passNueva.value) {
+                this.setCustomValidity('no coincide');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+</script>
+{% endblock %}

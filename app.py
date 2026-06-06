@@ -1851,56 +1851,23 @@ def activar_usuario(target_id, admin_id):
 def actualizar_usuario_completo(target_id, admin_id):
     u_target = Usuario.query.get_or_404(target_id)
 
-    nuevo_nombre = request.form.get('nombre')
-    nuevo_username = (request.form.get('username') or '').strip().lower()
-    nuevo_correo = (request.form.get('correo') or '').strip().lower() or None
     nuevo_rol = request.form.get('rol')
-    nueva_pass = request.form.get('password')
     nueva_ubicacion_id = request.form.get('ubicacion_id') or None
     nuevo_tipo = request.form.get('tipo_asignacion', 'acompanante')
 
-    # Inmunidad del súper admin: nadie le cambia correo, rol, ni estado
-    if u_target.es_super_admin():
-        if (nuevo_correo or '').lower() != SUPER_ADMIN_CORREO:
-            flash('El Súper Administrador es inmune. No se puede modificar su correo.', 'danger')
-            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
-        if nuevo_rol not in (None, '', 'admin'):
-            flash('El Súper Administrador es inmune. No se puede cambiar su rol.', 'danger')
-            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
-
-    conflicto_user = Usuario.query.filter(
-        Usuario.username == nuevo_username,
-        Usuario.id != target_id
-    ).first()
-    if conflicto_user:
-        flash(f'Error: El usuario "@{nuevo_username}" ya está asignado.', 'danger')
+    if u_target.es_super_admin() and nuevo_rol not in (None, '', 'admin'):
+        flash('El Súper Administrador es inmune. No se puede cambiar su rol.', 'danger')
         return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
-    if nuevo_correo and not u_target.es_super_admin():
-        dup_correo = Usuario.query.filter(
-            func.lower(Usuario.correo) == nuevo_correo,
-            Usuario.id != target_id
-        ).first()
-        if dup_correo:
-            flash('Ese correo ya está en uso por otro usuario.', 'danger')
-            return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+    if nuevo_rol not in ('admin', 'tecnico', 'operador', None, ''):
+        flash('Rol inválido.', 'danger')
+        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
     try:
-        u_target.nombre = nuevo_nombre
-        u_target.username = nuevo_username
-        if not u_target.es_super_admin():
-            u_target.correo = nuevo_correo
-        if not u_target.es_super_admin():
+        if not u_target.es_super_admin() and nuevo_rol:
             u_target.rol = nuevo_rol
         u_target.ubicacion_id = int(nueva_ubicacion_id) if nueva_ubicacion_id else None
         u_target.tipo_asignacion = nuevo_tipo
-
-        if nueva_pass and nueva_pass.strip():
-            if target_id == admin_id:
-                u_target.set_password(nueva_pass)
-            else:
-                flash("Solo puedes cambiar tu propia contraseña.", "danger")
-                return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
         db.session.commit()
         flash(f"Datos de {u_target.nombre} actualizados con éxito", 'success')
@@ -1910,6 +1877,71 @@ def actualizar_usuario_completo(target_id, admin_id):
         flash("Ocurrió un error técnico al intentar guardar los cambios.", "danger")
 
     return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+
+@app.route('/perfil', methods=['GET'])
+@require_active_user
+def ver_perfil():
+    return render_template('perfil.html', usuario=current_user)
+
+
+@app.route('/perfil/actualizar_nombre', methods=['POST'])
+@require_active_user
+def actualizar_perfil_nombre():
+    nuevo_nombre = (request.form.get('nombre') or '').strip()
+    if not nuevo_nombre or len(nuevo_nombre) < 3:
+        flash('El nombre debe tener al menos 3 caracteres.', 'danger')
+        return redirect(url_for('ver_perfil'))
+    if len(nuevo_nombre) > 80:
+        flash('El nombre es demasiado largo (máx 80 caracteres).', 'danger')
+        return redirect(url_for('ver_perfil'))
+    try:
+        current_user.nombre = nuevo_nombre
+        db.session.commit()
+        flash('Tu nombre se actualizó con éxito.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error actualizando nombre: {e}")
+        flash('No se pudo actualizar el nombre. Intenta nuevamente.', 'danger')
+    return redirect(url_for('ver_perfil'))
+
+
+@app.route('/perfil/actualizar_password', methods=['POST'])
+@require_active_user
+def actualizar_perfil_password():
+    pass_actual = request.form.get('password_actual') or ''
+    pass_nueva = request.form.get('password_nueva') or ''
+    pass_confirm = request.form.get('password_confirm') or ''
+
+    if not current_user.password:
+        flash('Tu cuenta no tiene contraseña local (puedes ingresar con Google).', 'warning')
+        return redirect(url_for('ver_perfil'))
+
+    if not current_user.check_password(pass_actual):
+        flash('La contraseña actual es incorrecta.', 'danger')
+        return redirect(url_for('ver_perfil'))
+
+    if len(pass_nueva) < 8:
+        flash('La nueva contraseña debe tener al menos 8 caracteres.', 'danger')
+        return redirect(url_for('ver_perfil'))
+
+    if pass_nueva != pass_confirm:
+        flash('La nueva contraseña y su confirmación no coinciden.', 'danger')
+        return redirect(url_for('ver_perfil'))
+
+    if pass_nueva == pass_actual:
+        flash('La nueva contraseña debe ser distinta de la actual.', 'warning')
+        return redirect(url_for('ver_perfil'))
+
+    try:
+        current_user.set_password(pass_nueva)
+        db.session.commit()
+        flash('Tu contraseña se actualizó con éxito.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error actualizando password: {e}")
+        flash('No se pudo actualizar la contraseña. Intenta nuevamente.', 'danger')
+    return redirect(url_for('ver_perfil'))
 
 @app.route('/usuarios/cambiar_estado/<int:target_id>/<int:admin_id>', methods=['POST'])
 @requiere_admin

@@ -270,6 +270,9 @@
                     <i class="fa-solid fa-clipboard-check"></i> <span>Checklist</span>
                 </a>
                 {% endif %}
+                <a href="{{ url_for('ver_perfil') }}" class="nav-link-pro {{ 'active' if 'perfil' in request.endpoint }}">
+                    <i class="fa-solid fa-id-badge"></i> <span>Mi Perfil</span>
+                </a>
             </nav>
 
             <div class="px-3 pb-4 mt-auto">
@@ -346,6 +349,12 @@
                             <div class="user-avatar-circle-new shadow-sm">{{ usuario.nombre[0].upper() }}</div>
                         </div>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                            <li>
+                                <a href="{{ url_for('ver_perfil') }}" class="dropdown-item">
+                                    <i class="fa-solid fa-id-badge fa-sm me-2"></i>Mi Perfil
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a href="{{ url_for('logout') }}" class="dropdown-item text-danger">
                                     <i class="fa-solid fa-power-off fa-sm me-2"></i>Cerrar Sesión
@@ -434,6 +443,8 @@
                 <a href="/checklist/viernes" class="nav-link-pro"><i class="fa-solid fa-clipboard-check"></i>
                     <span>Checklist</span></a>
                 {% endif %}
+                <a href="{{ url_for('ver_perfil') }}" class="nav-link-pro"><i class="fa-solid fa-id-badge"></i>
+                    <span>Mi Perfil</span></a>
             </nav>
 
             <div class="p-3 border-top border-white border-opacity-10">
