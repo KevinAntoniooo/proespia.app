@@ -294,8 +294,7 @@ def login():
 
         flash('Credenciales incorrectas. Por favor, verifique sus datos.', 'warning')
 
-    google_cfg = obtener_google_config()
-    return render_template('login.html', google_client_id=google_cfg['client_id'])
+    return render_template('login.html')
 
 # ==========================================
 # 3.1 REGISTRO DE NUEVOS USUARIOS (CORREO + CONTRASEÑA)
@@ -369,14 +368,17 @@ def registro():
             print(f"Error en registro: {e}")
             return jsonify({'ok': False, 'msg': 'Error técnico al registrar. Intenta más tarde.'}), 500
 
-    google_cfg = obtener_google_config()
-    return render_template('registro.html', google_client_id=google_cfg['client_id'])
+    return render_template('registro.html')
 
 # ==========================================
-# 3.2 LOGIN CON GOOGLE OAUTH 2.0 (verificación de ID Token)
+# 3.2 LOGIN CON GOOGLE OAUTH 2.0 (DESHABILITADO — solo correo+contraseña)
 # ==========================================
+GOOGLE_LOGIN_ENABLED = False
+
 @app.route('/login/google', methods=['POST'])
 def login_google():
+    if not GOOGLE_LOGIN_ENABLED:
+        return jsonify({'ok': False, 'msg': 'El inicio de sesión con Google está deshabilitado. Usa tu correo y contraseña.'}), 403
     ip = get_client_ip()
     if not throttling_ip(ip):
         return jsonify({'ok': False, 'msg': 'Demasiados intentos. Intenta en 15 minutos.'}), 429
@@ -459,6 +461,8 @@ def login_google():
 
 @app.route('/login/google/callback')
 def login_google_callback():
+    if not GOOGLE_LOGIN_ENABLED:
+        flash('El inicio de sesión con Google está deshabilitado.', 'info')
     return redirect(url_for('login'))
 
 # ==========================================

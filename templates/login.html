@@ -1,9 +1,6 @@
 {% extends "base.html" %}
 
 {% block content_login %}
-{% if google_client_id %}
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-{% endif %}
 <div class="min-vh-100 d-flex align-items-center justify-content-center p-3 p-md-4" style="background:linear-gradient(135deg,rgba(2,6,23,0.85),rgba(15,23,42,0.7)),url('{{ url_for('static', filename='img/bg-login.png') }}') center/cover no-repeat fixed;">
     <div class="card border-0 shadow-lg animate-in" style="max-width:420px;width:100%;border-radius:24px;backdrop-filter:blur(20px);background:rgba(255,255,255,0.96);">
         <div class="card-body p-4 p-md-5">
@@ -50,22 +47,6 @@
                     <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>Acceder al Sistema
                 </button>
             </form>
-
-            <div class="d-flex align-items-center my-3" style="color:#94a3b8;font-size:0.7rem;">
-                <div style="flex:1;height:1px;background:#e2e8f0;"></div>
-                <span class="px-2">o continúa con</span>
-                <div style="flex:1;height:1px;background:#e2e8f0;"></div>
-            </div>
-
-            <div class="d-flex justify-content-center mb-3" id="googleBtnContainer" style="min-height:44px;">
-                {% if google_client_id %}
-                <div id="g_id_onload" data-callback="handleGoogleLogin" data-client_id="{{ google_client_id }}" data-auto_prompt="false"></div>
-                {% else %}
-                <button type="button" class="btn btn-sm w-100" disabled style="border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#94a3b8;">
-                    <i class="fa-brands fa-google me-2"></i>Google (no configurado)
-                </button>
-                {% endif %}
-            </div>
 
             <div class="d-flex align-items-center justify-content-center gap-3 mt-4 pt-3 border-top">
                 <a href="{{ url_for('registro') }}" class="btn btn-sm" style="color:#0f172a;border:1px solid #cbd5e1;border-radius:20px;padding:6px 18px;font-size:0.8rem;text-decoration:none;">
@@ -290,55 +271,6 @@
     });
 
     actualizarBtnPWA();
-})();
-
-function handleGoogleLogin(response) {
-    if (!response || !response.credential) return;
-    var btn = document.querySelector('#googleBtnContainer button');
-    fetch('{{ url_for("login_google") }}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential })
-    })
-    .then(function(r){ return r.json().then(function(j){ return { status: r.status, body: j }; }); })
-    .then(function(res){
-        if (res.status === 429) {
-            alert(res.body.msg || 'Demasiados intentos. Espera 15 minutos.');
-            return;
-        }
-        if (res.body.ok) {
-            window.location.href = res.body.redirect;
-        } else {
-            alert(res.body.msg || 'No se pudo iniciar sesión con Google.');
-        }
-    })
-    .catch(function(){ alert('Error de red con Google.'); });
-}
-
-(function initGoogle() {
-    var cid = '{{ google_client_id or "" }}';
-    if (!cid) return;
-    var tries = 0;
-    var iv = setInterval(function() {
-        tries++;
-        if (window.google && google.accounts && google.accounts.id) {
-            clearInterval(iv);
-            google.accounts.id.initialize({
-                client_id: cid,
-                callback: handleGoogleLogin,
-                cancel_on_tap_outside: true
-            });
-            var container = document.getElementById('googleBtnContainer');
-            if (container) {
-                google.accounts.id.renderButton(container, {
-                    theme: 'outline', size: 'large', shape: 'pill',
-                    text: 'signin_with', logo_alignment: 'left', width: 320
-                });
-            }
-        } else if (tries > 50) {
-            clearInterval(iv);
-        }
-    }, 200);
 })();
 </script>
 {% endblock %}

@@ -8,9 +8,6 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon-icon.png') }}">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    {% if google_client_id %}
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    {% endif %}
     <style>
         :root {
             color-scheme: light;
@@ -126,29 +123,6 @@
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(220, 38, 38, 0.36); }
         .btn-primary:disabled { opacity: 0.7; cursor: progress; transform: none; }
 
-        .divider {
-            display: flex; align-items: center; gap: 10px;
-            color: #94a3b8; font-size: 0.78rem;
-            margin: 20px 0 16px;
-        }
-        .divider::before, .divider::after {
-            content: ''; flex: 1; height: 1px; background: var(--border);
-        }
-
-        .google-area {
-            display: flex; justify-content: center;
-            min-height: 44px;
-        }
-        .google-fallback {
-            display: inline-flex; align-items: center; gap: 10px;
-            padding: 11px 18px; border: 1px solid #d1d5db;
-            border-radius: 12px; background: #fff; color: #1f2937;
-            font-weight: 600; font-size: 0.9rem; cursor: pointer;
-            transition: background 0.2s ease, transform 0.2s ease;
-        }
-        .google-fallback:hover { background: #f8fafc; transform: translateY(-1px); }
-        .google-fallback img { width: 18px; height: 18px; }
-
         .footer-links {
             text-align: center; margin-top: 18px;
             color: var(--text-soft); font-size: 0.85rem;
@@ -252,24 +226,6 @@
                 </button>
             </form>
 
-            <div class="divider">o regístrate con</div>
-            <div class="google-area" id="googleArea">
-                {% if google_client_id %}
-                <div id="g_id_onload"
-                     data-callback="handleGoogleCredential"
-                     data-client_id="{{ google_client_id }}"
-                     data-auto_prompt="false"
-                     data-cancel_on_tap_outside="true">
-                </div>
-                <div id="googleBtnContainer" style="display:flex; justify-content:center;"></div>
-                {% else %}
-                <button type="button" class="google-fallback" id="googleFallbackBtn" disabled title="Configura GOOGLE_CLIENT_ID en el servidor">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                    Google (no configurado)
-                </button>
-                {% endif %}
-            </div>
-
             <p class="footer-links">
                 ¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión</a>
             </p>
@@ -340,46 +296,6 @@
             }
         });
 
-        function handleGoogleCredential(response) {
-            if (!response || !response.credential) {
-                showToast('No se obtuvo credencial de Google.', 'error');
-                return;
-            }
-            fetch('{{ url_for("login_google") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ credential: response.credential })
-            })
-            .then(r => r.json().then(j => ({ status: r.status, body: j })))
-            .then(({ status, body }) => {
-                if (status === 429) { showToast(body.msg || 'Demasiados intentos.', 'error'); return; }
-                if (body.ok) { window.location.href = body.redirect; }
-                else { showToast(body.msg || 'No se pudo validar con Google.', 'error'); }
-            })
-            .catch(() => showToast('Error de red con Google.', 'error'));
-        }
-
-        window.addEventListener('load', function () {
-            const cid = '{{ google_client_id or "" }}';
-            if (!cid) return;
-            const interval = setInterval(function () {
-                if (window.google && google.accounts && google.accounts.id) {
-                    clearInterval(interval);
-                    google.accounts.id.initialize({
-                        client_id: cid,
-                        callback: handleGoogleCredential,
-                        cancel_on_tap_outside: true
-                    });
-                    const container = document.getElementById('googleBtnContainer');
-                    if (container) {
-                        google.accounts.id.renderButton(container, {
-                            theme: 'outline', size: 'large', shape: 'pill',
-                            text: 'signup_with', logo_alignment: 'left', width: 320
-                        });
-                    }
-                }
-            }, 200);
-        });
     </script>
 </body>
 </html>
