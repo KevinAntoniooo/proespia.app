@@ -296,7 +296,7 @@ function verDetalleVisita(row) {
     document.getElementById('visita-cliente').innerText = row.dataset.cliente || '---';
     document.getElementById('visita-estado').innerHTML = estadoHTML;
     document.getElementById('visita-fecha').innerText = row.dataset.fecha || '---';
-    document.getElementById('visita-descripcion').innerText = row.dataset.descripcion || 'Sin descripción';
+    document.getElementById('visita-descripcion').innerText = (row.dataset.descripcion || 'Sin descripción').replace(/^\[Falla desde Bitácora\]\s*/i, '');
     var ubiEl = document.getElementById('visita-ubicacion');
     var mapaEl = document.getElementById('mapa-visita');
     var coords = extraerCoordenadas(row.dataset.ubicacion);

@@ -667,7 +667,7 @@
         badge.textContent = getEstadoLabel(v.estado);
         badge.className = 'badge ' + getEstadoBadgeClass(v.estado);
 
-        document.getElementById('detailDescripcion').textContent = v.descripcion || 'Sin notas adicionales.';
+        document.getElementById('detailDescripcion').textContent = (v.descripcion || 'Sin notas adicionales.').replace(/^\[Falla desde Bitácora\]\s*/i, '');
 
         var informeContainer = document.getElementById('detailInformeContainer');
         var informeText = document.getElementById('detailInforme');
