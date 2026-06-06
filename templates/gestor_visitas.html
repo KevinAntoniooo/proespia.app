@@ -128,7 +128,7 @@
                             {% if v.informe_tecnico %}
                             <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}"
                                 class="btn btn-sm btn-outline-danger shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
-                                onclick="event.stopPropagation();">
+                                onclick="event.stopPropagation();" target="_blank">
                                 <i class="fa-solid fa-file-pdf me-1"></i>PDF
                             </a>
                             {% else %}
@@ -325,6 +325,7 @@ function verDetalleVisita(row) {
     var btnPDF = document.getElementById('modal-gv-btn-pdf');
     if (row.dataset.informe) {
         btnPDF.href = '/reporte_visita_pdf/' + row.dataset.id + '/' + {{ usuario.id }};
+        btnPDF.target = '_blank';
         btnPDF.classList.remove('d-none');
     } else {
         btnPDF.classList.add('d-none');
