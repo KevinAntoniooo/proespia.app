@@ -3308,6 +3308,57 @@ with app.app_context():
         db.session.commit()
         print('Ubicación Bodega Central creada por defecto.')
 
+# ==========================================
+# 13. MANEJADORES DE ERROR (404 / 500)
+# ==========================================
+@app.errorhandler(404)
+def page_not_found(e):
+    try:
+        if current_user.is_authenticated and current_user.puede_acceder():
+            destino = url_for('dashboard', user_id=current_user.id)
+        else:
+            destino = url_for('login')
+    except Exception:
+        destino = '/'
+    return render_template('errors/404.html',
+                           status=404,
+                           path=request.path,
+                           destino=destino), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+    print(f"[ERROR 500] {e}")
+    return render_template('errors/500.html', status=500), 500
+
+
+@app.errorhandler(403)
+def forbidden(e):
+    try:
+        if current_user.is_authenticated and current_user.puede_acceder():
+            destino = url_for('dashboard', user_id=current_user.id)
+        else:
+            destino = url_for('login')
+    except Exception:
+        destino = '/'
+    return render_template('errors/404.html',
+                           status=403,
+                           path=request.path,
+                           destino=destino), 403
+
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return render_template('errors/404.html',
+                           status=405,
+                           path=request.path,
+                           destino=url_for('login')), 405
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

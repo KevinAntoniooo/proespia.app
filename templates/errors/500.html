@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
+    <title>500 · Error Interno del Servidor · PRO ESPÍA</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon-icon.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg-deep: #060912;
+            --bg-mid: #0f172a;
+            --bg-card: rgba(15, 23, 42, 0.65);
+            --warn: #facc15;
+            --warn-glow: #eab308;
+            --danger: #ef4444;
+            --ok: #22c55e;
+            --accent: #38bdf8;
+            --accent-2: #6366f1;
+            --text: #f1f5f9;
+            --text-soft: #94a3b8;
+            --text-mute: #64748b;
+            --border: rgba(148, 163, 184, 0.15);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Fira Sans', system-ui, -apple-system, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(900px 500px at 80% 10%, rgba(250, 204, 21, 0.10), transparent 60%),
+                radial-gradient(800px 500px at 20% 90%, rgba(239, 68, 68, 0.10), transparent 60%),
+                linear-gradient(135deg, var(--bg-deep), var(--bg-mid));
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px 18px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Cuadrícula sutil */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+            background-size: 36px 36px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 720px;
+            width: 100%;
+            text-align: center;
+            animation: fadeUp 0.7s ease-out;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== ILUSTRACIÓN: Monitor con alerta → servidor con luces ===== */
+        .illu {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto 30px;
+            aspect-ratio: 1.1;
+        }
+
+        /* Monitor (pantalla) */
+        .monitor {
+            position: absolute;
+            top: 4%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 56%;
+            background: linear-gradient(180deg, #1e293b, #0f172a);
+            border-radius: 14px;
+            padding: 14px 14px 22px;
+            box-shadow:
+                0 20px 40px rgba(0,0,0,0.55),
+                inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .monitor::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26%;
+            height: 8px;
+            background: #1e293b;
+            border-radius: 0 0 6px 6px;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.4);
+        }
+        .screen {
+            background: #020617;
+            border-radius: 6px;
+            aspect-ratio: 1.4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.7);
+        }
+        /* Scanlines del monitor */
+        .screen::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(56, 189, 248, 0.04) 0 2px,
+                transparent 2px 4px
+            );
+            pointer-events: none;
+        }
+        /* Signo de exclamación/advertencia */
+        .warn-mark {
+            position: relative;
+            width: 36%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .warn-mark::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid var(--warn);
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(250, 204, 21, 0.5);
+            animation: warnPulse 1.6s ease-in-out infinite;
+        }
+        .warn-mark::after {
+            content: '!';
+            position: relative;
+            color: var(--warn);
+            font-size: clamp(1.4rem, 4vw, 2.4rem);
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 0 14px rgba(250, 204, 21, 0.7);
+            font-family: 'Fira Sans', sans-serif;
+        }
+        @keyframes warnPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.7; }
+        }
+
+        /* Línea punteada de conexión */
+        .link {
+            position: absolute;
+            top: 32%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 16%;
+            background-image: linear-gradient(180deg, var(--warn) 50%, transparent 50%);
+            background-size: 4px 10px;
+            background-repeat: repeat-y;
+            z-index: 0;
+        }
+        .link::before, .link::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 14px;
+            height: 14px;
+            background: var(--warn);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--warn);
+        }
+        .link::before { top: -6px; }
+        .link::after { bottom: -6px; background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+
+        /* Servidor / Torre */
+        .server {
+            position: absolute;
+            bottom: 4%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 42%;
+            background: linear-gradient(180deg, #1e293b, #0f172a);
+            border-radius: 10px;
+            padding: 12px 10px;
+            box-shadow:
+                0 20px 40px rgba(0,0,0,0.55),
+                inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .rack {
+            background: #020617;
+            border-radius: 4px;
+            padding: 8px 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .unit {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, #0f172a, #1e293b);
+            border-radius: 3px;
+            padding: 6px 8px;
+            border: 1px solid rgba(148, 163, 184, 0.08);
+        }
+        .unit-slot {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.5rem;
+            color: var(--text-mute);
+            letter-spacing: 0.1em;
+        }
+        .led-group {
+            display: flex;
+            gap: 4px;
+        }
+        .led {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #1e293b;
+            box-shadow: inset 0 0 2px rgba(0,0,0,0.6);
+        }
+        .led.green {
+            background: var(--ok);
+            box-shadow: 0 0 6px var(--ok);
+            animation: ledBlink 2.4s ease-in-out infinite;
+        }
+        .led.red {
+            background: var(--danger);
+            box-shadow: 0 0 8px var(--danger);
+            animation: ledBlink 0.9s ease-in-out infinite;
+        }
+        .led.amber {
+            background: var(--warn);
+            box-shadow: 0 0 6px var(--warn);
+        }
+        .unit:nth-child(1) .led-group .led:nth-child(1) { animation-delay: 0.0s; }
+        .unit:nth-child(1) .led-group .led:nth-child(2) { animation-delay: 0.2s; }
+        .unit:nth-child(2) .led-group .led:nth-child(1) { animation-delay: 0.4s; }
+        .unit:nth-child(2) .led-group .led:nth-child(2) { animation-delay: 0.6s; }
+        .unit:nth-child(3) .led-group .led:nth-child(1) { animation-delay: 0.8s; }
+        .unit:nth-child(3) .led-group .led:nth-child(2) { animation-delay: 1.0s; }
+        @keyframes ledBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ===== Texto ===== */
+        .badge-code {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.3em;
+            color: var(--warn);
+            text-transform: uppercase;
+            padding: 6px 12px;
+            background: rgba(250, 204, 21, 0.08);
+            border: 1px solid rgba(250, 204, 21, 0.3);
+            border-radius: 999px;
+            margin-bottom: 14px;
+        }
+        .badge-code::before {
+            content: '';
+            width: 6px; height: 6px;
+            background: var(--warn);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--warn);
+            animation: pulse 1s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .big-code {
+            font-family: 'Fira Sans', sans-serif;
+            font-size: clamp(4rem, 12vw, 6.5rem);
+            font-weight: 900;
+            line-height: 0.95;
+            letter-spacing: -3px;
+            background: linear-gradient(135deg, #fde047 0%, #f59e0b 60%, #ef4444 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        h1 {
+            font-size: clamp(1.4rem, 3vw, 1.95rem);
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 14px;
+        }
+        p.lead {
+            color: var(--text-soft);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-width: 540px;
+            margin: 0 auto 28px;
+        }
+        p.lead strong { color: var(--text); }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 26px;
+            border: none;
+            border-radius: 14px;
+            font: inherit;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            box-shadow:
+                0 10px 25px rgba(245, 158, 11, 0.28),
+                inset 0 1px 0 rgba(255,255,255,0.18);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 14px 32px rgba(245, 158, 11, 0.42),
+                inset 0 1px 0 rgba(255,255,255,0.22);
+        }
+        .btn:active { transform: translateY(0); }
+        .btn i { font-size: 0.9rem; }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-soft);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+        .btn-ghost:hover {
+            background: rgba(148, 163, 184, 0.06);
+            color: var(--text);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 18px;
+            left: 0; right: 0;
+            text-align: center;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.65rem;
+            color: var(--text-mute);
+            letter-spacing: 0.3em;
+            z-index: 1;
+        }
+        .footer strong { color: var(--text-soft); }
+
+        @media (max-width: 480px) {
+            .illu { max-width: 320px; }
+            .monitor { width: 64%; }
+            .server { width: 50%; }
+            .actions .btn { width: 100%; justify-content: center; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .warn-mark::before, .led, .badge-code::before { animation: none; }
+            .wrap { animation: none; }
+            .btn { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap" role="main">
+        <!-- Ilustración: Monitor con ! → línea punteada → servidor con LEDs -->
+        <section class="illu" aria-hidden="true">
+            <div class="monitor">
+                <div class="screen">
+                    <div class="warn-mark"></div>
+                </div>
+            </div>
+
+            <div class="link"></div>
+
+            <div class="server">
+                <div class="rack">
+                    <div class="unit">
+                        <span class="unit-slot">U-01</span>
+                        <div class="led-group">
+                            <span class="led green"></span>
+                            <span class="led green"></span>
+                        </div>
+                    </div>
+                    <div class="unit">
+                        <span class="unit-slot">U-02</span>
+                        <div class="led-group">
+                            <span class="led red"></span>
+                            <span class="led amber"></span>
+                        </div>
+                    </div>
+                    <div class="unit">
+                        <span class="unit-slot">U-03</span>
+                        <div class="led-group">
+                            <span class="led green"></span>
+                            <span class="led red"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="badge-code">HTTP · {{ status }} · CONTINGENCIA</div>
+        <div class="big-code">500</div>
+        <h1>Error Interno del Servidor</h1>
+        <p class="lead">
+            Estamos trabajando en solucionar un <strong>inconveniente técnico</strong> en la
+            central de datos. Por favor, reintenta en unos minutos o comunica el evento al
+            administrador del sistema.
+        </p>
+
+        <div class="actions">
+            <button type="button" class="btn" onclick="window.location.reload();">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                Reintentar Conexión
+            </button>
+            <a href="javascript:history.back()" class="btn btn-ghost">
+                <i class="fa-solid fa-arrow-left"></i>
+                Volver atrás
+            </a>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <strong>PRO ESPÍA LTDA</strong> · Central de Seguridad Electrónica
+    </footer>
+</body>
+</html>
