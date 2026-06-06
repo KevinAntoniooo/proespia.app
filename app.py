@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, Response, jsonify, send_file, session
-from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgramada, CategoriaItem, Ubicacion, ProductoStock, MovimientoStock, Vehiculo, Herramienta, ChecklistSemanal, PushSubscription, Notificacion, SolicitudCombustible, RegistroIP, SUPER_ADMIN_CORREO
+from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgramada, CategoriaItem, Ubicacion, ProductoStock, MovimientoStock, Vehiculo, Herramienta, ChecklistSemanal, PushSubscription, Notificacion, SolicitudCombustible, RegistroIP, CodigoVerificacion, SUPER_ADMIN_CORREO
 from datetime import datetime, time, timedelta, date
 from sqlalchemy.exc import IntegrityError
 from fpdf import FPDF
@@ -10,6 +10,10 @@ import os
 import re
 import secrets
 import functools
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from werkzeug.utils import secure_filename
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -98,6 +102,7 @@ def _unauth():
 # 1.1 HELPERS DE AUTENTICACIÓN Y SEGURIDAD
 # ==========================================
 RUTAS_LIBRES = {'login', 'registro', 'login_google', 'login_google_callback',
+                'registro_solicitar_codigo', 'registro_verificar_codigo', 'registro_reenviar_codigo',
                 'olvido_contrasena', 'restablecer_password', 'static', 'service_worker',
                 'manifest_json'}
 
@@ -172,6 +177,61 @@ def obtener_google_config():
         'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET', ''),
         'redirect_uri': url_for('login_google_callback', _external=True),
     }
+
+
+# ==========================================
+# 1.2 HELPER DE ENVÍO DE CORREO (SMTP)
+# ==========================================
+def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
+    """Envía un correo vía SMTP. Si MAIL_SERVER no está configurado,
+    imprime el código/contenido en consola (modo desarrollo)."""
+    smtp_server = os.environ.get('MAIL_SERVER', '')
+    smtp_port = int(os.environ.get('MAIL_PORT', '587'))
+    smtp_user = os.environ.get('MAIL_USERNAME', '')
+    smtp_pass = os.environ.get('MAIL_PASSWORD', '')
+    smtp_from = os.environ.get('MAIL_FROM', smtp_user or 'no-reply@proespia.cl')
+    usar_tls = os.environ.get('MAIL_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
+
+    cuerpo_texto = cuerpo_texto or "Activá la vista HTML para ver este mensaje."
+
+    if not smtp_server or not smtp_user or not smtp_pass:
+        print("\n" + "=" * 60)
+        print(f"[EMAIL - MODO CONSOLA] (SMTP no configurado)")
+        print(f"Para:      {destinatario}")
+        print(f"Asunto:    {asunto}")
+        print("-" * 60)
+        print(cuerpo_texto)
+        print("=" * 60 + "\n")
+        return True
+
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = asunto
+        msg['From'] = smtp_from
+        msg['To'] = destinatario
+        part_texto = MIMEText(cuerpo_texto, 'plain', 'utf-8')
+        part_html = MIMEText(cuerpo_html, 'html', 'utf-8')
+        msg.attach(part_texto)
+        msg.attach(part_html)
+
+        context = ssl.create_default_context()
+        with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
+            if usar_tls:
+                server.starttls(context=context)
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_from, [destinatario], msg.as_string())
+        print(f"[EMAIL OK] Enviado a {destinatario}: {asunto}")
+        return True
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+        print("\n" + "=" * 60)
+        print(f"[EMAIL - FALLBACK CONSOLA]")
+        print(f"Para:      {destinatario}")
+        print(f"Asunto:    {asunto}")
+        print("-" * 60)
+        print(cuerpo_texto)
+        print("=" * 60 + "\n")
+        return False
 
 @app.before_request
 def _muro_contencion_global():
@@ -297,78 +357,239 @@ def login():
     return render_template('login.html')
 
 # ==========================================
-# 3.1 REGISTRO DE NUEVOS USUARIOS (CORREO + CONTRASEÑA)
+# 3.1 REGISTRO DE NUEVOS USUARIOS (CORREO + CONTRASEÑA) — 2 PASOS CON CÓDIGO
 # ==========================================
-@app.route('/registro', methods=['GET', 'POST'])
+@app.route('/registro', methods=['GET'])
 def registro():
     if current_user.is_authenticated:
         return redirect(url_for('espera') if not current_user.puede_acceder() else url_for('dashboard', user_id=current_user.id))
-
-    if request.method == 'POST':
-        ip = get_client_ip()
-        if not throttling_ip(ip):
-            return jsonify({'ok': False, 'msg': 'Demasiados intentos desde tu red. Intenta en 15 minutos.'}), 429
-
-        # Acepta form data o JSON
-        if request.is_json:
-            data = request.get_json(silent=True) or {}
-        else:
-            data = request.form
-        nombre = (data.get('nombre') or '').strip()
-        correo = (data.get('correo') or '').strip().lower()
-        password = data.get('password') or ''
-        password2 = data.get('password2') or ''
-
-        if not nombre or not correo or not password:
-            return jsonify({'ok': False, 'msg': 'Todos los campos son obligatorios.'}), 400
-        if not correo_valido(correo):
-            return jsonify({'ok': False, 'msg': 'El correo no es válido.'}), 400
-        if len(password) < 6:
-            return jsonify({'ok': False, 'msg': 'La contraseña debe tener al menos 6 caracteres.'}), 400
-        if password != password2:
-            return jsonify({'ok': False, 'msg': 'Las contraseñas no coinciden.'}), 400
-
-        existente = Usuario.query.filter(func.lower(Usuario.correo) == correo).first()
-        if existente:
-            return jsonify({'ok': False, 'msg': 'Este correo ya está registrado.'}), 409
-
-        try:
-            username = correo.split('@')[0]
-            base_username = re.sub(r'[^a-z0-9._-]', '', username.lower()) or 'usuario'
-            username_unico = base_username
-            i = 1
-            while Usuario.query.filter_by(username=username_unico).first():
-                username_unico = f"{base_username}{i}"
-                i += 1
-
-            rol_inicial = 'admin' if correo == SUPER_ADMIN_CORREO else 'Pendiente'
-
-            nuevo = Usuario(
-                nombre=nombre,
-                username=username_unico,
-                correo=correo,
-                rol=rol_inicial,
-                estado='Activo',
-            )
-            nuevo.set_password(password)
-            db.session.add(nuevo)
-            db.session.commit()
-
-            reset_throttling_ip(ip)
-            login_user(nuevo)
-
-            if nuevo.rol == 'Pendiente':
-                return jsonify({'ok': True, 'redirect': url_for('espera')})
-            return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=nuevo.id)})
-        except IntegrityError:
-            db.session.rollback()
-            return jsonify({'ok': False, 'msg': 'Conflicto de datos. Intenta con otro correo.'}), 409
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error en registro: {e}")
-            return jsonify({'ok': False, 'msg': 'Error técnico al registrar. Intenta más tarde.'}), 500
-
     return render_template('registro.html')
+
+
+@app.route('/registro/solicitar-codigo', methods=['POST'])
+def registro_solicitar_codigo():
+    """Paso 1: valida el formulario, genera código de 6 dígitos y lo envía al correo."""
+    if current_user.is_authenticated:
+        return jsonify({'ok': False, 'msg': 'Ya tienes una sesión activa.'}), 400
+
+    ip = get_client_ip()
+    if not throttling_ip(ip):
+        return jsonify({'ok': False, 'msg': 'Demasiados intentos desde tu red. Intenta en 15 minutos.'}), 429
+
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form
+    nombre = (data.get('nombre') or '').strip()
+    correo = (data.get('correo') or '').strip().lower()
+    password = data.get('password') or ''
+    password2 = data.get('password2') or ''
+
+    if not nombre or not correo or not password:
+        return jsonify({'ok': False, 'msg': 'Todos los campos son obligatorios.'}), 400
+    if not correo_valido(correo):
+        return jsonify({'ok': False, 'msg': 'El correo no es válido.'}), 400
+    if len(password) < 6:
+        return jsonify({'ok': False, 'msg': 'La contraseña debe tener al menos 6 caracteres.'}), 400
+    if password != password2:
+        return jsonify({'ok': False, 'msg': 'Las contraseñas no coinciden.'}), 400
+
+    if Usuario.query.filter(func.lower(Usuario.correo) == correo).first():
+        return jsonify({'ok': False, 'msg': 'Este correo ya está registrado. Inicia sesión.'}), 409
+
+    # Rate-limit por correo: máximo 1 código cada 60s
+    ultimo = CodigoVerificacion.query.filter_by(correo=correo, usado=False)\
+        .order_by(CodigoVerificacion.created_at.desc()).first()
+    if ultimo and (datetime.now() - ultimo.created_at).total_seconds() < 60:
+        return jsonify({'ok': False, 'msg': 'Espera 60 segundos antes de pedir un nuevo código.'}), 429
+
+    # Generar código de 6 dígitos
+    codigo = f"{secrets.randbelow(1000000):06d}"
+    expires_at = datetime.now() + timedelta(minutes=10)
+
+    # Invalidar códigos previos no usados del mismo correo
+    CodigoVerificacion.query.filter_by(correo=correo, usado=False).delete()
+    db.session.commit()
+
+    nuevo_codigo = CodigoVerificacion(
+        correo=correo,
+        codigo=codigo,
+        expires_at=expires_at,
+        ip_solicitud=ip,
+    )
+    db.session.add(nuevo_codigo)
+    db.session.commit()
+
+    # Guardar datos pendientes en session (servidor, no cookie)
+    session['pending_reg'] = {
+        'nombre': nombre,
+        'correo': correo,
+        'password': password,
+    }
+
+    # Enviar correo
+    nombre_corto = nombre.split()[0] if nombre else 'Usuario'
+    asunto = f"[PRO ESPÍA] Tu código de verificación: {codigo}"
+    cuerpo_texto = (
+        f"Hola {nombre_corto},\n\n"
+        f"Tu código de verificación para crear tu cuenta en PRO ESPÍA es:\n\n"
+        f"    {codigo}\n\n"
+        f"Este código expira en 10 minutos. Si no solicitaste este registro, ignora este mensaje.\n\n"
+        f"— Central PRO ESPÍA LTDA"
+    )
+    cuerpo_html = f"""
+    <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;background:#0f172a;padding:32px 24px;border-radius:18px;color:#f1f5f9;">
+      <div style="text-align:center;margin-bottom:18px;">
+        <div style="display:inline-block;width:60px;height:60px;line-height:60px;border-radius:18px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;font-weight:800;font-size:1.4rem;">PE</div>
+      </div>
+      <h2 style="text-align:center;color:#f1f5f9;margin:0 0 6px;">Hola, {nombre_corto}</h2>
+      <p style="text-align:center;color:#94a3b8;margin:0 0 24px;">Usa este código para verificar tu correo y crear tu cuenta en PRO ESPÍA.</p>
+      <div style="background:#020617;border:1px dashed #334155;border-radius:14px;padding:22px 16px;text-align:center;margin:0 0 22px;">
+        <div style="font-family:'Courier New',monospace;font-size:2.4rem;font-weight:800;letter-spacing:0.5em;color:#38bdf8;text-shadow:0 0 16px rgba(56,189,248,0.4);">{codigo}</div>
+        <div style="margin-top:8px;color:#64748b;font-size:0.78rem;letter-spacing:0.2em;text-transform:uppercase;">EXPIRA EN 10 MINUTOS</div>
+      </div>
+      <p style="color:#94a3b8;font-size:0.85rem;line-height:1.5;">Si no solicitaste este registro, puedes ignorar este mensaje de forma segura.</p>
+      <hr style="border:none;border-top:1px solid #1e293b;margin:22px 0 12px;">
+      <p style="color:#64748b;font-size:0.72rem;text-align:center;letter-spacing:0.2em;margin:0;">PRO ESPÍA LTDA · CENTRAL DE SEGURIDAD</p>
+    </div>
+    """
+    enviar_correo(correo, asunto, cuerpo_html, cuerpo_texto)
+
+    return jsonify({
+        'ok': True,
+        'msg': f'Código enviado a {correo}. Revisa tu bandeja de entrada.',
+        'correo_mask': correo[:3] + '***' + correo[correo.find('@'):]
+    })
+
+
+@app.route('/registro/verificar-codigo', methods=['POST'])
+def registro_verificar_codigo():
+    """Paso 2: valida el código, crea el Usuario y loguea."""
+    if current_user.is_authenticated:
+        return jsonify({'ok': False, 'msg': 'Ya tienes una sesión activa.'}), 400
+
+    pending = session.get('pending_reg')
+    if not pending:
+        return jsonify({'ok': False, 'msg': 'Tu sesión de registro expiró. Vuelve a solicitar un código.'}), 400
+
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+    else:
+        data = request.form
+    codigo_ingresado = (data.get('codigo') or '').strip()
+
+    if not codigo_ingresado or len(codigo_ingresado) != 6 or not codigo_ingresado.isdigit():
+        return jsonify({'ok': False, 'msg': 'El código debe tener 6 dígitos numéricos.'}), 400
+
+    correo = pending['correo']
+    registro = CodigoVerificacion.query.filter_by(correo=correo, usado=False)\
+        .order_by(CodigoVerificacion.created_at.desc()).first()
+
+    if not registro:
+        return jsonify({'ok': False, 'msg': 'No hay un código pendiente para este correo. Solicita uno nuevo.'}), 400
+
+    registro.intentos += 1
+    db.session.commit()
+
+    if registro.intentosagotados():
+        registro.usado = True
+        db.session.commit()
+        session.pop('pending_reg', None)
+        return jsonify({'ok': False, 'msg': 'Demasiados intentos fallidos. Solicita un nuevo código.'}), 429
+
+    if registro.expirado():
+        registro.usado = True
+        db.session.commit()
+        session.pop('pending_reg', None)
+        return jsonify({'ok': False, 'msg': 'El código expiró. Solicita uno nuevo.'}), 400
+
+    if registro.codigo != codigo_ingresado:
+        return jsonify({'ok': False, 'msg': f'Código incorrecto. Te quedan {5 - registro.intentos} intentos.'}), 401
+
+    # OK: crear el usuario
+    registro.usado = True
+    db.session.commit()
+
+    try:
+        username_base = re.sub(r'[^a-z0-9._-]', '', correo.split('@')[0].lower()) or 'usuario'
+        username_unico = username_base
+        i = 1
+        while Usuario.query.filter_by(username=username_unico).first():
+            username_unico = f"{username_base}{i}"
+            i += 1
+
+        rol_inicial = 'admin' if correo == SUPER_ADMIN_CORREO else 'Pendiente'
+
+        nuevo = Usuario(
+            nombre=pending['nombre'],
+            username=username_unico,
+            correo=correo,
+            rol=rol_inicial,
+            estado='Activo',
+        )
+        nuevo.set_password(pending['password'])
+        db.session.add(nuevo)
+        db.session.commit()
+
+        # Limpiar sesión pendiente
+        session.pop('pending_reg', None)
+
+        # Login
+        reset_throttling_ip(get_client_ip())
+        login_user(nuevo)
+
+        if nuevo.rol == 'Pendiente':
+            return jsonify({'ok': True, 'redirect': url_for('espera')})
+        return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=nuevo.id)})
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': 'Conflicto: ese nombre de usuario ya existe. Contacta al administrador.'}), 409
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error en verificación: {e}")
+        return jsonify({'ok': False, 'msg': 'Error técnico al crear la cuenta. Intenta más tarde.'}), 500
+
+
+@app.route('/registro/reenviar-codigo', methods=['POST'])
+def registro_reenviar_codigo():
+    """Reenvía un nuevo código al correo pendiente."""
+    pending = session.get('pending_reg')
+    if not pending:
+        return jsonify({'ok': False, 'msg': 'No hay un registro pendiente.'}), 400
+    correo = pending['correo']
+
+    # Reutilizar la lógica de solicitar
+    ultimo = CodigoVerificacion.query.filter_by(correo=correo, usado=False)\
+        .order_by(CodigoVerificacion.created_at.desc()).first()
+    if ultimo and (datetime.now() - ultimo.created_at).total_seconds() < 60:
+        return jsonify({'ok': False, 'msg': f'Espera {60 - int((datetime.now() - ultimo.created_at).total_seconds())} segundos.'}), 429
+
+    codigo = f"{secrets.randbelow(1000000):06d}"
+    expires_at = datetime.now() + timedelta(minutes=10)
+    CodigoVerificacion.query.filter_by(correo=correo, usado=False).delete()
+    db.session.commit()
+    db.session.add(CodigoVerificacion(
+        correo=correo, codigo=codigo, expires_at=expires_at,
+        ip_solicitud=get_client_ip(),
+    ))
+    db.session.commit()
+
+    nombre_corto = pending['nombre'].split()[0] if pending['nombre'] else 'Usuario'
+    asunto = f"[PRO ESPÍA] Tu nuevo código: {codigo}"
+    cuerpo_texto = f"Hola {nombre_corto},\n\nTu nuevo código de verificación es: {codigo}\nExpira en 10 minutos.\n\n— PRO ESPÍA LTDA"
+    cuerpo_html = f"""
+    <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;background:#0f172a;padding:24px;border-radius:14px;color:#f1f5f9;text-align:center;">
+      <h3 style="margin:0 0 12px;">Hola, {nombre_corto}</h3>
+      <p style="color:#94a3b8;margin:0 0 16px;">Tu nuevo código de verificación:</p>
+      <div style="background:#020617;border:1px dashed #334155;border-radius:12px;padding:18px;margin:0 0 16px;">
+        <div style="font-family:'Courier New',monospace;font-size:2.2rem;font-weight:800;letter-spacing:0.4em;color:#38bdf8;">{codigo}</div>
+      </div>
+      <p style="color:#64748b;font-size:0.75rem;margin:0;">Expira en 10 minutos · PRO ESPÍA LTDA</p>
+    </div>
+    """
+    enviar_correo(correo, asunto, cuerpo_html, cuerpo_texto)
+    return jsonify({'ok': True, 'msg': f'Nuevo código enviado a {correo}.'})
+
 
 # ==========================================
 # 3.2 LOGIN CON GOOGLE OAUTH 2.0 (DESHABILITADO — solo correo+contraseña)

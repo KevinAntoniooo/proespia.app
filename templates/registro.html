@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light">
     <title>Crear Cuenta · PRO ESPÍA</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon-icon.png') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         :root {
@@ -16,11 +16,13 @@
             --bg-card: #ffffff;
             --accent: #dc2626;
             --accent-2: #b91c1c;
+            --accent-blue: #0ea5e9;
             --text: #0f172a;
             --text-soft: #475569;
             --border: #e2e8f0;
             --input-bg: #f8fafc;
             --shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+            --ok: #16a34a;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { height: 100%; }
@@ -57,7 +59,7 @@
         }
         .brand {
             display: flex; flex-direction: column; align-items: center; gap: 10px;
-            margin-bottom: 22px;
+            margin-bottom: 18px;
         }
         .logo {
             width: 72px; height: 72px; border-radius: 22px;
@@ -69,17 +71,62 @@
         .brand h2 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
         .brand p { color: var(--text-soft); font-size: 0.78rem; }
 
-        h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
-        .sub { color: var(--text-soft); font-size: 0.9rem; margin-bottom: 22px; }
+        /* Stepper */
+        .stepper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            gap: 8px;
+        }
+        .step {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .step .num {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #94a3b8;
+            display: grid; place-items: center;
+            font-weight: 800;
+            font-size: 0.8rem;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        .step.active .num {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(220,38,38,0.3);
+        }
+        .step.active { color: var(--text); }
+        .step.done .num {
+            background: var(--ok);
+            color: #fff;
+            border-color: var(--ok);
+        }
+        .step.done { color: var(--ok); }
+        .step-line {
+            flex: 0.3;
+            height: 2px;
+            background: #e2e8f0;
+        }
 
-        .field { margin-bottom: 14px; }
+        h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+        .sub { color: var(--text-soft); font-size: 0.88rem; margin-bottom: 18px; }
+
+        .field { margin-bottom: 13px; }
         .field label {
             display: block; font-weight: 600; font-size: 0.78rem;
             color: #334155; margin-bottom: 6px; letter-spacing: 0.2px;
         }
-        .input {
-            position: relative;
-        }
+        .input { position: relative; }
         .input i.icon {
             position: absolute; left: 14px; top: 50%;
             transform: translateY(-50%);
@@ -102,6 +149,7 @@
             background: #fff;
             box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
         }
+        .input input:disabled { opacity: 0.6; cursor: not-allowed; }
         .toggle-pass {
             position: absolute; right: 12px; top: 50%;
             transform: translateY(-50%);
@@ -122,6 +170,11 @@
         }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(220, 38, 38, 0.36); }
         .btn-primary:disabled { opacity: 0.7; cursor: progress; transform: none; }
+        .btn-primary.blue {
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.28);
+        }
+        .btn-primary.blue:hover { box-shadow: 0 12px 26px rgba(14, 165, 233, 0.4); }
 
         .footer-links {
             text-align: center; margin-top: 18px;
@@ -143,6 +196,7 @@
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background: #991b1b; }
         .toast.success { background: #065f46; }
+        .toast.info { background: #075985; }
 
         .notice {
             background: #fff7ed;
@@ -154,9 +208,79 @@
         }
         .notice i { color: #ea580c; margin-right: 6px; }
 
+        /* Step visibility */
+        .step-pane { display: none; animation: fadeIn 0.3s ease-out; }
+        .step-pane.active { display: block; }
+        @keyframes fadeIn { from {opacity:0; transform: translateY(8px);} to {opacity:1; transform:none;} }
+
+        /* Step 2: code input */
+        .code-display {
+            text-align: center;
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 18px;
+            color: var(--text-soft);
+            font-size: 0.85rem;
+        }
+        .code-display strong { color: var(--text); font-family: 'Fira Code', monospace; }
+        .code-inputs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 6px 0 18px;
+        }
+        .code-inputs input {
+            width: 46px;
+            height: 58px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Fira Code', monospace;
+            color: var(--text);
+            background: var(--input-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+        .code-inputs input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+        }
+        .resend {
+            text-align: center;
+            margin-top: 14px;
+            font-size: 0.85rem;
+            color: var(--text-soft);
+        }
+        .resend a {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .resend a.disabled { color: #94a3b8; pointer-events: none; }
+        .resend a:hover { text-decoration: underline; }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-soft);
+            font-size: 0.85rem;
+            text-decoration: none;
+            margin-bottom: 14px;
+            cursor: pointer;
+        }
+        .back-link:hover { color: var(--text); }
+
         @media (max-width: 480px) {
             .card { padding: 28px 22px 24px; border-radius: 20px; }
-            h1 { font-size: 1.25rem; }
+            h1 { font-size: 1.2rem; }
+            .code-inputs input { width: 40px; height: 52px; font-size: 1.3rem; }
         }
         @media (prefers-reduced-motion: reduce) {
             .wrap { animation: none; }
@@ -173,60 +297,101 @@
                 <p>Central de Seguridad</p>
             </header>
 
+            <div class="stepper" aria-label="Pasos de registro">
+                <div class="step active" id="step1indicator">
+                    <div class="num">1</div>
+                    <span class="d-none d-sm-inline">Datos</span>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" id="step2indicator">
+                    <div class="num">2</div>
+                    <span class="d-none d-sm-inline">Verificar</span>
+                </div>
+            </div>
+
             <h1 id="reg-titulo">Crear Cuenta</h1>
-            <p class="sub">Regístrate con tu correo o usa tu cuenta de Google.</p>
+            <p class="sub">Regístrate con tu correo. Te enviaremos un código de verificación.</p>
 
             <div class="notice">
                 <i class="fa-solid fa-circle-info"></i>
-                Por seguridad, tu cuenta entrará en estado <strong>Pendiente</strong> hasta que la jefatura asigne tu rol y active tus permisos.
+                Por seguridad, tu cuenta entrará en estado <strong>Pendiente</strong> hasta que la jefatura asigne tu rol y active tus permisos operativos.
             </div>
 
-            <form id="formRegistro" novalidate>
-                <div class="field">
-                    <label for="reg-nombre">Nombre Completo</label>
-                    <div class="input">
-                        <i class="fa-solid fa-user icon"></i>
-                        <input id="reg-nombre" name="nombre" type="text" required placeholder="Ej: Juan Pérez" autocomplete="name">
+            <!-- ============ PASO 1: Datos ============ -->
+            <div class="step-pane active" id="pane1">
+                <form id="formDatos" novalidate>
+                    <div class="field">
+                        <label for="reg-nombre">Nombre Completo</label>
+                        <div class="input">
+                            <i class="fa-solid fa-user icon"></i>
+                            <input id="reg-nombre" name="nombre" type="text" required placeholder="Ej: Juan Pérez" autocomplete="name">
+                        </div>
                     </div>
+                    <div class="field">
+                        <label for="reg-correo">Correo Electrónico</label>
+                        <div class="input">
+                            <i class="fa-solid fa-envelope icon"></i>
+                            <input id="reg-correo" name="correo" type="email" required placeholder="tunombre@empresa.cl" autocomplete="email">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="reg-pass">Contraseña</label>
+                        <div class="input">
+                            <i class="fa-solid fa-lock icon"></i>
+                            <input id="reg-pass" name="password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+                            <button type="button" class="toggle-pass" data-target="reg-pass" aria-label="Mostrar u ocultar contraseña">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="reg-pass2">Repetir Contraseña</label>
+                        <div class="input">
+                            <i class="fa-solid fa-shield-halved icon"></i>
+                            <input id="reg-pass2" name="password2" type="password" required minlength="6" placeholder="Confirma tu contraseña" autocomplete="new-password">
+                            <button type="button" class="toggle-pass" data-target="reg-pass2" aria-label="Mostrar u ocultar contraseña">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="btnSolicitar">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Enviar código de verificación
+                    </button>
+                </form>
+            </div>
+
+            <!-- ============ PASO 2: Verificar código ============ -->
+            <div class="step-pane" id="pane2">
+                <a class="back-link" id="btnVolverPaso1">
+                    <i class="fa-solid fa-arrow-left"></i> Editar datos
+                </a>
+                <div class="code-display">
+                    Enviamos un código de 6 dígitos a<br>
+                    <strong id="correoMostrado">***@***</strong>
                 </div>
 
-                <div class="field">
-                    <label for="reg-correo">Correo Electrónico</label>
-                    <div class="input">
-                        <i class="fa-solid fa-envelope icon"></i>
-                        <input id="reg-correo" name="correo" type="email" required placeholder="tunombre@empresa.cl" autocomplete="email">
+                <form id="formCodigo" novalidate>
+                    <div class="code-inputs" id="codeInputs">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-idx="0">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-idx="1">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-idx="2">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-idx="3">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-idx="4">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-idx="5">
                     </div>
+                    <button type="submit" class="btn-primary blue" id="btnVerificar">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        Verificar y crear mi cuenta
+                    </button>
+                </form>
+
+                <div class="resend">
+                    ¿No recibiste el código? <a id="btnReenviar" class="disabled">Reenviar (<span id="countdown">60</span>s)</a>
                 </div>
+            </div>
 
-                <div class="field">
-                    <label for="reg-pass">Contraseña</label>
-                    <div class="input">
-                        <i class="fa-solid fa-lock icon"></i>
-                        <input id="reg-pass" name="password" type="password" required minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-                        <button type="button" class="toggle-pass" data-target="reg-pass" aria-label="Mostrar u ocultar contraseña">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label for="reg-pass2">Repetir Contraseña</label>
-                    <div class="input">
-                        <i class="fa-solid fa-shield-halved icon"></i>
-                        <input id="reg-pass2" name="password2" type="password" required minlength="6" placeholder="Confirma tu contraseña" autocomplete="new-password">
-                        <button type="button" class="toggle-pass" data-target="reg-pass2" aria-label="Mostrar u ocultar contraseña">
-                            <i class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-primary" id="btnRegistrar">
-                    <i class="fa-solid fa-user-plus"></i>
-                    Crear mi cuenta
-                </button>
-            </form>
-
-            <p class="footer-links">
+            <p class="footer-links" style="margin-top: 22px;">
                 ¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión</a>
             </p>
         </section>
@@ -240,7 +405,7 @@
             toast.textContent = msg;
             toast.className = 'toast show ' + (type || '');
             clearTimeout(showToast._t);
-            showToast._t = setTimeout(() => toast.classList.remove('show'), 4500);
+            showToast._t = setTimeout(() => toast.classList.remove('show'), 5000);
         }
 
         document.querySelectorAll('.toggle-pass').forEach(btn => {
@@ -252,8 +417,9 @@
             });
         });
 
-        const form = document.getElementById('formRegistro');
-        form.addEventListener('submit', async (e) => {
+        // ===== PASO 1: enviar datos y solicitar código =====
+        const formDatos = document.getElementById('formDatos');
+        formDatos.addEventListener('submit', async (e) => {
             e.preventDefault();
             const data = {
                 nombre: document.getElementById('reg-nombre').value.trim(),
@@ -270,32 +436,163 @@
             if (data.password !== data.password2) {
                 showToast('Las contraseñas no coinciden.', 'error'); return;
             }
-            const btn = document.getElementById('btnRegistrar');
-            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creando...';
+            const btn = document.getElementById('btnSolicitar');
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
             try {
-                const r = await fetch('{{ url_for("registro") }}', {
+                const r = await fetch('{{ url_for("registro_solicitar_codigo") }}', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(data)
                 });
                 const json = await r.json().catch(() => ({}));
                 if (r.ok && json.ok) {
-                    showToast('¡Cuenta creada! Redirigiendo...', 'success');
-                    setTimeout(() => { window.location.href = json.redirect; }, 700);
+                    showToast(json.msg, 'success');
+                    document.getElementById('correoMostrado').textContent = json.correo_mask || data.correo;
+                    irAPaso2();
                 } else if (r.status === 429) {
-                    showToast(json.msg || 'Demasiados intentos. Espera 15 minutos.', 'error');
+                    showToast(json.msg || 'Demasiados intentos. Espera.', 'error');
                 } else if (r.status === 409) {
                     showToast(json.msg || 'El correo ya está registrado.', 'error');
                 } else {
-                    showToast(json.msg || 'No se pudo crear la cuenta.', 'error');
+                    showToast(json.msg || 'No se pudo enviar el código.', 'error');
                 }
             } catch (err) {
                 showToast('Error de red. Intenta nuevamente.', 'error');
             } finally {
-                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Crear mi cuenta';
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar código de verificación';
             }
         });
 
+        // ===== PASO 2: verificar código =====
+        const codeInputs = document.querySelectorAll('#codeInputs input');
+        codeInputs.forEach((inp, i) => {
+            inp.addEventListener('input', (e) => {
+                const v = e.target.value.replace(/\D/g, '');
+                e.target.value = v.slice(0, 1);
+                if (v && i < codeInputs.length - 1) codeInputs[i + 1].focus();
+            });
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && i > 0) {
+                    codeInputs[i - 1].focus();
+                }
+            });
+            inp.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasted = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+                pasted.split('').forEach((d, idx) => {
+                    if (codeInputs[idx]) codeInputs[idx].value = d;
+                });
+                codeInputs[Math.min(pasted.length, 5)].focus();
+            });
+        });
+
+        const formCodigo = document.getElementById('formCodigo');
+        formCodigo.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const codigo = Array.from(codeInputs).map(i => i.value).join('');
+            if (codigo.length !== 6) {
+                showToast('Ingresa los 6 dígitos del código.', 'error');
+                codeInputs[0].focus();
+                return;
+            }
+            const btn = document.getElementById('btnVerificar');
+            btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando...';
+            try {
+                const r = await fetch('{{ url_for("registro_verificar_codigo") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ codigo })
+                });
+                const json = await r.json().catch(() => ({}));
+                if (r.ok && json.ok) {
+                    showToast('¡Cuenta creada! Redirigiendo...', 'success');
+                    setTimeout(() => { window.location.href = json.redirect; }, 700);
+                } else if (r.status === 401) {
+                    showToast(json.msg || 'Código incorrecto.', 'error');
+                    codeInputs.forEach(i => { i.value = ''; i.classList.add('shake'); });
+                    setTimeout(() => codeInputs.forEach(i => i.classList.remove('shake')), 400);
+                    codeInputs[0].focus();
+                } else {
+                    showToast(json.msg || 'No se pudo verificar el código.', 'error');
+                }
+            } catch (err) {
+                showToast('Error de red. Intenta nuevamente.', 'error');
+            } finally {
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Verificar y crear mi cuenta';
+            }
+        });
+
+        // ===== Navegación entre pasos =====
+        function irAPaso2() {
+            document.getElementById('pane1').classList.remove('active');
+            document.getElementById('pane2').classList.add('active');
+            document.getElementById('step1indicator').classList.remove('active');
+            document.getElementById('step1indicator').classList.add('done');
+            document.getElementById('step2indicator').classList.add('active');
+            codeInputs[0].focus();
+            iniciarCountdown();
+        }
+        function irAPaso1() {
+            document.getElementById('pane2').classList.remove('active');
+            document.getElementById('pane1').classList.add('active');
+            document.getElementById('step2indicator').classList.remove('active');
+            document.getElementById('step1indicator').classList.remove('done');
+            document.getElementById('step1indicator').classList.add('active');
+            clearInterval(countdownIv);
+        }
+        document.getElementById('btnVolverPaso1').addEventListener('click', irAPaso1);
+
+        // ===== Countdown para reenviar =====
+        let countdownIv = null;
+        function iniciarCountdown() {
+            clearInterval(countdownIv);
+            let s = 60;
+            const span = document.getElementById('countdown');
+            const link = document.getElementById('btnReenviar');
+            span.textContent = s;
+            link.classList.add('disabled');
+            countdownIv = setInterval(() => {
+                s--;
+                span.textContent = s;
+                if (s <= 0) {
+                    clearInterval(countdownIv);
+                    link.classList.remove('disabled');
+                    span.textContent = '✓';
+                }
+            }, 1000);
+        }
+        document.getElementById('btnReenviar').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (e.currentTarget.classList.contains('disabled')) return;
+            try {
+                const r = await fetch('{{ url_for("registro_reenviar_codigo") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const json = await r.json().catch(() => ({}));
+                if (r.ok && json.ok) {
+                    showToast(json.msg, 'success');
+                    codeInputs.forEach(i => i.value = '');
+                    codeInputs[0].focus();
+                    iniciarCountdown();
+                } else {
+                    showToast(json.msg || 'No se pudo reenviar.', 'error');
+                }
+            } catch (err) {
+                showToast('Error de red.', 'error');
+            }
+        });
     </script>
+
+    <style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        .code-inputs input.shake { animation: shake 0.4s ease; border-color: #ef4444; }
+    </style>
 </body>
 </html>

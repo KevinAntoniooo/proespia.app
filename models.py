@@ -279,3 +279,21 @@ class Notificacion(db.Model):
     tipo = db.Column(db.String(30), default='info')
 
     rel_usuario = db.relationship('Usuario', backref='notificaciones')
+
+
+class CodigoVerificacion(db.Model):
+    __tablename__ = 'codigo_verificacion'
+    id = db.Column(db.Integer, primary_key=True)
+    correo = db.Column(db.String(120), nullable=False, index=True)
+    codigo = db.Column(db.String(6), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    usado = db.Column(db.Boolean, default=False, nullable=False)
+    intentos = db.Column(db.Integer, default=0, nullable=False)
+    ip_solicitud = db.Column(db.String(64), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
+
+    def expirado(self):
+        return datetime.now() > self.expires_at
+
+    def intentosagotados(self, max_intentos=5):
+        return self.intentos >= max_intentos
