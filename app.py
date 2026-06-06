@@ -532,6 +532,80 @@ def logout():
     return redirect(url_for('login'))
 
 # ==========================================
+# 3.5 WIPE TOTAL (solo Súper Admin autenticado + token de confirmación)
+# ==========================================
+@app.route('/admin/wipe_db', methods=['POST'])
+@login_required
+def admin_wipe_db():
+    """Endpoint de un solo uso para limpiar la BD en producción.
+    Requiere: (a) sesión activa del Súper Admin, (b) header X-Wipe-Token con valor
+    del env var WIPE_TOKEN. Sin el token, devuelve 403."""
+    if not current_user.es_super_admin() or not current_user.puede_acceder():
+        return jsonify({'ok': False, 'msg': 'Solo el Súper Admin puede ejecutar esta acción.'}), 403
+
+    expected = os.environ.get('WIPE_TOKEN', '')
+    provided = request.headers.get('X-Wipe-Token', '')
+    if not expected or provided != expected:
+        return jsonify({'ok': False, 'msg': 'Token de confirmación inválido. Configura WIPE_TOKEN en el servidor.'}), 403
+
+    try:
+        from models import (
+            Notificacion, PushSubscription, SolicitudCombustible, ChecklistSemanal,
+            Herramienta, MovimientoStock, ProductoStock, Vehiculo, Ubicacion,
+            CategoriaItem, VisitaProgramada, Boveda, Bitacora, Equipo, Cliente,
+            Tarea, RegistroIP
+        )
+        tablas = [
+            Notificacion, PushSubscription, SolicitudCombustible, ChecklistSemanal,
+            Herramienta, MovimientoStock, ProductoStock, Vehiculo, Ubicacion,
+            CategoriaItem, VisitaProgramada, Boveda, Bitacora, Equipo, Cliente,
+            Tarea, RegistroIP
+        ]
+        resumen = {}
+        for m in tablas:
+            try:
+                n = m.query.delete()
+                resumen[m.__tablename__] = n
+            except Exception as e:
+                db.session.rollback()
+                resumen[m.__tablename__] = f'err: {e}'
+
+        usuarios_borrados = Usuario.query.filter(
+            or_(
+                Usuario.correo.is_(None),
+                func.lower(Usuario.correo) != SUPER_ADMIN_CORREO
+            )
+        ).delete(synchronize_session=False)
+        resumen['usuario (no super)'] = usuarios_borrados
+
+        sa = Usuario.query.filter(func.lower(Usuario.correo) == SUPER_ADMIN_CORREO).first()
+        if not sa:
+            sa = Usuario(
+                nombre='Kevin (Súper Admin)',
+                username='kevix0813',
+                correo=SUPER_ADMIN_CORREO,
+                rol='admin',
+                estado='Activo',
+            )
+            sa.set_password('ProEspia2026')
+            db.session.add(sa)
+        else:
+            sa.password = generate_password_hash('ProEspia2026')
+            sa.rol = 'admin'
+            sa.estado = 'Activo'
+
+        for nombre in ['Camaras', 'Conectividad', 'Discos Duros', 'Herramientas',
+                       'Accesorios', 'Gabinetes', 'Fuentes de Poder', 'Cableado']:
+            db.session.add(CategoriaItem(nombre=nombre))
+        db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
+
+        db.session.commit()
+        return jsonify({'ok': True, 'msg': 'BD limpiada. Login: kevix0813@yahoo.es / ProEspia2026', 'resumen': resumen})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': str(e)}), 500
+
+# ==========================================
 # 4. DASHBOARD PRINCIPAL
 # ==========================================
 from datetime import datetime, time, date
