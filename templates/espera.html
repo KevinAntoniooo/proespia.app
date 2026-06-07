@@ -44,7 +44,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 22px;
+            gap: 18px;
             animation: rise 0.6s ease-out;
         }
         @keyframes rise {
@@ -53,14 +53,17 @@
         }
         .logo-wrap {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
+            width: 100%;
+            max-width: 400px;
         }
         .logo-mark {
-            width: 92px;
-            height: 92px;
-            border-radius: 26px;
+            width: 72px;
+            height: 72px;
+            min-width: 72px;
+            border-radius: 20px;
             display: grid;
             place-items: center;
             background: linear-gradient(135deg, #dc2626, #991b1b);
@@ -70,8 +73,8 @@
         .logo-mark::after {
             content: '';
             position: absolute;
-            inset: -6px;
-            border-radius: 30px;
+            inset: -4px;
+            border-radius: 24px;
             border: 1px solid rgba(220, 38, 38, 0.35);
             animation: pulse 2.6s ease-in-out infinite;
         }
@@ -79,21 +82,22 @@
             0%, 100% { transform: scale(1); opacity: 0.6; }
             50% { transform: scale(1.08); opacity: 0; }
         }
-        .logo-mark i { color: #fff; font-size: 2.3rem; }
+        .logo-mark i { color: #fff; font-size: 1.9rem; }
         .brand {
             color: #f8fafc;
             font-weight: 800;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             letter-spacing: 1.5px;
             text-transform: uppercase;
+            line-height: 1.2;
         }
         .brand small {
             display: block;
             color: #94a3b8;
             font-weight: 500;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             letter-spacing: 0.4em;
-            margin-top: 4px;
+            margin-top: 2px;
         }
         .card {
             background: var(--bg-card);
@@ -206,9 +210,16 @@
         }
         .footer strong { color: #cbd5e1; }
         @media (max-width: 480px) {
+            .stage { gap: 16px; }
             .card { padding: 26px 22px; border-radius: 20px; }
             h1 { font-size: 1.25rem; }
             p.lead { font-size: 0.9rem; }
+            .logo-wrap { gap: 12px; max-width: 320px; }
+            .logo-mark { width: 60px; height: 60px; min-width: 60px; border-radius: 16px; }
+            .logo-mark i { font-size: 1.5rem; }
+            .logo-mark::after { inset: -3px; border-radius: 20px; }
+            .brand { font-size: 1rem; }
+            .brand small { font-size: 0.55rem; }
         }
         @media (prefers-reduced-motion: reduce) {
             .logo-mark::after { animation: none; }
