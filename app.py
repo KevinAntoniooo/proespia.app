@@ -1850,43 +1850,6 @@ def activar_usuario(target_id, admin_id):
     flash(f'{u_target.nombre} activado como {nuevo_rol.upper()}.', 'success')
     return redirect(url_for('gestionar_usuarios', user_id=admin_id))
 
-@app.route('/usuarios/actualizar_completo/<int:target_id>/<int:admin_id>', methods=['POST'])
-@requiere_admin
-def actualizar_usuario_completo(target_id, admin_id):
-    u_target = Usuario.query.get_or_404(target_id)
-
-    nuevo_rol = request.form.get('rol')
-    nueva_ubicacion_id = request.form.get('ubicacion_id') or None
-    nuevo_tipo = request.form.get('tipo_asignacion') or None
-
-    if u_target.es_super_admin() and nuevo_rol not in (None, '', 'admin'):
-        flash('El Súper Administrador es inmune. No se puede cambiar su rol.', 'danger')
-        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
-
-    if nuevo_rol not in ('admin', 'tecnico', 'operador', None, ''):
-        flash('Rol inválido.', 'danger')
-        return redirect(url_for('gestionar_usuarios', user_id=admin_id))
-
-    rol_final = u_target.rol if u_target.es_super_admin() else (nuevo_rol or u_target.rol)
-    if rol_final != 'tecnico':
-        nueva_ubicacion_id = None
-        nuevo_tipo = None
-
-    try:
-        if not u_target.es_super_admin() and nuevo_rol:
-            u_target.rol = nuevo_rol
-        u_target.ubicacion_id = int(nueva_ubicacion_id) if nueva_ubicacion_id else None
-        u_target.tipo_asignacion = nuevo_tipo
-
-        db.session.commit()
-        flash(f"Datos de {u_target.nombre} actualizados con éxito", 'success')
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error en actualización: {e}")
-        flash("Ocurrió un error técnico al intentar guardar los cambios.", "danger")
-
-    return redirect(url_for('gestionar_usuarios', user_id=admin_id))
-
 
 @app.route('/perfil', methods=['GET'])
 @require_active_user

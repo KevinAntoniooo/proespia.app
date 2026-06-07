@@ -102,9 +102,6 @@
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm shadow-sm">
-                                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ u.id }}" title="Editar Perfil">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
                                 {% if not is_sa %}
                                 <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#estadoModal{{ u.id }}" title="Activar / Desactivar">
                                     <i class="fa-solid fa-toggle-{% if u.estado == 'Activo' %}on{% else %}off{% endif %}"></i>
@@ -193,73 +190,6 @@
 
 {% for u in usuarios %}
 {% set is_sa = (u.correo or '')|lower == super_admin_correo %}
-<div class="modal fade" id="editModal{{ u.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title">
-                    {% if is_sa %}<i class="fa-solid fa-crown me-1"></i>{% endif %}
-                    Editar Usuario: {{ u.nombre }}
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="/usuarios/actualizar_completo/{{ u.id }}/{{ usuario.id }}" method="POST">
-                <div class="modal-body">
-                    <div class="d-flex align-items-center mb-3 p-3 rounded-3"
-                        style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);">
-                        <i class="fa-solid fa-id-badge fa-2x me-3" style="color:#38bdf8;"></i>
-                        <div class="flex-grow-1">
-                            <div class="fw-bold" style="color:var(--text-heading);">{{ u.nombre }}</div>
-                            <small style="color:var(--text-muted);">
-                                @{{ u.username or '—' }}{% if u.correo %} · {{ u.correo }}{% endif %}
-                            </small>
-                        </div>
-                    </div>
-
-                    <div class="alert mb-3 small d-flex align-items-start"
-                        style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);color:#fbbf24;border-radius:10px;">
-                        <i class="fa-solid fa-circle-info mt-1 me-2"></i>
-                        <div>
-                            <strong>Datos personales auto-gestionados:</strong> el nombre, correo y contraseña los modifica el propio usuario desde su <em>Perfil</em>. Aquí solo asignas <strong>rol</strong>, <strong>activación</strong> y <strong>ubicación</strong>.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Rol</label>
-                        <select name="rol" class="form-select text-uppercase" onchange="toggleUbicacionEdit(this, '{{ u.id }}')" {% if is_sa %}disabled{% endif %}>
-                            <option value="admin" {% if u.rol in ['admin','super_su'] %}selected{% endif %}>Administrador</option>
-                            <option value="operador" {% if u.rol == 'operador' %}selected{% endif %}>Operador</option>
-                            <option value="tecnico" {% if u.rol == 'tecnico' %}selected{% endif %}>Técnico</option>
-                        </select>
-                        {% if is_sa %}<small class="text-muted d-block mt-1"><i class="fa-solid fa-lock me-1"></i>El rol del Súper Administrador es inmutable.</small>{% endif %}
-                    </div>
-                    <div class="mb-3 ubicacion-field" id="ubicacionEditField{{ u.id }}">
-                        <label class="form-label fw-bold">Ubicación de Stock</label>
-                        <select name="ubicacion_id" class="form-select">
-                            <option value="">Sin vehículo</option>
-                            {% for loc in ubicaciones %}
-                            <option value="{{ loc.id }}" {% if u.ubicacion_id == loc.id %}selected{% endif %}>{{ loc.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                        <small class="text-muted">Opcional. Vehículo al que pertenece este técnico.</small>
-                    </div>
-                    <div class="mb-3 ubicacion-field" id="tipoAsignacionEditField{{ u.id }}">
-                        <label class="form-label fw-bold">Tipo de Asignación</label>
-                        <select name="tipo_asignacion" class="form-select">
-                            <option value="acompanante" {% if u.tipo_asignacion == 'acompanante' %}selected{% endif %}>Acompañante</option>
-                            <option value="a_cargo" {% if u.tipo_asignacion == 'a_cargo' %}selected{% endif %}>A cargo</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary px-4">Guardar Cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 {% if not is_sa %}
 <div class="modal fade" id="estadoModal{{ u.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -418,34 +348,10 @@ function toggleUbicacionNuevo(select) {
     }
 }
 
-function toggleUbicacionEdit(select, userId) {
-    var field = document.getElementById('ubicacionEditField' + userId);
-    var tipoField = document.getElementById('tipoAsignacionEditField' + userId);
-    var isTecnico = select.value === 'tecnico';
-    field.style.display = isTecnico ? '' : 'none';
-    if (isTecnico) {
-        var ubiSelect = field.querySelector('select[name="ubicacion_id"]');
-        if (ubiSelect) {
-            ubiSelect.onchange = function() {
-                tipoField.style.display = this.value ? '' : 'none';
-            };
-            tipoField.style.display = ubiSelect.value ? '' : 'none';
-        } else {
-            tipoField.style.display = 'none';
-        }
-    } else {
-        tipoField.style.display = 'none';
-    }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("buscadorUsuarios");
     if(input) input.value = "";
 
-    document.querySelectorAll('[id^="editModal"]').forEach(function(modal) {
-        var select = modal.querySelector('select[name="rol"]');
-        if (select && !select.disabled) select.onchange();
-    });
     var selectNuevo = document.querySelector('#nuevoUserModal select[name="rol"]');
     if (selectNuevo) toggleUbicacionNuevo(selectNuevo);
 });
