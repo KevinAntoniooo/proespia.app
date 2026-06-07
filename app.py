@@ -1874,13 +1874,18 @@ def actualizar_perfil_password():
 def cambiar_estado_usuario(target_id, admin_id):
     u_target = Usuario.query.get_or_404(target_id)
     if u_target.es_super_admin():
-        flash('El Súper Administrador es inmune. No se puede desactivar.', 'danger')
+        flash('El Súper Administrador es inmune.', 'danger')
         return redirect(url_for('gestionar_usuarios', user_id=admin_id))
     nuevo_estado = request.form.get('estado')
     if nuevo_estado not in ('Activo', 'Inactivo'):
         flash('Estado inválido.', 'danger')
         return redirect(url_for('gestionar_usuarios', user_id=admin_id))
     u_target.estado = nuevo_estado
+
+    nuevo_rol = request.form.get('rol')
+    if nuevo_rol in ('admin', 'tecnico', 'operador'):
+        u_target.rol = nuevo_rol
+
     db.session.commit()
     flash(f'{u_target.nombre} ahora está {nuevo_estado}.', 'warning' if nuevo_estado == 'Inactivo' else 'success')
     return redirect(url_for('gestionar_usuarios', user_id=admin_id))

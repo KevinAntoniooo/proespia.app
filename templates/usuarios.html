@@ -178,19 +178,37 @@
 {% set is_sa = (u.correo or '')|lower == super_admin_correo %}
 {% if not is_sa %}
 <div class="modal fade" id="estadoModal{{ u.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST" action="{{ url_for('cambiar_estado_usuario', target_id=u.id, admin_id=usuario.id) }}">
                 <div class="modal-body text-center p-4">
                     <i class="fa-solid fa-toggle-{% if u.estado == 'Activo' %}on text-success{% else %}off text-secondary{% endif %} fa-3x mb-2"></i>
-                    <h5 class="fw-bold">Cambiar estado</h5>
-                    <p class="text-muted small mb-3">{{ u.nombre }} está actualmente <strong>{{ u.estado or 'Activo' }}</strong>.</p>
-                    <select name="estado" class="form-select mb-3" required>
-                        <option value="Activo" {% if u.estado == 'Activo' %}selected{% endif %}>Activo</option>
-                        <option value="Inactivo" {% if u.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
-                    </select>
+                    <h5 class="fw-bold">{{ u.nombre }}</h5>
+                    <p class="text-muted small mb-3">
+                        Estado actual: <strong>{{ u.estado or 'Activo' }}</strong>
+                        {% if u.rol != 'Pendiente' %} · Rol: <strong class="text-uppercase">{{ u.rol }}</strong>{% endif %}
+                    </p>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small mb-1">Estado</label>
+                            <select name="estado" class="form-select" required>
+                                <option value="Activo" {% if u.estado == 'Activo' %}selected{% endif %}>Activo</option>
+                                <option value="Inactivo" {% if u.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small mb-1">Rol</label>
+                            <select name="rol" class="form-select text-uppercase">
+                                <option value="">Sin cambio</option>
+                                <option value="admin" {% if u.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                                <option value="operador" {% if u.rol == 'operador' %}selected{% endif %}>Operador</option>
+                                <option value="tecnico" {% if u.rol == 'tecnico' %}selected{% endif %}>Técnico</option>
+                                {% if u.rol == 'Pendiente' %}<option value="Pendiente" selected>Pendiente</option>{% endif %}
+                            </select>
+                        </div>
+                    </div>
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Aplicar cambio</button>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
                     </div>
                 </div>
