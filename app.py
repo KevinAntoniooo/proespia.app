@@ -703,11 +703,30 @@ def olvido_contrasena():
             user.token_recuperacion = token
             db.session.commit()
             enlace = url_for('restablecer_password', token=token, _external=True)
-            print(f"\n==================================================")
-            print(f"[RECUPERACIÓN DE CONTRASEÑA]")
-            print(f"Usuario: {user.nombre} <{user.correo}>")
-            print(f"Enlace:  {enlace}")
-            print(f"==================================================\n")
+            asunto = "Recuperación de contraseña · PRO ESPÍA"
+            cuerpo_html = f"""\
+            <div style="background:#0f172a;padding:40px 20px;font-family:'Fira Sans',system-ui,sans-serif;">
+            <div style="max-width:480px;margin:0 auto;background:#1e293b;border-radius:16px;padding:32px;box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+            <div style="text-align:center;margin-bottom:24px;">
+            <div style="display:inline-block;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#dc2626,#991b1b);line-height:56px;text-align:center;">
+            <span style="color:#fff;font-size:1.4rem;font-weight:800;">PE</span>
+            </div>
+            </div>
+            <h2 style="color:#f8fafc;text-align:center;font-weight:700;margin-bottom:8px;">Recupera tu acceso</h2>
+            <p style="color:#94a3b8;text-align:center;font-size:0.9rem;margin-bottom:24px;">
+            Haga clic en el botón para restablecer su contraseña.
+            </p>
+            <div style="text-align:center;">
+            <a href="{enlace}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;box-shadow:0 8px 24px rgba(220,38,38,0.4);">
+            Restablecer contraseña
+            </a>
+            </div>
+            <p style="color:#64748b;text-align:center;font-size:0.78rem;margin-top:24px;">
+            Si no solicitaste este cambio, ignora este mensaje.
+            </p>
+            </div></div>"""
+            cuerpo_texto = f"Para restablecer tu contraseña, visita: {enlace}"
+            enviar_correo(user.correo, asunto, cuerpo_html, cuerpo_texto)
 
         flash('Si el correo existe en el sistema, te enviamos un enlace de recuperación.', 'info')
         return redirect(url_for('login'))
