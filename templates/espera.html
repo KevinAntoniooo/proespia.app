@@ -55,20 +55,21 @@
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: 16px;
+            justify-content: center;
+            gap: 14px;
             width: 100%;
-            max-width: 400px;
         }
         .logo-mark {
-            width: 72px;
-            height: 72px;
-            min-width: 72px;
+            width: 80px;
+            height: 80px;
+            min-width: 80px;
             border-radius: 20px;
             display: grid;
             place-items: center;
             background: linear-gradient(135deg, #dc2626, #991b1b);
             box-shadow: 0 14px 40px rgba(220, 38, 38, 0.45), inset 0 0 0 1px rgba(255,255,255,0.12);
             position: relative;
+            overflow: visible;
         }
         .logo-mark::after {
             content: '';
@@ -82,14 +83,16 @@
             0%, 100% { transform: scale(1); opacity: 0.6; }
             50% { transform: scale(1.08); opacity: 0; }
         }
-        .logo-mark i { color: #fff; font-size: 1.9rem; }
+        .logo-mark i { color: #fff; font-size: 2rem; }
         .brand {
             color: #f8fafc;
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             line-height: 1.2;
+            flex-shrink: 1;
+            min-width: 0;
         }
         .brand small {
             display: block;
@@ -211,15 +214,19 @@
         .footer strong { color: #cbd5e1; }
         @media (max-width: 480px) {
             .stage { gap: 16px; }
-            .card { padding: 26px 22px; border-radius: 20px; }
-            h1 { font-size: 1.25rem; }
-            p.lead { font-size: 0.9rem; }
-            .logo-wrap { gap: 12px; max-width: 320px; }
+            body { padding: 16px 12px; }
+            .card { padding: 24px 18px; border-radius: 20px; }
+            h1 { font-size: 1.15rem; }
+            p.lead { font-size: 0.85rem; }
+            .logo-wrap { gap: 10px; }
             .logo-mark { width: 60px; height: 60px; min-width: 60px; border-radius: 16px; }
-            .logo-mark i { font-size: 1.5rem; }
+            .logo-mark i { font-size: 1.4rem; }
             .logo-mark::after { inset: -3px; border-radius: 20px; }
             .brand { font-size: 1rem; }
             .brand small { font-size: 0.55rem; }
+            .info-list { padding: 12px 14px; }
+            .info-list li { font-size: 0.82rem; }
+            .user-chip { font-size: 0.78rem; padding: 8px 14px; }
         }
         @media (prefers-reduced-motion: reduce) {
             .logo-mark::after { animation: none; }
