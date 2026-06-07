@@ -77,15 +77,17 @@
                             </span>
                         </li>
                         {% endif %}
+                        {% if usuario.rol == 'tecnico' %}
                         <li class="d-flex align-items-center justify-content-between py-2 border-bottom border-opacity-10"
                             style="border-color:rgba(255,255,255,0.05) !important;">
                             <span class="d-inline-flex align-items-center">
                                 <i class="fa-solid fa-user-tag me-2 text-info"></i>Asignación
                             </span>
                             <span class="fw-semibold text-capitalize" style="color:var(--text-heading);">
-                                {{ usuario.tipo_asignacion or 'acompanante' }}
+                                {{ usuario.tipo_asignacion or 'Acompañante' }}
                             </span>
                         </li>
+                        {% endif %}
                         {% if usuario.created_at %}
                         <li class="d-flex align-items-center justify-content-between py-2">
                             <span class="d-inline-flex align-items-center">

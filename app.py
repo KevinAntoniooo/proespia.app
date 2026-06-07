@@ -1779,7 +1779,7 @@ def gestionar_usuarios(user_id):
         rol = request.form.get('rol')
         ubicacion_id = request.form.get('ubicacion_id') or None
         password_plana = request.form.get('password')
-        tipo_asignacion = request.form.get('tipo_asignacion', 'acompanante')
+        tipo_asignacion = request.form.get('tipo_asignacion') or None
 
         if not nombre or not username or not password_plana:
             flash('Nombre, usuario y contraseña son obligatorios.', 'danger')
@@ -1790,6 +1790,10 @@ def gestionar_usuarios(user_id):
             if dup:
                 flash('Ya existe un usuario con ese correo.', 'danger')
                 return redirect(url_for('gestionar_usuarios', user_id=user_id))
+
+        if rol != 'tecnico':
+            ubicacion_id = None
+            tipo_asignacion = None
 
         try:
             nuevo = Usuario(
@@ -1853,7 +1857,7 @@ def actualizar_usuario_completo(target_id, admin_id):
 
     nuevo_rol = request.form.get('rol')
     nueva_ubicacion_id = request.form.get('ubicacion_id') or None
-    nuevo_tipo = request.form.get('tipo_asignacion', 'acompanante')
+    nuevo_tipo = request.form.get('tipo_asignacion') or None
 
     if u_target.es_super_admin() and nuevo_rol not in (None, '', 'admin'):
         flash('El Súper Administrador es inmune. No se puede cambiar su rol.', 'danger')
@@ -1862,6 +1866,11 @@ def actualizar_usuario_completo(target_id, admin_id):
     if nuevo_rol not in ('admin', 'tecnico', 'operador', None, ''):
         flash('Rol inválido.', 'danger')
         return redirect(url_for('gestionar_usuarios', user_id=admin_id))
+
+    rol_final = u_target.rol if u_target.es_super_admin() else (nuevo_rol or u_target.rol)
+    if rol_final != 'tecnico':
+        nueva_ubicacion_id = None
+        nuevo_tipo = None
 
     try:
         if not u_target.es_super_admin() and nuevo_rol:
@@ -2787,15 +2796,15 @@ def asignar_vehiculo():
         data = request.get_json()
         usuario_id = int(data['usuario_id'])
         vehiculo_id = int(data.get('vehiculo_id', 0))
-        tipo = data.get('tipo_asignacion', 'acompanante')
+        tipo = data.get('tipo_asignacion') or None
         user = Usuario.query.get_or_404(usuario_id)
-        if vehiculo_id:
+        if vehiculo_id and user.rol == 'tecnico':
             v = Vehiculo.query.get_or_404(vehiculo_id)
             user.ubicacion_id = v.ubicacion_id
             user.tipo_asignacion = tipo
         else:
             user.ubicacion_id = None
-            user.tipo_asignacion = 'acompanante'
+            user.tipo_asignacion = None
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'Asignación actualizada'})
     except Exception as e:
@@ -3449,7 +3458,7 @@ with app.app_context():
                     password VARCHAR(255),
                     rol VARCHAR(20) DEFAULT 'Pendiente',
                     ubicacion_id INTEGER,
-                    tipo_asignacion VARCHAR(20) DEFAULT 'acompanante',
+                    tipo_asignacion VARCHAR(20),
                     correo VARCHAR(120),
                     google_id VARCHAR(120),
                     token_recuperacion VARCHAR(200),
@@ -3490,6 +3499,16 @@ with app.app_context():
         ))
         db.session.execute(db.text(
             "UPDATE usuario SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    # Backfill: limpiar tipo_asignacion y ubicacion_id de no-tecnicos
+    try:
+        db.session.execute(db.text(
+            "UPDATE usuario SET tipo_asignacion = NULL, ubicacion_id = NULL "
+            "WHERE rol IN ('admin', 'super_su', 'operador', 'Pendiente')"
         ))
         db.session.commit()
     except Exception:

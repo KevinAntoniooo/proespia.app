@@ -56,7 +56,7 @@ class Usuario(db.Model, UserMixin):
     rol = db.Column(db.String(20), default='Pendiente')
     estado = db.Column(db.String(20), default='Activo')
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion_bodega.id'), nullable=True)
-    tipo_asignacion = db.Column(db.String(20), default='acompanante')
+    tipo_asignacion = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, nullable=True)
 
     rel_ubicacion = db.relationship('Ubicacion', backref='usuarios_asignados')
