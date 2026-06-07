@@ -186,13 +186,19 @@ def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
     """Envía un correo vía SMTP. Si MAIL_SERVER no está configurado,
     imprime el código/contenido en consola (modo desarrollo)."""
     smtp_server = os.environ.get('MAIL_SERVER', '')
-    smtp_port = int(os.environ.get('MAIL_PORT', '587'))
+    raw_port = os.environ.get('MAIL_PORT', '587')
+    try:
+        smtp_port = int(raw_port)
+    except (ValueError, TypeError):
+        smtp_port = 587
     smtp_user = os.environ.get('MAIL_USERNAME', '')
     smtp_pass = os.environ.get('MAIL_PASSWORD', '')
     smtp_from = os.environ.get('MAIL_FROM', smtp_user or 'no-reply@proespia.cl')
     usar_tls = os.environ.get('MAIL_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
 
     cuerpo_texto = cuerpo_texto or "Activá la vista HTML para ver este mensaje."
+
+    print(f"[EMAIL DEBUG] server={smtp_server} port={smtp_port} user={smtp_user} from={smtp_from} tls={usar_tls}")
 
     if not smtp_server or not smtp_user or not smtp_pass:
         print("\n" + "=" * 60)
@@ -215,15 +221,27 @@ def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
         msg.attach(part_html)
 
         context = ssl.create_default_context()
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
-            if usar_tls:
-                server.starttls(context=context)
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(smtp_from, [destinatario], msg.as_string())
+
+        if smtp_port == 465:
+            # SSL directo (Yahoo, Gmail con puerto 465)
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15, context=context) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, [destinatario], msg.as_string())
+        else:
+            # STARTTLS (puerto 587 o 25)
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+                server.ehlo()
+                if usar_tls:
+                    server.starttls(context=context)
+                    server.ehlo()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, [destinatario], msg.as_string())
         print(f"[EMAIL OK] Enviado a {destinatario}: {asunto}")
         return True
     except Exception as e:
+        import traceback
         print(f"[EMAIL ERROR] {e}")
+        traceback.print_exc()
         print("\n" + "=" * 60)
         print(f"[EMAIL - FALLBACK CONSOLA]")
         print(f"Para:      {destinatario}")
