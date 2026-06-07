@@ -26,30 +26,16 @@
 <div class="tab-content" id="usersTabContent">
 
 <div class="tab-pane fade show active" id="tab-personal" role="tabpanel">
-<div class="row align-items-center mb-3">
-    <div class="col-md-8 col-lg-6">
-        <div class="d-flex align-items-center gap-2">
-            <div style="flex:8">
-                <div class="input-group">
-                    <span class="input-group-text bg-primary text-white border-0 shadow-sm">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" id="buscadorUsuarios" class="form-control shadow-sm"
-                           placeholder="Buscar por nombre, usuario o rol..."
-                           onkeyup="filtrarUsuarios()">
-                </div>
-            </div>
-            <div style="flex:2" class="d-md-none">
-                <button class="btn btn-success shadow-sm btn-sm fw-bold w-100" style="font-size:0.75rem;height:38px;" data-bs-toggle="modal" data-bs-target="#nuevoUserModal">
-                    <i class="bi bi-person-plus-fill"></i><span class="d-none d-sm-inline ms-1"> Nuevo Usuario</span>
-                </button>
-            </div>
+<div class="row mb-3">
+    <div class="col-md-6 col-lg-5">
+        <div class="input-group">
+            <span class="input-group-text bg-primary text-white border-0 shadow-sm">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="buscadorUsuarios" class="form-control shadow-sm"
+                   placeholder="Buscar por nombre, usuario o rol..."
+                   onkeyup="filtrarUsuarios()">
         </div>
-    </div>
-    <div class="col-md-4 col-lg-6 text-md-end mt-3 mt-md-0 d-none d-md-block">
-        <button class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#nuevoUserModal">
-            <i class="bi bi-person-plus-fill me-1"></i> Nuevo Usuario
-        </button>
     </div>
 </div>
 
@@ -240,65 +226,6 @@
 </div>
 {% endfor %}
 
-<div class="modal fade" id="nuevoUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white border-0">
-                <h5 class="modal-title">Crear Nuevo Acceso</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form action="/usuarios/{{ usuario.id }}" method="POST">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nombre Completo</label>
-                        <input type="text" name="nombre" class="form-control" placeholder="Ej: Juan Pérez" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nombre de Usuario</label>
-                        <input type="text" name="username" class="form-control" placeholder="Ej: k.seguridad" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Correo (opcional)</label>
-                        <input type="email" name="correo" class="form-control" placeholder="usuario@empresa.cl">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Contraseña</label>
-                        <input type="password" name="password" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Rol del Sistema</label>
-                        <select name="rol" class="form-select" onchange="toggleUbicacionNuevo(this)">
-                            <option value="operador">Operador</option>
-                            <option value="tecnico">Técnico</option>
-                            <option value="admin">Administrador</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 ubicacion-field" id="ubicacionNuevoField">
-                        <label class="form-label fw-bold">Ubicación de Stock</label>
-                        <select name="ubicacion_id" class="form-select">
-                            <option value="">Sin vehículo</option>
-                            {% for loc in ubicaciones %}
-                            <option value="{{ loc.id }}">{{ loc.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                        <small class="text-muted">Opcional. Vehículo al que pertenece este técnico.</small>
-                    </div>
-                    <div class="mb-3 ubicacion-field" id="tipoAsignacionNuevoField">
-                        <label class="form-label fw-bold">Tipo de Asignación</label>
-                        <select name="tipo_asignacion" class="form-select">
-                            <option value="acompanante">Acompañante</option>
-                            <option value="a_cargo">A cargo</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light shadow-sm btn-sm" style="font-size:0.75rem;" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.75rem;">Crear Cuenta</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <style>
 @media (max-width: 767px) {
@@ -328,32 +255,9 @@ function filtrarUsuarios() {
     }
 }
 
-function toggleUbicacionNuevo(select) {
-    var field = document.getElementById('ubicacionNuevoField');
-    var tipoField = document.getElementById('tipoAsignacionNuevoField');
-    var isTecnico = select.value === 'tecnico';
-    field.style.display = isTecnico ? '' : 'none';
-    if (isTecnico) {
-        var ubiSelect = field.querySelector('select[name="ubicacion_id"]');
-        if (ubiSelect) {
-            ubiSelect.onchange = function() {
-                tipoField.style.display = this.value ? '' : 'none';
-            };
-            tipoField.style.display = ubiSelect.value ? '' : 'none';
-        } else {
-            tipoField.style.display = 'none';
-        }
-    } else {
-        tipoField.style.display = 'none';
-    }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("buscadorUsuarios");
     if(input) input.value = "";
-
-    var selectNuevo = document.querySelector('#nuevoUserModal select[name="rol"]');
-    if (selectNuevo) toggleUbicacionNuevo(selectNuevo);
 });
 </script>
 {% endblock %}

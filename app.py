@@ -1767,56 +1767,10 @@ def verificar_clave_admin():
 # ==========================================
 # 7. GESTIÓN DE USUARIOS (SOLO PARA ADMINISTRADORES)
 # ==========================================
-@app.route('/usuarios/<int:user_id>', methods=['GET', 'POST'])
+@app.route('/usuarios/<int:user_id>', methods=['GET'])
 @requiere_admin
 def gestionar_usuarios(user_id):
     usuario_admin = db.session.get(Usuario, user_id)
-
-    if request.method == 'POST':
-        nombre = request.form.get('nombre')
-        username = (request.form.get('username') or '').strip().lower()
-        correo = (request.form.get('correo') or '').strip().lower() or None
-        rol = request.form.get('rol')
-        ubicacion_id = request.form.get('ubicacion_id') or None
-        password_plana = request.form.get('password')
-        tipo_asignacion = request.form.get('tipo_asignacion') or None
-
-        if not nombre or not username or not password_plana:
-            flash('Nombre, usuario y contraseña son obligatorios.', 'danger')
-            return redirect(url_for('gestionar_usuarios', user_id=user_id))
-
-        if correo:
-            dup = Usuario.query.filter(func.lower(Usuario.correo) == correo).first()
-            if dup:
-                flash('Ya existe un usuario con ese correo.', 'danger')
-                return redirect(url_for('gestionar_usuarios', user_id=user_id))
-
-        if rol != 'tecnico':
-            ubicacion_id = None
-            tipo_asignacion = None
-
-        try:
-            nuevo = Usuario(
-                nombre=nombre,
-                username=username,
-                correo=correo,
-                rol=rol,
-                estado='Activo',
-                ubicacion_id=int(ubicacion_id) if ubicacion_id else None,
-                tipo_asignacion=tipo_asignacion
-            )
-            nuevo.set_password(password_plana)
-            db.session.add(nuevo)
-            db.session.commit()
-            flash(f'Personal "{nombre}" registrado correctamente.', 'success')
-        except IntegrityError:
-            db.session.rollback()
-            flash('Conflicto: el nombre de usuario ya existe.', 'danger')
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error técnico al registrar: {e}")
-            flash('No se pudo completar el registro.', 'danger')
-        return redirect(url_for('gestionar_usuarios', user_id=user_id))
 
     usuarios = Usuario.query.order_by(Usuario.rol.asc(), Usuario.nombre.asc()).all()
     pendientes = Usuario.query.filter_by(rol='Pendiente').order_by(Usuario.created_at.desc()).all()
