@@ -386,7 +386,8 @@
         style="width: 280px; background-color: #0f172a !important;">
         <div class="offcanvas-header border-bottom border-white border-opacity-10 text-white p-2">
             <div class="d-flex align-items-center gap-2 w-100">
-                <a href="{{ url_for('ver_perfil') }}" data-bs-dismiss="offcanvas"
+                <a href="{{ url_for('ver_perfil') }}"
+                    onclick="var oc=bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('sidebarMobile'));if(oc){oc.hide();}"
                     class="d-flex align-items-center gap-2 flex-grow-1 text-decoration-none text-white rounded-2 px-2 py-1 mobile-profile-trigger">
                     <div class="user-avatar-circle-new shadow-sm flex-shrink-0"
                         style="width:36px;height:36px;font-size:0.85rem;background:linear-gradient(135deg,#0ea5e9,#6366f1);">
