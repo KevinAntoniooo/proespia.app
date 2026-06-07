@@ -3,10 +3,10 @@
 {% block content %}
 <div class="container-fluid px-4 mt-4">
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Gestión de Personal</h2>
+    <h2 class="fw-bold mb-0" style="color:var(--text-heading);"><i class="fa-solid fa-users me-2"></i>Gestión de Personal</h2>
 </div>
 
-<ul class="nav nav-pills nav-justified mb-4" id="usersTab" role="tablist" style="background:#f1f5f9;border-radius:14px;padding:6px;">
+<ul class="nav nav-pills nav-justified mb-4" id="usersTab" role="tablist" style="background:var(--bg-card);border-radius:14px;padding:6px;border:1px solid var(--border-subtle);">
     <li class="nav-item" role="presentation">
         <button class="nav-link active fw-semibold" id="tab-personal-btn" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab">
             <i class="fa-solid fa-users-gear me-1"></i> Personal Activo
@@ -34,12 +34,13 @@
             </span>
             <input type="text" id="buscadorUsuarios" class="form-control shadow-sm"
                    placeholder="Buscar por nombre, usuario o rol..."
+                   style="background:var(--bg-input);color:var(--text-heading);border:1px solid var(--border-subtle);"
                    onkeyup="filtrarUsuarios()">
         </div>
     </div>
 </div>
 
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background:var(--bg-card);">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
@@ -119,7 +120,7 @@
             Asígnales un rol operativo y se habilitarán automáticamente.
         </div>
     </div>
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background:var(--bg-card);">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-warning text-dark">
@@ -163,9 +164,9 @@
         </div>
     </div>
     {% else %}
-    <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center" style="background:var(--bg-card);">
         <i class="fa-solid fa-user-check fa-3x text-success mb-3" style="opacity:0.6;"></i>
-        <h5 class="fw-bold mb-1">Sin usuarios pendientes</h5>
+        <h5 class="fw-bold mb-1" style="color:var(--text-heading);">Sin usuarios pendientes</h5>
         <p class="text-muted small mb-0">Todos los registros están siendo atendidos. Las nuevas inscripciones aparecerán aquí automáticamente.</p>
     </div>
     {% endif %}
@@ -250,7 +251,7 @@
     .table td:first-child { font-size: 0.85rem; }
 }
 #usersTab .nav-link {
-    color: #475569;
+    color: var(--text-muted);
     border-radius: 10px;
     padding: 10px 14px;
     transition: all 0.25s ease;
@@ -260,7 +261,11 @@
     color: #fff;
     box-shadow: 0 4px 12px rgba(15,23,42,0.25);
 }
-#usersTab .nav-link:not(.active):hover { background: #e2e8f0; }
+html.dark-mode #usersTab .nav-link.active {
+    background: linear-gradient(135deg, #1e293b, #334155);
+}
+#usersTab .nav-link:not(.active):hover { background: var(--border-subtle); }
+html.dark-mode #usersTab .nav-link:not(.active):hover { background: rgba(255,255,255,0.06); }
 </style>
 <script>
 function filtrarUsuarios() {

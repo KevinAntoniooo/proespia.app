@@ -13,17 +13,6 @@
                 <p class="small mt-1" style="color:#64748b;">Central de monitoreo y seguridad</p>
             </div>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for category, message in messages %}
-              <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' }} py-2 px-3 rounded-3 small mb-3 text-start" role="alert">
-                  <i class="fa-solid {{ 'fa-circle-exclamation' if category == 'error' or category == 'warning' else 'fa-circle-check' }} me-1"></i>
-                  {{ message }}
-              </div>
-              {% endfor %}
-            {% endif %}
-            {% endwith %}
-
             <form method="POST" aria-label="Formulario de inicio de sesión">
                 <div class="mb-3">
                     <label for="login-usuario" class="form-label small fw-semibold" style="color:#334155;">Usuario o Correo</label>
