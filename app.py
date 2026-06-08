@@ -801,14 +801,12 @@ def olvido_contrasena():
             <p style="color:#64748b;text-align:center;font-size:0.78rem;margin-top:24px;">
             Si no solicitaste este cambio, ignora este mensaje.
             </p>
-            <p style="color:#64748b;text-align:center;font-size:0.72rem;margin-top:12px;border-top:1px solid #334155;padding-top:12px;">
-            Si no ves el correo en tu bandeja de entrada, revisa la carpeta <strong style="color:#f8fafc;">Spam / Correo no deseado</strong>.
-            </p>
             </div></div>"""
-            cuerpo_texto = f"Para restablecer tu contraseña, visita: {enlace}\n\nEste enlace expira en 15 minutos.\n\nSi no ves este correo en tu bandeja de entrada, revisa la carpeta Spam."
+            cuerpo_texto = f"Para restablecer tu contraseña, visita: {enlace}\n\nEste enlace expira en 15 minutos."
             enviar_correo(user.correo, asunto, cuerpo_html, cuerpo_texto)
 
         flash('Si el correo existe en el sistema, te enviamos un enlace de recuperación.', 'info')
+        flash('Revisa también tu carpeta SPAM/Correo no deseado si no lo ves en la bandeja de entrada.', 'info')
         return redirect(url_for('login'))
 
     return render_template('olvido_contrasena.html')
