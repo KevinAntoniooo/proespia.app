@@ -790,7 +790,8 @@ def olvido_contrasena():
             </div>
             <h2 style="color:#f8fafc;text-align:center;font-weight:700;margin-bottom:8px;">Recupera tu acceso</h2>
             <p style="color:#94a3b8;text-align:center;font-size:0.9rem;margin-bottom:24px;">
-            Haga clic en el botón para restablecer su contraseña.
+            Haga clic en el botón para restablecer su contraseña.<br>
+            <span style="color:#ef4444;font-size:0.82rem;">Este enlace expira en 15 minutos.</span>
             </p>
             <div style="text-align:center;">
             <a href="{enlace}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border-radius:12px;text-decoration:none;font-weight:700;box-shadow:0 8px 24px rgba(220,38,38,0.4);">
@@ -801,7 +802,7 @@ def olvido_contrasena():
             Si no solicitaste este cambio, ignora este mensaje.
             </p>
             </div></div>"""
-            cuerpo_texto = f"Para restablecer tu contraseña, visita: {enlace}"
+            cuerpo_texto = f"Para restablecer tu contraseña, visita: {enlace}\n\nEste enlace expira en 15 minutos."
             enviar_correo(user.correo, asunto, cuerpo_html, cuerpo_texto)
 
         flash('Si el correo existe en el sistema, te enviamos un enlace de recuperación.', 'info')
