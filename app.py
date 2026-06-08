@@ -190,18 +190,27 @@ def obtener_google_config():
 # ==========================================
 # 1.2 HELPER DE ENVÍO DE CORREO (SMTP)
 # ==========================================
+def _flush():
+    """Fuerza flush de stdout para que gunicorn capture logs de threads."""
+    import sys
+    sys.stdout.flush()
+
+
 def _enviar_smtp(smtp_server, smtp_port, smtp_user, smtp_pass, smtp_from, destinatario, asunto, msg, usar_tls, cuerpo_html, cuerpo_texto):
     """Ejecuta el envío SMTP real (se llama en un thread separado).
     Si SMTP falla por red bloqueada, intenta SendGrid HTTP API como fallback."""
     import traceback
+    _flush()
+    print(f"[EMAIL THREAD] Iniciando envío a {destinatario}")
+    _flush()
     try:
         context = ssl.create_default_context()
         if smtp_port == 465:
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15, context=context) as server:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=10, context=context) as server:
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_from, [destinatario], msg.as_string())
         else:
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
                 server.ehlo()
                 if usar_tls:
                     server.starttls(context=context)
@@ -209,17 +218,23 @@ def _enviar_smtp(smtp_server, smtp_port, smtp_user, smtp_pass, smtp_from, destin
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_from, [destinatario], msg.as_string())
         print(f"[EMAIL OK] Enviado a {destinatario}: {asunto}")
+        _flush()
         return
     except (OSError, smtplib.SMTPException) as e:
         print(f"[EMAIL SMTP ERROR] {e}")
+        _flush()
     except Exception as e:
         print(f"[EMAIL ERROR] {e}")
+        _flush()
         traceback.print_exc()
+        sys.stdout.flush()
         _fallback_consola(destinatario, asunto, msg)
         return
 
     # Fallback: SendGrid HTTP API (port 443, nunca bloqueado)
     api_key = os.environ.get('SENDGRID_API_KEY', '') or (smtp_pass if smtp_user == 'apikey' else '')
+    print(f"[EMAIL THREAD] SendGrid API key disponible: {bool(api_key)}, requests: {bool(requests)}")
+    _flush()
     if api_key and requests:
         try:
             cuerpo_texto = cuerpo_texto or "Activá la vista HTML para ver este mensaje."
@@ -233,19 +248,27 @@ def _enviar_smtp(smtp_server, smtp_port, smtp_user, smtp_pass, smtp_from, destin
                 ]
             }
             headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+            print(f"[EMAIL THREAD] Enviando a SendGrid API...")
+            _flush()
             r = requests.post('https://api.sendgrid.com/v3/mail/send', json=payload, headers=headers, timeout=15)
             if r.status_code in (200, 201, 202):
                 print(f"[EMAIL OK vía SendGrid API] Enviado a {destinatario}: {asunto}")
+                _flush()
                 return
             else:
                 print(f"[EMAIL SendGrid API ERROR] status={r.status_code} body={r.text[:200]}")
+                _flush()
         except Exception as api_err:
             print(f"[EMAIL SendGrid API ERROR] {api_err}")
+            _flush()
             traceback.print_exc()
+            sys.stdout.flush()
     else:
         print(f"[EMAIL] SendGrid API no disponible (falta api_key o requests)")
+        _flush()
 
     _fallback_consola(destinatario, asunto, msg)
+    _flush()
 
 
 def _fallback_consola(destinatario, asunto, msg):
@@ -276,8 +299,10 @@ def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
     cuerpo_texto = cuerpo_texto or "Activá la vista HTML para ver este mensaje."
 
     print(f"[EMAIL DEBUG] server={smtp_server} port={smtp_port} user={smtp_user} from={smtp_from} tls={usar_tls}")
+    _flush()
     if smtp_user and '@' in smtp_user and 'sendgrid' in smtp_server:
         print("[EMAIL WARN] Para SendGrid, MAIL_USERNAME debe ser 'apikey', no un correo.")
+        _flush()
 
     if not smtp_server or not smtp_user or not smtp_pass:
         print("\n" + "=" * 60)
