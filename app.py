@@ -776,6 +776,7 @@ def olvido_contrasena():
         if user and not user.google_id:
             token = secrets.token_urlsafe(32)
             user.token_recuperacion = token
+            user.expiracion_token = datetime.utcnow() + timedelta(minutes=15)
             db.session.commit()
             enlace = url_for('restablecer_password', token=token, _external=True)
             asunto = "Recuperación de contraseña · PRO ESPÍA"
@@ -815,6 +816,13 @@ def restablecer_password(token):
         flash('El enlace de recuperación es inválido o ya fue utilizado.', 'danger')
         return redirect(url_for('login'))
 
+    if user.expiracion_token and datetime.utcnow() > user.expiracion_token:
+        user.token_recuperacion = None
+        user.expiracion_token = None
+        db.session.commit()
+        flash('El enlace de recuperación ha expirado (15 min). Solicita uno nuevo.', 'danger')
+        return redirect(url_for('olvido_contrasena'))
+
     if request.method == 'POST':
         nueva = request.form.get('password') or ''
         nueva2 = request.form.get('password2') or ''
@@ -827,6 +835,7 @@ def restablecer_password(token):
 
         user.set_password(nueva)
         user.token_recuperacion = None
+        user.expiracion_token = None
         db.session.commit()
         flash('Contraseña actualizada con éxito. Ya puedes iniciar sesión.', 'success')
         return redirect(url_for('login'))
@@ -3447,6 +3456,7 @@ with app.app_context():
         ("ALTER TABLE usuario ADD COLUMN google_id VARCHAR(120)", None),
         ("CREATE UNIQUE INDEX IF NOT EXISTS ix_usuario_google_id ON usuario(google_id)", None),
         ("ALTER TABLE usuario ADD COLUMN token_recuperacion VARCHAR(200)", None),
+        ("ALTER TABLE usuario ADD COLUMN expiracion_token TIMESTAMP", None),
         ("ALTER TABLE usuario ADD COLUMN estado VARCHAR(20)", None),
         ("ALTER TABLE usuario ADD COLUMN created_at TIMESTAMP", None),
     ]:
@@ -3478,15 +3488,16 @@ with app.app_context():
                     correo VARCHAR(120),
                     google_id VARCHAR(120),
                     token_recuperacion VARCHAR(200),
+                    expiracion_token TIMESTAMP,
                     estado VARCHAR(20) DEFAULT 'Activo',
                     created_at TIMESTAMP
                 )
             """))
             db.session.execute(db.text("""
                 INSERT INTO usuario (id, nombre, username, password, rol, ubicacion_id, tipo_asignacion,
-                                     correo, google_id, token_recuperacion, estado, created_at)
+                                     correo, google_id, token_recuperacion, expiracion_token, estado, created_at)
                 SELECT id, nombre, username, password, rol, ubicacion_id, tipo_asignacion,
-                       correo, google_id, token_recuperacion, estado, created_at
+                       correo, google_id, token_recuperacion, expiracion_token, estado, created_at
                 FROM _usuario_old
             """))
             db.session.execute(db.text("DROP TABLE _usuario_old"))

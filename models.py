@@ -53,6 +53,7 @@ class Usuario(db.Model, UserMixin):
     password = db.Column(db.String(255), nullable=True)
     google_id = db.Column(db.String(120), unique=True, nullable=True, index=True)
     token_recuperacion = db.Column(db.String(200), nullable=True)
+    expiracion_token = db.Column(db.DateTime, nullable=True)
     rol = db.Column(db.String(20), default='Pendiente')
     estado = db.Column(db.String(20), default='Activo')
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion_bodega.id'), nullable=True)
