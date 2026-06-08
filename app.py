@@ -1904,6 +1904,10 @@ def gestionar_usuarios(user_id):
 
     usuarios = Usuario.query.order_by(Usuario.rol.asc(), Usuario.nombre.asc()).all()
     pendientes = Usuario.query.filter_by(rol='Pendiente').order_by(Usuario.created_at.desc()).all()
+    # Ocultar súper admin a los demás usuarios (solo él se ve a sí mismo)
+    if not usuario_admin.es_super_admin():
+        usuarios = [u for u in usuarios if not u.es_super_admin()]
+        pendientes = [p for p in pendientes if not p.es_super_admin()]
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre.asc()).all()
     return render_template('usuarios.html',
                            usuarios=usuarios,
