@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, Response, jsonify, send_file, session
 from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgramada, CategoriaItem, Ubicacion, ProductoStock, MovimientoStock, Vehiculo, Herramienta, ChecklistSemanal, PushSubscription, Notificacion, SolicitudCombustible, RegistroIP, CodigoVerificacion, SUPER_ADMIN_CORREO
 from datetime import datetime, time, timedelta, date
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from fpdf import FPDF
 from sqlalchemy import func, case, or_, and_
 import io
@@ -59,6 +59,13 @@ _db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
 if _db_url.startswith('postgres://'):
     _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_size': 10,
+    'max_overflow': 20,
+    'connect_args': {'sslmode': 'require', 'connect_timeout': 10}
+}
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'proespiapt_seguridad_2026')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=15)
@@ -3592,6 +3599,28 @@ def method_not_allowed(e):
                            status=405,
                            path=request.path,
                            destino=url_for('login')), 405
+
+
+@app.errorhandler(OperationalError)
+def handle_db_operational_error(e):
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+    try:
+        db.engine.dispose()
+    except Exception:
+        pass
+    print(f"[DB SSL ERROR] {e}")
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Error de conexión con la base de datos. Intente nuevamente.', 'retry_after': 5}), 503
+    flash('Error de conexión. Por favor intenta de nuevo.', 'warning')
+    try:
+        if current_user.is_authenticated and current_user.puede_acceder():
+            return redirect(url_for('dashboard', user_id=current_user.id))
+    except Exception:
+        pass
+    return redirect(url_for('login'))
 
 
 if __name__ == '__main__':
