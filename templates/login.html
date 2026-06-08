@@ -37,19 +37,28 @@
                 </button>
             </form>
 
-            <div class="d-flex align-items-center justify-content-center gap-3 mt-4 pt-3 border-top">
+            <div class="text-center mt-3">
+                <a href="{{ url_for('olvido_contrasena') }}" class="small" style="color:#64748b;text-decoration:none;">
+                    <i class="fa-solid fa-key me-1"></i>¿Olvidaste tu contraseña?
+                </a>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-3 pt-3 border-top">
                 <a href="{{ url_for('registro') }}" class="btn btn-sm" style="color:#0f172a;border:1px solid #cbd5e1;border-radius:20px;padding:6px 18px;font-size:0.8rem;text-decoration:none;">
                     <i class="fa-solid fa-user-plus me-1"></i>Crear cuenta
                 </a>
-                <button type="button" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#resetModal" style="color:#64748b;border:1px solid #e2e8f0;border-radius:20px;padding:6px 18px;font-size:0.8rem;">
-                    <i class="fa-solid fa-shield me-1"></i>Problemas de acceso
-                </button>
                 <button type="button" class="btn btn-sm d-none" id="btnInstalarPWA" style="color:#0f172a;border:1px solid #cbd5e1;border-radius:20px;padding:6px 18px;font-size:0.8rem;transition:all 0.3s ease;">
                     <i class="fa-solid fa-download me-1"></i>Descargar Aplicación
                 </button>
             </div>
 
-            <div class="d-flex align-items-center justify-content-center gap-3 mt-3">
+            <div class="text-center mt-3">
+                <a href="#" class="small" data-bs-toggle="modal" data-bs-target="#soporteModal" style="color:#94a3b8;text-decoration:none;">
+                    <i class="fa-brands fa-whatsapp me-1" style="color:#25D366;"></i>Contacta con soporte
+                </a>
+            </div>
+
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-2">
                 <small class="d-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.65rem;">
                     <i class="fa-solid fa-lock" style="font-size:0.5rem;"></i> Conexión segura
                 </small>
@@ -122,21 +131,25 @@
     }
 </style>
 
-<!-- Modal -->
-<div class="modal fade" id="resetModal" tabindex="-1" aria-hidden="true">
+<!-- Modal Soporte WhatsApp -->
+<div class="modal fade" id="soporteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow rounded-4">
             <div class="modal-body text-center p-4">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width:60px;height:60px;background:#fffbeb;">
-                    <i class="fa-solid fa-shield-halved" style="color:#f59e0b;font-size:1.5rem;"></i>
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width:60px;height:60px;background:#f0fdf4;">
+                    <i class="fa-brands fa-whatsapp" style="color:#25D366;font-size:1.8rem;"></i>
                 </div>
-                <h5 class="fw-bold heading-font">Restablecer Acceso</h5>
-                <p class="text-muted small mb-3">¿Olvidaste tu contraseña? Te enviamos un enlace de recuperación a tu correo. Si tu cuenta está asociada a Google, inicia sesión con Google y podrás definir una clave local.</p>
-                <div class="d-flex gap-2 justify-content-center flex-wrap">
-                    <a href="{{ url_for('olvido_contrasena') }}" class="btn btn-sm btn-primary rounded-pill px-4"><i class="fa-solid fa-key me-2"></i>Recuperar por correo</a>
-                    <a href="#" class="btn btn-sm btn-success rounded-pill px-4"><i class="fa-brands fa-whatsapp me-2"></i>WhatsApp</a>
-                    <button class="btn btn-sm btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                <h5 class="fw-bold heading-font">Contacta con Soporte</h5>
+                <p class="text-muted small mb-3">Escríbenos por WhatsApp para recibir ayuda con tu cuenta o reportar incidentes.</p>
+                <div class="d-flex flex-column gap-2">
+                    <a id="whatsappLink" href="https://wa.me/569XXXXXXXX?text=Hola%20PRO%20ESPIA%2C%20necesito%20ayuda%20con%20mi%20cuenta" target="_blank" class="btn btn-lg fw-semibold border-0" style="border-radius:14px;padding:14px;background:#25D366;color:#fff;">
+                        <i class="fa-brands fa-whatsapp me-2"></i>Abrir WhatsApp
+                    </a>
+                    <p class="small" style="color:#94a3b8;margin:4px 0 0;">
+                        Horario de atención: <strong>Lun–Sáb 08:00–20:00</strong>
+                    </p>
                 </div>
+                <button class="btn btn-sm btn-light rounded-pill px-4 mt-3" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
