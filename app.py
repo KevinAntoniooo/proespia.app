@@ -190,8 +190,9 @@ def obtener_google_config():
 # ==========================================
 # 1.2 HELPER DE ENVÍO DE CORREO (SMTP)
 # ==========================================
-def _enviar_smtp(smtp_server, smtp_port, smtp_user, smtp_pass, smtp_from, destinatario, asunto, msg, usar_tls):
-    """Ejecuta el envío SMTP real (se llama en un thread separado)."""
+def _enviar_smtp(smtp_server, smtp_port, smtp_user, smtp_pass, smtp_from, destinatario, asunto, msg, usar_tls, cuerpo_html, cuerpo_texto):
+    """Ejecuta el envío SMTP real (se llama en un thread separado).
+    Si SMTP falla por red bloqueada, intenta SendGrid HTTP API como fallback."""
     import traceback
     try:
         context = ssl.create_default_context()
@@ -208,16 +209,54 @@ def _enviar_smtp(smtp_server, smtp_port, smtp_user, smtp_pass, smtp_from, destin
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_from, [destinatario], msg.as_string())
         print(f"[EMAIL OK] Enviado a {destinatario}: {asunto}")
+        return
+    except (OSError, smtplib.SMTPException) as e:
+        print(f"[EMAIL SMTP ERROR] {e}")
     except Exception as e:
         print(f"[EMAIL ERROR] {e}")
         traceback.print_exc()
-        print("\n" + "=" * 60)
-        print(f"[EMAIL - FALLBACK CONSOLA]")
-        print(f"Para:      {destinatario}")
-        print(f"Asunto:    {asunto}")
-        print("-" * 60)
-        print(msg.as_string() if hasattr(msg, 'as_string') else str(msg))
-        print("=" * 60 + "\n")
+        _fallback_consola(destinatario, asunto, msg)
+        return
+
+    # Fallback: SendGrid HTTP API (port 443, nunca bloqueado)
+    api_key = os.environ.get('SENDGRID_API_KEY', '') or (smtp_pass if smtp_user == 'apikey' else '')
+    if api_key and requests:
+        try:
+            cuerpo_texto = cuerpo_texto or "Activá la vista HTML para ver este mensaje."
+            payload = {
+                'personalizations': [{'to': [{'email': destinatario}]}],
+                'from': {'email': smtp_from},
+                'subject': asunto,
+                'content': [
+                    {'type': 'text/plain', 'value': cuerpo_texto},
+                    {'type': 'text/html', 'value': cuerpo_html}
+                ]
+            }
+            headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+            r = requests.post('https://api.sendgrid.com/v3/mail/send', json=payload, headers=headers, timeout=15)
+            if r.status_code in (200, 201, 202):
+                print(f"[EMAIL OK vía SendGrid API] Enviado a {destinatario}: {asunto}")
+                return
+            else:
+                print(f"[EMAIL SendGrid API ERROR] status={r.status_code} body={r.text[:200]}")
+        except Exception as api_err:
+            print(f"[EMAIL SendGrid API ERROR] {api_err}")
+            traceback.print_exc()
+    else:
+        print(f"[EMAIL] SendGrid API no disponible (falta api_key o requests)")
+
+    _fallback_consola(destinatario, asunto, msg)
+
+
+def _fallback_consola(destinatario, asunto, msg):
+    """Imprime el correo en consola cuando no se puede enviar."""
+    print("\n" + "=" * 60)
+    print(f"[EMAIL - FALLBACK CONSOLA]")
+    print(f"Para:      {destinatario}")
+    print(f"Asunto:    {asunto}")
+    print("-" * 60)
+    print(msg.as_string() if hasattr(msg, 'as_string') else str(msg))
+    print("=" * 60 + "\n")
 
 
 def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
@@ -262,7 +301,8 @@ def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
     t = threading.Thread(
         target=_enviar_smtp,
         args=(smtp_server, smtp_port, smtp_user, smtp_pass,
-              smtp_from, destinatario, asunto, msg, usar_tls),
+              smtp_from, destinatario, asunto, msg, usar_tls,
+              cuerpo_html, cuerpo_texto),
         daemon=True
     )
     t.start()
