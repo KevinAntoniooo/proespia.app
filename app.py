@@ -10,6 +10,7 @@ import os
 import re
 import secrets
 import functools
+import threading
 import smtplib
 import ssl
 from email.mime.text import MIMEText
@@ -189,9 +190,39 @@ def obtener_google_config():
 # ==========================================
 # 1.2 HELPER DE ENVÍO DE CORREO (SMTP)
 # ==========================================
+def _enviar_smtp(smtp_server, smtp_port, smtp_user, smtp_pass, smtp_from, destinatario, asunto, msg, usar_tls):
+    """Ejecuta el envío SMTP real (se llama en un thread separado)."""
+    import traceback
+    try:
+        context = ssl.create_default_context()
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15, context=context) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, [destinatario], msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
+                server.ehlo()
+                if usar_tls:
+                    server.starttls(context=context)
+                    server.ehlo()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_from, [destinatario], msg.as_string())
+        print(f"[EMAIL OK] Enviado a {destinatario}: {asunto}")
+    except Exception as e:
+        print(f"[EMAIL ERROR] {e}")
+        traceback.print_exc()
+        print("\n" + "=" * 60)
+        print(f"[EMAIL - FALLBACK CONSOLA]")
+        print(f"Para:      {destinatario}")
+        print(f"Asunto:    {asunto}")
+        print("-" * 60)
+        print(msg.as_string() if hasattr(msg, 'as_string') else str(msg))
+        print("=" * 60 + "\n")
+
+
 def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
-    """Envía un correo vía SMTP. Si MAIL_SERVER no está configurado,
-    imprime el código/contenido en consola (modo desarrollo)."""
+    """Envía un correo vía SMTP en background thread (no bloquea el request).
+    Si MAIL_SERVER no está configurado, imprime en consola."""
     smtp_server = os.environ.get('MAIL_SERVER', '')
     raw_port = os.environ.get('MAIL_PORT', '587')
     try:
@@ -206,6 +237,8 @@ def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
     cuerpo_texto = cuerpo_texto or "Activá la vista HTML para ver este mensaje."
 
     print(f"[EMAIL DEBUG] server={smtp_server} port={smtp_port} user={smtp_user} from={smtp_from} tls={usar_tls}")
+    if smtp_user and '@' in smtp_user and 'sendgrid' in smtp_server:
+        print("[EMAIL WARN] Para SendGrid, MAIL_USERNAME debe ser 'apikey', no un correo.")
 
     if not smtp_server or not smtp_user or not smtp_pass:
         print("\n" + "=" * 60)
@@ -217,46 +250,23 @@ def enviar_correo(destinatario, asunto, cuerpo_html, cuerpo_texto=None):
         print("=" * 60 + "\n")
         return True
 
-    try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = asunto
-        msg['From'] = smtp_from
-        msg['To'] = destinatario
-        part_texto = MIMEText(cuerpo_texto, 'plain', 'utf-8')
-        part_html = MIMEText(cuerpo_html, 'html', 'utf-8')
-        msg.attach(part_texto)
-        msg.attach(part_html)
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = asunto
+    msg['From'] = smtp_from
+    msg['To'] = destinatario
+    part_texto = MIMEText(cuerpo_texto, 'plain', 'utf-8')
+    part_html = MIMEText(cuerpo_html, 'html', 'utf-8')
+    msg.attach(part_texto)
+    msg.attach(part_html)
 
-        context = ssl.create_default_context()
-
-        if smtp_port == 465:
-            # SSL directo (Yahoo, Gmail con puerto 465)
-            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=15, context=context) as server:
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(smtp_from, [destinatario], msg.as_string())
-        else:
-            # STARTTLS (puerto 587 o 25)
-            with smtplib.SMTP(smtp_server, smtp_port, timeout=15) as server:
-                server.ehlo()
-                if usar_tls:
-                    server.starttls(context=context)
-                    server.ehlo()
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(smtp_from, [destinatario], msg.as_string())
-        print(f"[EMAIL OK] Enviado a {destinatario}: {asunto}")
-        return True
-    except Exception as e:
-        import traceback
-        print(f"[EMAIL ERROR] {e}")
-        traceback.print_exc()
-        print("\n" + "=" * 60)
-        print(f"[EMAIL - FALLBACK CONSOLA]")
-        print(f"Para:      {destinatario}")
-        print(f"Asunto:    {asunto}")
-        print("-" * 60)
-        print(cuerpo_texto)
-        print("=" * 60 + "\n")
-        return False
+    t = threading.Thread(
+        target=_enviar_smtp,
+        args=(smtp_server, smtp_port, smtp_user, smtp_pass,
+              smtp_from, destinatario, asunto, msg, usar_tls),
+        daemon=True
+    )
+    t.start()
+    return True
 
 @app.before_request
 def _muro_contencion_global():
