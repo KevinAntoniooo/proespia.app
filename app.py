@@ -2668,13 +2668,14 @@ def ver_bodega(user_id, page=1):
         base_query = ProductoStock.query.filter_by(ubicacion_id=usuario.ubicacion_id)
     else:
         base_query = ProductoStock.query
+    base_query = base_query.filter(ProductoStock.cantidad_actual > 0)
     pagination = base_query.order_by(ProductoStock.nombre.asc()).paginate(page=page, per_page=20, error_out=False)
     productos = pagination.items
 
     categorias = CategoriaItem.query.order_by(CategoriaItem.nombre.asc()).all()
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre.asc()).all()
 
-    todos_productos_db = ProductoStock.query.order_by(ProductoStock.nombre.asc()).all()
+    todos_productos_db = ProductoStock.query.filter(ProductoStock.cantidad_actual > 0).order_by(ProductoStock.nombre.asc()).all()
     if usuario.rol == 'tecnico' and usuario.ubicacion_id:
         productos_autocomplete = [p for p in todos_productos_db if p.ubicacion_id == usuario.ubicacion_id]
     else:
@@ -2867,9 +2868,6 @@ def traspaso_bodega():
             hacia_ubicacion_id=hacia_id, usuario_id=current_user.id
         )
         db.session.add(mov)
-        if desde_id and hacia_id and prod.cantidad_actual == 0:
-            mov.producto_id = destino.id
-            db.session.delete(prod)
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'Traspaso realizado'})
     except Exception as e:
