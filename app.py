@@ -3742,6 +3742,39 @@ with app.app_context():
     except Exception:
         db.session.rollback()
 
+    # Migrar herramienta.vehiculo_id a nullable (PostgreSQL)
+    try:
+        db.session.execute(db.text('ALTER TABLE herramienta ALTER COLUMN vehiculo_id DROP NOT NULL'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    # SQLite: recrear herramienta si vehiculo_id aún tiene NOT NULL
+    try:
+        cols = db.session.execute(db.text("PRAGMA table_info(herramienta)")).fetchall()
+        for c in cols:
+            if c[1] == 'vehiculo_id' and c[3] == 1:
+                db.session.execute(db.text("ALTER TABLE herramienta RENAME TO _herramienta_old"))
+                db.session.execute(db.text("""
+                    CREATE TABLE herramienta (
+                        id INTEGER PRIMARY KEY,
+                        nombre VARCHAR(120) NOT NULL,
+                        codigo_inventario VARCHAR(50) UNIQUE NOT NULL,
+                        vehiculo_id INTEGER REFERENCES vehiculo(id)
+                    )
+                """))
+                db.session.execute(db.text("""
+                    INSERT INTO herramienta (id, nombre, codigo_inventario, vehiculo_id)
+                    SELECT id, nombre, codigo_inventario, vehiculo_id FROM _herramienta_old
+                """))
+                db.session.execute(db.text("DROP TABLE _herramienta_old"))
+                db.session.commit()
+                print('Migración: herramienta.vehiculo_id ahora NULLable (SQLite).')
+                break
+        else:
+            db.session.rollback()
+    except Exception:
+        db.session.rollback()
+
     # Backfill: limpiar tipo_asignacion y ubicacion_id de no-tecnicos
     try:
         db.session.execute(db.text(
