@@ -1433,20 +1433,22 @@ def historial_pdf(cliente_id, user_id):
     u_admin = Usuario.query.get_or_404(user_id)
     secciones = request.args.get('secciones', 'equipos,bitacoras,visitas')
 
-    def t(texto):
-        if not texto: return 'N/A'
-        return str(texto).encode('latin-1', 'replace').decode('latin-1')
+    def enc(valor):
+        if valor is None: return ''
+        s = str(valor)
+        if not s.strip(): return ''
+        return s.encode('latin-1', 'replace').decode('latin-1')
 
     pdf = FPDF(orientation='P', unit='mm', format='A4')
     pdf.add_page()
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, 'PROESPIA LTDA - HISTORIAL DEL CLIENTE', 0, 1, 'C')
     pdf.set_font('Arial', '', 12)
-    pdf.cell(0, 8, t(f'Cliente: {cliente.nombre}'), 0, 1, 'C')
+    pdf.cell(0, 8, enc(f'Cliente: {cliente.nombre}'), 0, 1, 'C')
     pdf.set_font('Arial', '', 9)
-    pdf.cell(0, 5, t(f'Direccion: {cliente.direccion}'), 0, 1, 'C')
+    pdf.cell(0, 5, enc(f'Direccion: {cliente.direccion}'), 0, 1, 'C')
     pdf.set_font('Arial', 'I', 9)
-    pdf.cell(0, 5, f'Generado por: {t(u_admin.nombre)}', 0, 1, 'C')
+    pdf.cell(0, 5, f'Generado por: {enc(u_admin.nombre)}', 0, 1, 'C')
     pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
     pdf.ln(8)
 
@@ -1462,16 +1464,14 @@ def historial_pdf(cliente_id, user_id):
         if equipos:
             pdf.set_font('Arial', 'B', 8)
             pdf.set_fill_color(220, 220, 220)
-            pdf.cell(40, 7, 'TIPO', 1, 0, 'C', True)
-            pdf.cell(55, 7, 'SERIE', 1, 0, 'C', True)
-            pdf.cell(35, 7, 'IP', 1, 0, 'C', True)
-            pdf.cell(60, 7, 'UBICACION', 1, 1, 'C', True)
+            pdf.cell(50, 7, 'TIPO', 1, 0, 'C', True)
+            pdf.cell(70, 7, 'SERIE', 1, 0, 'C', True)
+            pdf.cell(70, 7, 'IP', 1, 1, 'C', True)
             pdf.set_font('Arial', '', 8)
             for e in equipos:
-                pdf.cell(40, 6, t(e.tipo), 1, 0, 'C')
-                pdf.cell(55, 6, t(e.serie), 1, 0, 'C')
-                pdf.cell(35, 6, t(e.ip), 1, 0, 'C')
-                pdf.cell(60, 6, t(e.ubicacion), 1, 1, 'C')
+                pdf.cell(50, 6, enc(e.tipo), 1, 0, 'C')
+                pdf.cell(70, 6, enc(e.serie), 1, 0, 'C')
+                pdf.cell(70, 6, enc(e.ip), 1, 1, 'C')
         else:
             pdf.set_font('Arial', '', 9)
             pdf.set_text_color(150, 150, 150)
@@ -1497,10 +1497,10 @@ def historial_pdf(cliente_id, user_id):
             pdf.set_font('Arial', '', 7)
             for b in bitacoras:
                 prio = {1: 'Critica', 2: 'Alta', 3: 'Media', 4: 'Baja'}.get(b.prioridad, 'Media')
-                pdf.cell(30, 6, t(b.fecha.strftime('%d/%m/%Y') if b.fecha else ''), 1, 0, 'C')
-                pdf.cell(30, 6, t(b.tipo_visita), 1, 0, 'C')
-                pdf.cell(70, 6, t((b.descripcion or '')[:90]), 1, 0, 'C')
-                pdf.cell(30, 6, t(b.rel_usuario.nombre if b.rel_usuario else '---'), 1, 0, 'C')
+                pdf.cell(30, 6, enc(b.fecha.strftime('%d/%m/%Y') if b.fecha else ''), 1, 0, 'C')
+                pdf.cell(30, 6, enc(b.tipo_visita), 1, 0, 'C')
+                pdf.cell(70, 6, enc((b.descripcion or '')[:90]), 1, 0, 'C')
+                pdf.cell(30, 6, enc(b.rel_usuario.nombre if b.rel_usuario else '---'), 1, 0, 'C')
                 pdf.cell(30, 6, prio, 1, 1, 'C')
         else:
             pdf.set_font('Arial', '', 9)
@@ -1525,10 +1525,10 @@ def historial_pdf(cliente_id, user_id):
             pdf.cell(65, 7, 'TECNICO', 1, 1, 'C', True)
             pdf.set_font('Arial', '', 8)
             for v in visitas:
-                pdf.cell(35, 6, t(v.fecha_programada.strftime('%d/%m/%Y %H:%M') if v.fecha_programada else ''), 1, 0, 'C')
-                pdf.cell(55, 6, t(v.tipo_trabajo), 1, 0, 'C')
-                pdf.cell(35, 6, t(v.estado), 1, 0, 'C')
-                pdf.cell(65, 6, t(v.rel_usuario.nombre if v.rel_usuario else '---'), 1, 1, 'C')
+                pdf.cell(35, 6, enc(v.fecha_programada.strftime('%d/%m/%Y %H:%M') if v.fecha_programada else ''), 1, 0, 'C')
+                pdf.cell(55, 6, enc(v.tipo_trabajo), 1, 0, 'C')
+                pdf.cell(35, 6, enc(v.estado), 1, 0, 'C')
+                pdf.cell(65, 6, enc(v.rel_usuario.nombre if v.rel_usuario else '---'), 1, 1, 'C')
         else:
             pdf.set_font('Arial', '', 9)
             pdf.set_text_color(150, 150, 150)
