@@ -2981,12 +2981,13 @@ def editar_vehiculo(id):
         db.session.rollback()
         return jsonify({'ok': False, 'msg': str(e)}), 400
 
-@app.route('/api/vehiculos/<int:id>/herramientas-count')
+@app.route('/api/vehiculos/<int:id>/check-eliminar')
 @login_required
-def vehiculo_herramientas_count(id):
+def vehiculo_check_eliminar(id):
     v = Vehiculo.query.get_or_404(id)
-    count = Herramienta.query.filter_by(vehiculo_id=v.id).count()
-    return jsonify({'count': count})
+    tecnicos = Usuario.query.filter_by(ubicacion_id=v.ubicacion_id).count()
+    herramientas = Herramienta.query.filter_by(vehiculo_id=v.id).count()
+    return jsonify({'tecnicos': tecnicos, 'herramientas': herramientas})
 
 @app.route('/api/vehiculos/eliminar/<int:id>', methods=['DELETE'])
 @login_required
@@ -2995,9 +2996,6 @@ def eliminar_vehiculo(id):
         return jsonify({'ok': False, 'msg': 'No autorizado'}), 403
     try:
         v = Vehiculo.query.get_or_404(id)
-        tecnicos_asignados = Usuario.query.filter_by(ubicacion_id=v.ubicacion_id).count()
-        if tecnicos_asignados > 0:
-            return jsonify({'ok': False, 'msg': f'No se puede eliminar: {tecnicos_asignados} técnico(s) asignado(s) a este vehículo'}), 400
 
         bodega_central = Ubicacion.query.filter_by(nombre='Bodega Central').first()
 

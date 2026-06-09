@@ -374,17 +374,25 @@ document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click'
     var btn = this;
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Verificando...';
-    fetch('/api/vehiculos/' + id + '/herramientas-count')
+    fetch('/api/vehiculos/' + id + '/check-eliminar')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
-            if (data.count > 0) {
-                var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+            var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+            if (data.tecnicos > 0 && data.herramientas > 0) {
+                if (modalConfirm) modalConfirm.hide();
+                mostrarAdvertencia('No se puede eliminar',
+                    'Este vehículo tiene ' + data.tecnicos + ' técnico(s) asignado(s) y ' + data.herramientas + ' herramienta(s). Reasigna el técnico a otro vehículo antes de eliminar.');
+            } else if (data.tecnicos > 0) {
+                if (modalConfirm) modalConfirm.hide();
+                mostrarAdvertencia('No se puede eliminar',
+                    'Este vehículo tiene ' + data.tecnicos + ' técnico(s) asignado(s). Reasigna el técnico a otro vehículo antes de eliminar.');
+            } else if (data.herramientas > 0) {
                 if (modalConfirm) modalConfirm.hide();
                 pendienteEliminar = id;
                 mostrarAdvertencia('Herramientas asignadas',
-                    'Este vehículo tiene ' + data.count + ' herramienta(s). Se desasignarán y quedarán disponibles en Bodega Central.');
+                    'Este vehículo tiene ' + data.herramientas + ' herramienta(s). Se desasignarán y quedarán disponibles en Bodega Central.');
             } else {
                 ejecutarEliminarVehiculo(id);
             }
