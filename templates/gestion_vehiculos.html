@@ -319,6 +319,32 @@ function abrirModalEditar(id) {
 
 var detalleVehiculoReabrir = false;
 
+document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click', function() {
+    var id = vehiculoAEliminar;
+    if (!id) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Eliminando...';
+    fetch('/api/vehiculos/eliminar/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+                if (modal) modal.hide();
+                location.reload();
+            } else {
+                alert(data.msg || 'Error al eliminar');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
+            }
+        })
+        .catch(function() {
+            alert('Error de conexión');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
+        });
+});
+
 document.addEventListener('hidden.bs.modal', function(e) {
     if (detalleVehiculoReabrir && e.target.id !== 'modalDetalleVehiculo') {
         detalleVehiculoReabrir = false;
