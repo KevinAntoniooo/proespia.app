@@ -2844,6 +2844,9 @@ def traspaso_bodega():
                 return jsonify({'ok': False, 'msg': f'Stock insuficiente. Solo hay {prod.cantidad_actual}'}), 400
             prod.cantidad_actual -= cantidad
 
+        if hacia_id and desde_id and prod.cantidad_actual == 0:
+            db.session.delete(prod)
+
         if hacia_id:
             destino = ProductoStock.query.filter_by(
                 nombre=prod.nombre, marca=prod.marca, modelo=prod.modelo,
@@ -3008,9 +3011,17 @@ def eliminar_vehiculo(id):
 
         # Mover productos y movimientos del vehículo a bodega central
         if v.rel_ubicacion and bodega_central:
-            ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).update(
-                {'ubicacion_id': bodega_central.id}, synchronize_session=False
-            )
+            productos = ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).all()
+            for p in productos:
+                destino = ProductoStock.query.filter_by(
+                    nombre=p.nombre, marca=p.marca, modelo=p.modelo,
+                    ubicacion_id=bodega_central.id, estado=p.estado
+                ).first()
+                if destino:
+                    destino.cantidad_actual += p.cantidad_actual
+                    db.session.delete(p)
+                else:
+                    p.ubicacion_id = bodega_central.id
             MovimientoStock.query.filter_by(desde_ubicacion_id=v.ubicacion_id).update(
                 {'desde_ubicacion_id': bodega_central.id}, synchronize_session=False
             )
