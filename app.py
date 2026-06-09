@@ -3006,10 +3006,16 @@ def eliminar_vehiculo(id):
                 h.vehiculo_id = None
             db.session.flush()
 
-        # Mover productos del vehículo a bodega central
+        # Mover productos y movimientos del vehículo a bodega central
         if v.rel_ubicacion and bodega_central:
             ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).update(
                 {'ubicacion_id': bodega_central.id}, synchronize_session=False
+            )
+            MovimientoStock.query.filter_by(desde_ubicacion_id=v.ubicacion_id).update(
+                {'desde_ubicacion_id': bodega_central.id}, synchronize_session=False
+            )
+            MovimientoStock.query.filter_by(hacia_ubicacion_id=v.ubicacion_id).update(
+                {'hacia_ubicacion_id': bodega_central.id}, synchronize_session=False
             )
             db.session.flush()
             db.session.delete(v.rel_ubicacion)
