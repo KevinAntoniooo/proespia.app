@@ -553,11 +553,9 @@ function cargarHistorial(clienteId) {
                 html += '<div class="alert alert-secondary py-2 small"><i class="fa-solid fa-circle-info me-1"></i>Sin equipos registrados</div>';
             }
             if (data.bitacoras.length > 0) {
-                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-book me-1"></i>Bitácoras (' + data.bitacoras.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo Visita</th><th>Descripción</th><th>Técnico</th><th>Prioridad</th></tr></thead><tbody>';
+                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-book me-1"></i>Bitácoras (' + data.bitacoras.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo Visita</th><th>Descripción</th><th>Técnico</th></tr></thead><tbody>';
                 data.bitacoras.forEach(function(b) {
-                    var badgePrio = {1:'bg-danger',2:'bg-warning text-dark',3:'bg-info text-dark',4:'bg-secondary'};
-                    var labelPrio = {1:'Crítica',2:'Alta',3:'Media',4:'Baja'};
-                    html += '<tr><td class="small">' + escHtml(b.fecha) + '</td><td>' + escHtml(b.tipo_visita) + '</td><td class="small">' + escHtml(b.descripcion) + '</td><td>' + escHtml(b.tecnico) + '</td><td><span class="badge ' + (badgePrio[b.prioridad]||'bg-info') + '">' + (labelPrio[b.prioridad]||'Media') + '</span></td></tr>';
+                    html += '<tr><td class="small">' + escHtml(b.fecha) + '</td><td>' + escHtml(b.tipo_visita) + '</td><td class="small">' + escHtml(b.descripcion) + '</td><td>' + escHtml(b.tecnico) + '</td></tr>';
                 });
                 html += '</tbody></table></div></div>';
             } else {
