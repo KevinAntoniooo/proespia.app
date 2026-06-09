@@ -1405,6 +1405,145 @@ def nuevo_cliente(user_id):
                   f"Se registró el cliente {nuevo.nombre}")
     return render_template('nuevo_cliente.html', usuario=usuario)
 
+# --- API HISTORIAL CLIENTE (JSON) ---
+@app.route('/api/cliente/<int:cliente_id>/historial')
+@login_required
+def api_cliente_historial(cliente_id):
+    equipos = [{'tipo': e.tipo, 'serie': e.serie, 'ip': e.ip, 'ubicacion': e.ubicacion} for e in Equipo.query.filter_by(cliente_id=cliente_id).all()]
+    bitacoras = [{
+        'fecha': b.fecha.strftime('%d/%m/%Y %H:%M') if b.fecha else '',
+        'tipo_visita': b.tipo_visita,
+        'descripcion': (b.descripcion or '')[:120],
+        'prioridad': b.prioridad,
+        'tecnico': b.rel_usuario.nombre if b.rel_usuario else '---'
+    } for b in Bitacora.query.filter_by(cliente_id=cliente_id).order_by(Bitacora.fecha.desc()).all()]
+    visitas = [{
+        'fecha': v.fecha_programada.strftime('%d/%m/%Y %H:%M') if v.fecha_programada else '',
+        'tipo_trabajo': v.tipo_trabajo,
+        'estado': v.estado,
+        'tecnico': v.rel_usuario.nombre if v.rel_usuario else '---'
+    } for v in VisitaProgramada.query.filter_by(cliente_id=cliente_id).order_by(VisitaProgramada.fecha_programada.desc()).all()]
+    return jsonify({'equipos': equipos, 'bitacoras': bitacoras, 'visitas': visitas})
+
+# --- PDF HISTORIAL CLIENTE ---
+@app.route('/clientes/historial_pdf/<int:cliente_id>/<int:user_id>')
+@login_required
+def historial_pdf(cliente_id, user_id):
+    cliente = Cliente.query.get_or_404(cliente_id)
+    u_admin = Usuario.query.get_or_404(user_id)
+    secciones = request.args.get('secciones', 'equipos,bitacoras,visitas')
+
+    def t(texto):
+        if not texto: return 'N/A'
+        return str(texto).encode('latin-1', 'replace').decode('latin-1')
+
+    pdf = FPDF(orientation='P', unit='mm', format='A4')
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(0, 10, 'PROESPIA LTDA - HISTORIAL DEL CLIENTE', 0, 1, 'C')
+    pdf.set_font('Arial', '', 12)
+    pdf.cell(0, 8, t(f'Cliente: {cliente.nombre}'), 0, 1, 'C')
+    pdf.set_font('Arial', '', 9)
+    pdf.cell(0, 5, t(f'Direccion: {cliente.direccion}'), 0, 1, 'C')
+    pdf.set_font('Arial', 'I', 9)
+    pdf.cell(0, 5, f'Generado por: {t(u_admin.nombre)}', 0, 1, 'C')
+    pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
+    pdf.ln(8)
+
+    partes = [s.strip().lower() for s in secciones.split(',') if s.strip()]
+
+    if 'equipos' in partes:
+        equipos = Equipo.query.filter_by(cliente_id=cliente_id).all()
+        pdf.set_font('Arial', 'B', 11)
+        pdf.set_fill_color(40, 40, 40)
+        pdf.set_text_color(255, 255, 255)
+        pdf.cell(0, 8, '  EQUIPOS INSTALADOS', 1, 1, 'L', True)
+        pdf.set_text_color(0, 0, 0)
+        if equipos:
+            pdf.set_font('Arial', 'B', 8)
+            pdf.set_fill_color(220, 220, 220)
+            pdf.cell(40, 7, 'TIPO', 1, 0, 'C', True)
+            pdf.cell(55, 7, 'SERIE', 1, 0, 'C', True)
+            pdf.cell(35, 7, 'IP', 1, 0, 'C', True)
+            pdf.cell(60, 7, 'UBICACION', 1, 1, 'C', True)
+            pdf.set_font('Arial', '', 8)
+            for e in equipos:
+                pdf.cell(40, 6, t(e.tipo), 1, 0, 'C')
+                pdf.cell(55, 6, t(e.serie), 1, 0, 'C')
+                pdf.cell(35, 6, t(e.ip), 1, 0, 'C')
+                pdf.cell(60, 6, t(e.ubicacion), 1, 1, 'C')
+        else:
+            pdf.set_font('Arial', '', 9)
+            pdf.set_text_color(150, 150, 150)
+            pdf.cell(0, 7, 'Sin equipos registrados', 1, 1, 'C')
+            pdf.set_text_color(0, 0, 0)
+        pdf.ln(5)
+
+    if 'bitacoras' in partes:
+        bitacoras = Bitacora.query.filter_by(cliente_id=cliente_id).order_by(Bitacora.fecha.desc()).all()
+        pdf.set_font('Arial', 'B', 11)
+        pdf.set_fill_color(40, 40, 40)
+        pdf.set_text_color(255, 255, 255)
+        pdf.cell(0, 8, '  BITACORAS / REPORTES', 1, 1, 'L', True)
+        pdf.set_text_color(0, 0, 0)
+        if bitacoras:
+            pdf.set_font('Arial', 'B', 7)
+            pdf.set_fill_color(220, 220, 220)
+            pdf.cell(30, 7, 'FECHA', 1, 0, 'C', True)
+            pdf.cell(30, 7, 'TIPO VISITA', 1, 0, 'C', True)
+            pdf.cell(70, 7, 'DESCRIPCION', 1, 0, 'C', True)
+            pdf.cell(30, 7, 'TECNICO', 1, 0, 'C', True)
+            pdf.cell(30, 7, 'PRIORIDAD', 1, 1, 'C', True)
+            pdf.set_font('Arial', '', 7)
+            for b in bitacoras:
+                prio = {1: 'Critica', 2: 'Alta', 3: 'Media', 4: 'Baja'}.get(b.prioridad, 'Media')
+                pdf.cell(30, 6, t(b.fecha.strftime('%d/%m/%Y') if b.fecha else ''), 1, 0, 'C')
+                pdf.cell(30, 6, t(b.tipo_visita), 1, 0, 'C')
+                pdf.cell(70, 6, t((b.descripcion or '')[:90]), 1, 0, 'C')
+                pdf.cell(30, 6, t(b.rel_usuario.nombre if b.rel_usuario else '---'), 1, 0, 'C')
+                pdf.cell(30, 6, prio, 1, 1, 'C')
+        else:
+            pdf.set_font('Arial', '', 9)
+            pdf.set_text_color(150, 150, 150)
+            pdf.cell(0, 7, 'Sin bitacoras registradas', 1, 1, 'C')
+            pdf.set_text_color(0, 0, 0)
+        pdf.ln(5)
+
+    if 'visitas' in partes:
+        visitas = VisitaProgramada.query.filter_by(cliente_id=cliente_id).order_by(VisitaProgramada.fecha_programada.desc()).all()
+        pdf.set_font('Arial', 'B', 11)
+        pdf.set_fill_color(40, 40, 40)
+        pdf.set_text_color(255, 255, 255)
+        pdf.cell(0, 8, '  VISITAS PROGRAMADAS', 1, 1, 'L', True)
+        pdf.set_text_color(0, 0, 0)
+        if visitas:
+            pdf.set_font('Arial', 'B', 8)
+            pdf.set_fill_color(220, 220, 220)
+            pdf.cell(35, 7, 'FECHA', 1, 0, 'C', True)
+            pdf.cell(55, 7, 'TIPO TRABAJO', 1, 0, 'C', True)
+            pdf.cell(35, 7, 'ESTADO', 1, 0, 'C', True)
+            pdf.cell(65, 7, 'TECNICO', 1, 1, 'C', True)
+            pdf.set_font('Arial', '', 8)
+            for v in visitas:
+                pdf.cell(35, 6, t(v.fecha_programada.strftime('%d/%m/%Y %H:%M') if v.fecha_programada else ''), 1, 0, 'C')
+                pdf.cell(55, 6, t(v.tipo_trabajo), 1, 0, 'C')
+                pdf.cell(35, 6, t(v.estado), 1, 0, 'C')
+                pdf.cell(65, 6, t(v.rel_usuario.nombre if v.rel_usuario else '---'), 1, 1, 'C')
+        else:
+            pdf.set_font('Arial', '', 9)
+            pdf.set_text_color(150, 150, 150)
+            pdf.cell(0, 7, 'Sin visitas programadas', 1, 1, 'C')
+            pdf.set_text_color(0, 0, 0)
+
+    output = io.BytesIO()
+    pdf_output = pdf.output()
+    output.write(pdf_output)
+    output.seek(0)
+    return make_response(output.read(), {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': f'attachment; filename=Historial_{cliente.nombre}.pdf'
+    })
+
 # --- ELIMINAR SEDE ---
 @app.route('/clientes/eliminar/<int:cliente_id>/<int:user_id>')
 @login_required

@@ -71,6 +71,9 @@
                             <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarCliente{{ c.id }}" title="Editar">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
+                            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#historialCliente{{ c.id }}" title="Ver Historial">
+                                <i class="fa-solid fa-clock-rotate-left"></i>
+                            </button>
                             <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminarCliente{{ c.id }}" title="Eliminar">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
@@ -222,28 +225,78 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalEliminarCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="historialCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>Historial: {{ c.nombre }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3 col-6">
+                        <span class="badge bg-info fs-6 w-100 py-2">{{ c.estado_monitoreo }}</span>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <span class="badge bg-secondary fs-6 w-100 py-2"><i class="fa-solid fa-map-pin me-1"></i>{{ c.direccion[:40] }}{% if c.direccion|length > 40 %}...{% endif %}</span>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 mb-3">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-2"><i class="fa-solid fa-download me-1"></i>Exportar Historial</h6>
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input seccion-check" type="checkbox" id="chkEquipos{{ c.id }}" value="equipos" checked>
+                                <label class="form-check-label" for="chkEquipos{{ c.id }}">Equipos</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input seccion-check" type="checkbox" id="chkBitacoras{{ c.id }}" value="bitacoras" checked>
+                                <label class="form-check-label" for="chkBitacoras{{ c.id }}">Bitácoras</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input seccion-check" type="checkbox" id="chkVisitas{{ c.id }}" value="visitas" checked>
+                                <label class="form-check-label" for="chkVisitas{{ c.id }}">Visitas</label>
+                            </div>
+                            <button class="btn btn-danger btn-sm ms-auto" onclick="descargarHistorialPDF({{ c.id }})">
+                                <i class="fa-solid fa-file-pdf me-1"></i>Descargar PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="historialContent{{ c.id }}">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="text-muted mt-2">Cargando historial...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmarEliminarCliente{{ c.id }}">
+                    <i class="fa-solid fa-trash-can me-1"></i>Eliminar esta sede
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmarEliminarCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i>¡Atención Crítica!</h5>
+                <h6 class="modal-title"><i class="fa-solid fa-exclamation-triangle me-1"></i>Confirmar Eliminación</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center p-4">
-                <i class="bi bi-shield-slash text-danger" style="font-size: 3rem;"></i>
-                <h4 class="mt-3">¿Eliminar {{ c.nombre }}?</h4>
-                <p class="text-muted">
-                    Esta acción es irreversible. Al eliminar esta sede, podrías perder el vínculo con los equipos instalados en <strong>{{ c.direccion }}</strong>.
-                </p>
-                <div class="alert alert-warning small">
-                    <i class="bi bi-info-circle me-1"></i> Se recomienda descargar el reporte PDF antes de proceder.
-                </div>
+                <i class="fa-solid fa-shield-slash text-danger" style="font-size: 2.5rem;"></i>
+                <h5 class="mt-2">¿Eliminar {{ c.nombre }}?</h5>
+                <p class="text-muted small">Esta acción es irreversible. Se eliminarán equipos, bitácoras y visitas asociadas.</p>
             </div>
             <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar y Volver</button>
-                <a href="/clientes/eliminar/{{ c.id }}/{{ usuario.id }}" class="btn btn-danger px-4">
-                    Confirmar Eliminación
-                </a>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <a href="/clientes/eliminar/{{ c.id }}/{{ usuario.id }}" class="btn btn-danger btn-sm px-3">Confirmar</a>
             </div>
         </div>
     </div>
@@ -502,6 +555,80 @@ document.addEventListener('DOMContentLoaded', function() {
                     renderizarContactos(id);
                 }
             } catch(e) {}
+        });
+    });
+});
+
+// ===== HISTORIAL CLIENTE =====
+function cargarHistorial(clienteId) {
+    var container = document.getElementById('historialContent' + clienteId);
+    if (!container) return;
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Cargando historial...</p></div>';
+    fetch('/api/cliente/' + clienteId + '/historial')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var html = '';
+            if (data.equipos.length > 0) {
+                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-microchip me-1"></i>Equipos (' + data.equipos.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Tipo</th><th>Serie</th><th>IP</th><th>Ubicación</th></tr></thead><tbody>';
+                data.equipos.forEach(function(e) {
+                    html += '<tr><td>' + escHtml(e.tipo) + '</td><td><code>' + escHtml(e.serie) + '</code></td><td>' + escHtml(e.ip) + '</td><td>' + escHtml(e.ubicacion) + '</td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            } else {
+                html += '<div class="alert alert-secondary py-2 small"><i class="fa-solid fa-circle-info me-1"></i>Sin equipos registrados</div>';
+            }
+            if (data.bitacoras.length > 0) {
+                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-book me-1"></i>Bitácoras (' + data.bitacoras.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo Visita</th><th>Descripción</th><th>Técnico</th><th>Prioridad</th></tr></thead><tbody>';
+                data.bitacoras.forEach(function(b) {
+                    var badgePrio = {1:'bg-danger',2:'bg-warning text-dark',3:'bg-info text-dark',4:'bg-secondary'};
+                    var labelPrio = {1:'Crítica',2:'Alta',3:'Media',4:'Baja'};
+                    html += '<tr><td class="small">' + escHtml(b.fecha) + '</td><td>' + escHtml(b.tipo_visita) + '</td><td class="small">' + escHtml(b.descripcion) + '</td><td>' + escHtml(b.tecnico) + '</td><td><span class="badge ' + (badgePrio[b.prioridad]||'bg-info') + '">' + (labelPrio[b.prioridad]||'Media') + '</span></td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            } else {
+                html += '<div class="alert alert-secondary py-2 small"><i class="fa-solid fa-circle-info me-1"></i>Sin bitácoras registradas</div>';
+            }
+            if (data.visitas.length > 0) {
+                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-calendar-check me-1"></i>Visitas Programadas (' + data.visitas.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo Trabajo</th><th>Estado</th><th>Técnico</th></tr></thead><tbody>';
+                data.visitas.forEach(function(v) {
+                    var badgeEstado = {Pendiente:'bg-warning text-dark',Completada:'bg-success',Cancelada:'bg-secondary'};
+                    html += '<tr><td class="small">' + escHtml(v.fecha) + '</td><td>' + escHtml(v.tipo_trabajo) + '</td><td><span class="badge ' + (badgeEstado[v.estado]||'bg-secondary') + '">' + escHtml(v.estado) + '</span></td><td>' + escHtml(v.tecnico) + '</td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            } else {
+                html += '<div class="alert alert-secondary py-2 small"><i class="fa-solid fa-circle-info me-1"></i>Sin visitas programadas</div>';
+            }
+            container.innerHTML = html;
+        })
+        .catch(function() {
+            container.innerHTML = '<div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-1"></i>Error al cargar el historial</div>';
+        });
+}
+
+function descargarHistorialPDF(clienteId) {
+    var secciones = [];
+    document.querySelectorAll('#historialCliente' + clienteId + ' .seccion-check:checked').forEach(function(cb) {
+        secciones.push(cb.value);
+    });
+    if (secciones.length === 0) {
+        alert('Selecciona al menos una sección para exportar.');
+        return;
+    }
+    window.open('/clientes/historial_pdf/' + clienteId + '/' + {{ usuario.id }} + '?secciones=' + secciones.join(','), '_blank');
+}
+
+function escHtml(str) {
+    if (!str) return '---';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[id^="historialCliente"]').forEach(function(m) {
+        m.addEventListener('shown.bs.modal', function() {
+            var id = this.id.replace('historialCliente', '');
+            cargarHistorial(id);
         });
     });
 });
