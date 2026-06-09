@@ -3019,6 +3019,9 @@ def eliminar_vehiculo(id):
                 ).first()
                 if destino:
                     destino.cantidad_actual += p.cantidad_actual
+                    MovimientoStock.query.filter_by(producto_id=p.id).update(
+                        {'producto_id': destino.id}, synchronize_session=False
+                    )
                     db.session.delete(p)
                 else:
                     p.ubicacion_id = bodega_central.id
