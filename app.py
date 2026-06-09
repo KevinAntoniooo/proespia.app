@@ -2868,6 +2868,7 @@ def traspaso_bodega():
         )
         db.session.add(mov)
         if desde_id and hacia_id and prod.cantidad_actual == 0:
+            mov.producto_id = destino.id
             db.session.delete(prod)
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'Traspaso realizado'})
