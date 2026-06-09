@@ -267,7 +267,7 @@ function eliminarVehiculo(id) {
                 <i class="fa-solid fa-circle-exclamation text-warning fs-1 mb-3"></i>
                 <h5 class="fw-bold mb-2" id="advertenciaTitulo">Advertencia</h5>
                 <p class="text-muted small mb-3" id="advertenciaMensaje"></p>
-                <button type="button" class="btn btn-warning shadow-sm btn-sm fw-bold px-4" style="font-size:0.85rem;" data-bs-dismiss="modal">Entendido</button>
+                <button type="button" class="btn btn-warning shadow-sm btn-sm fw-bold px-4" style="font-size:0.85rem;" id="btnAdvertenciaOk">Entendido</button>
             </div>
         </div>
     </div>
@@ -337,38 +337,82 @@ function mostrarAdvertencia(titulo, mensaje) {
     if (el) bootstrap.Modal.getOrCreateInstance(el).show();
 }
 
+var pendienteEliminar = null;
 var detalleVehiculoReabrir = false;
+
+function ejecutarEliminarVehiculo(id) {
+    var btn = document.getElementById('btnConfirmarEliminarVehiculo');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Eliminando...';
+    fetch('/api/vehiculos/eliminar/' + id, { method: 'DELETE' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
+            if (data.ok) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+                if (modal) modal.hide();
+                location.reload();
+            } else {
+                var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+                if (modalConfirm) modalConfirm.hide();
+                mostrarAdvertencia('No se puede eliminar', data.msg || 'Error al eliminar');
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
+            var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+            if (modalConfirm) modalConfirm.hide();
+            mostrarAdvertencia('Error de conexión', 'Verifica tu conexión e inténtalo de nuevo.');
+        });
+}
 
 document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click', function() {
     var id = vehiculoAEliminar;
     if (!id) return;
     var btn = this;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Eliminando...';
-    fetch('/api/vehiculos/eliminar/' + id, { method: 'DELETE' })
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Verificando...';
+    fetch('/api/vehiculos/' + id + '/herramientas-count')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (data.ok) {
-                var modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
-                if (modal) modal.hide();
-                location.reload();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
+            if (data.count > 0) {
+                var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+                if (modalConfirm) modalConfirm.hide();
+                pendienteEliminar = id;
+                mostrarAdvertencia('Herramientas asignadas',
+                    'Este vehículo tiene ' + data.count + ' herramienta(s). Se desasignarán y quedarán disponibles en Bodega Central.');
             } else {
-                mostrarAdvertencia('No se puede eliminar', data.msg || 'Error al eliminar');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
+                ejecutarEliminarVehiculo(id);
             }
         })
         .catch(function() {
-            mostrarAdvertencia('Error de conexión', 'Verifica tu conexión e inténtalo de nuevo.');
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
+            mostrarAdvertencia('Error', 'No se pudo verificar el vehículo. Intenta de nuevo.');
         });
+});
+
+document.getElementById('btnAdvertenciaOk').addEventListener('click', function() {
+    var id = pendienteEliminar;
+    if (!id) return;
+    pendienteEliminar = null;
+    var modalAd = bootstrap.Modal.getInstance(document.getElementById('modalAdvertencia'));
+    if (modalAd) modalAd.hide();
+    ejecutarEliminarVehiculo(id);
 });
 
 document.addEventListener('hidden.bs.modal', function(e) {
     if (detalleVehiculoReabrir && e.target.id !== 'modalDetalleVehiculo') {
         detalleVehiculoReabrir = false;
         new bootstrap.Modal(document.getElementById('modalDetalleVehiculo')).show();
+    }
+    if (e.target.id === 'modalAdvertencia' && pendienteEliminar) {
+        pendienteEliminar = null;
+        new bootstrap.Modal(document.getElementById('modalConfirmarEliminarVehiculo')).show();
     }
 });
 

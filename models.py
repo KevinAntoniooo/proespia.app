@@ -222,14 +222,14 @@ class Vehiculo(db.Model):
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion_bodega.id'), nullable=True)
     rel_ubicacion = db.relationship('Ubicacion', backref=db.backref('vehiculo', uselist=False))
 
-    herramientas = db.relationship('Herramienta', backref='rel_vehiculo', lazy=True, cascade='all, delete-orphan')
+    herramientas = db.relationship('Herramienta', backref='rel_vehiculo', lazy=True)
 
 class Herramienta(db.Model):
     __tablename__ = 'herramienta'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(120), nullable=False)
     codigo_inventario = db.Column(db.String(50), unique=True, nullable=False)
-    vehiculo_id = db.Column(db.Integer, db.ForeignKey('vehiculo.id'), nullable=False)
+    vehiculo_id = db.Column(db.Integer, db.ForeignKey('vehiculo.id'), nullable=True)
 
 class ChecklistSemanal(db.Model):
     __tablename__ = 'checklist_semanal'

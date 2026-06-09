@@ -2981,6 +2981,13 @@ def editar_vehiculo(id):
         db.session.rollback()
         return jsonify({'ok': False, 'msg': str(e)}), 400
 
+@app.route('/api/vehiculos/<int:id>/herramientas-count')
+@login_required
+def vehiculo_herramientas_count(id):
+    v = Vehiculo.query.get_or_404(id)
+    count = Herramienta.query.filter_by(vehiculo_id=v.id).count()
+    return jsonify({'count': count})
+
 @app.route('/api/vehiculos/eliminar/<int:id>', methods=['DELETE'])
 @login_required
 def eliminar_vehiculo(id):
@@ -2991,15 +2998,27 @@ def eliminar_vehiculo(id):
         tecnicos_asignados = Usuario.query.filter_by(ubicacion_id=v.ubicacion_id).count()
         if tecnicos_asignados > 0:
             return jsonify({'ok': False, 'msg': f'No se puede eliminar: {tecnicos_asignados} técnico(s) asignado(s) a este vehículo'}), 400
-        if v.rel_ubicacion:
-            prod_count = ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).count()
-            if prod_count > 0:
-                return jsonify({'ok': False, 'msg': f'No se puede eliminar: hay {prod_count} producto(s) en este vehículo'}), 400
+
+        bodega_central = Ubicacion.query.filter_by(nombre='Bodega Central').first()
+
+        # Mover herramientas a bodega central (desasignar del vehículo)
+        herramientas = Herramienta.query.filter_by(vehiculo_id=v.id).all()
+        if herramientas:
+            for h in herramientas:
+                h.vehiculo_id = None
+            db.session.flush()
+
+        # Mover productos del vehículo a bodega central
+        if v.rel_ubicacion and bodega_central:
+            ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).update(
+                {'ubicacion_id': bodega_central.id}, synchronize_session=False
+            )
+            db.session.flush()
             db.session.delete(v.rel_ubicacion)
-        Herramienta.query.filter_by(vehiculo_id=v.id).delete(synchronize_session=False)
+
         db.session.delete(v)
         db.session.commit()
-        return jsonify({'ok': True, 'msg': 'Vehículo eliminado'})
+        return jsonify({'ok': True, 'msg': 'Vehículo eliminado', 'herramientas_movidas': len(herramientas)})
     except Exception as e:
         db.session.rollback()
         return jsonify({'ok': False, 'msg': str(e)}), 400
