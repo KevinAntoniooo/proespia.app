@@ -199,7 +199,7 @@
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-semibold small mb-1">Rol</label>
-                            <select name="rol" class="form-select text-uppercase">
+                            <select name="rol" class="form-select text-uppercase" onchange="toggleVehiculo(this, 'vehiculoField{{ u.id }}')">
                                 <option value="">Sin cambio</option>
                                 <option value="admin" {% if u.rol == 'admin' %}selected{% endif %}>Administrador</option>
                                 <option value="operador" {% if u.rol == 'operador' %}selected{% endif %}>Operador</option>
@@ -207,6 +207,17 @@
                                 {% if u.rol == 'Pendiente' %}<option value="Pendiente" selected>Pendiente</option>{% endif %}
                             </select>
                         </div>
+                    </div>
+                    <div class="mb-3 {% if u.rol != 'tecnico' %}d-none{% endif %}" id="vehiculoField{{ u.id }}">
+                        <label class="form-label fw-semibold small mb-1"><i class="fa-solid fa-truck me-1"></i>Vehículo asignado</label>
+                        <select name="vehiculo_id" class="form-select">
+                            <option value="">Sin vehículo</option>
+                            {% for v in vehiculos %}
+                            <option value="{{ v.id }}" {% if u.ubicacion_id and v.ubicacion_id == u.ubicacion_id %}selected{% endif %}>
+                                {{ v.placa }} — {{ v.modelo or 'Sin modelo' }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">Guardar cambios</button>
@@ -278,9 +289,28 @@ function filtrarUsuarios() {
     }
 }
 
+function toggleVehiculo(select, fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    if (select.value === 'tecnico') {
+        field.classList.remove('d-none');
+    } else {
+        field.classList.add('d-none');
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("buscadorUsuarios");
     if(input) input.value = "";
+    // Inicializar visibilidad de campos vehículo según rol actual
+    document.querySelectorAll('[id^="vehiculoField"]').forEach(el => {
+        const modal = el.closest('.modal');
+        if (!modal) return;
+        const rolSelect = modal.querySelector('select[name="rol"]');
+        if (rolSelect && rolSelect.value !== 'tecnico') {
+            el.classList.add('d-none');
+        }
+    });
 });
 </script>
 {% endblock %}

@@ -1909,11 +1909,13 @@ def gestionar_usuarios(user_id):
         usuarios = [u for u in usuarios if not u.es_super_admin()]
         pendientes = [p for p in pendientes if not p.es_super_admin()]
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre.asc()).all()
+    vehiculos = Vehiculo.query.order_by(Vehiculo.placa).all()
     return render_template('usuarios.html',
                            usuarios=usuarios,
                            pendientes=pendientes,
                            usuario=usuario_admin,
                            ubicaciones=ubicaciones,
+                           vehiculos=vehiculos,
                            super_admin_correo=SUPER_ADMIN_CORREO)
 
 # ==========================================
@@ -2019,6 +2021,18 @@ def cambiar_estado_usuario(target_id, admin_id):
     nuevo_rol = request.form.get('rol')
     if nuevo_rol in ('admin', 'tecnico', 'operador'):
         u_target.rol = nuevo_rol
+
+    vehiculo_id = request.form.get('vehiculo_id')
+    if nuevo_rol == 'tecnico' and vehiculo_id:
+        try:
+            v = Vehiculo.query.get(int(vehiculo_id))
+            if v:
+                u_target.ubicacion_id = v.ubicacion_id
+        except (ValueError, TypeError):
+            pass
+    elif nuevo_rol and nuevo_rol != 'tecnico':
+        u_target.ubicacion_id = None
+        u_target.tipo_asignacion = None
 
     db.session.commit()
     flash(f'{u_target.nombre} ahora está {nuevo_estado}.', 'warning' if nuevo_estado == 'Inactivo' else 'success')
