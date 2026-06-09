@@ -1410,19 +1410,19 @@ def nuevo_cliente(user_id):
 @login_required
 def eliminar_cliente(cliente_id, user_id):
     cliente = Cliente.query.get_or_404(cliente_id)
-    # VERIFICACIÓN TÉCNICA: 
-    # Revisamos si la lista de equipos del cliente tiene algún elemento
-    if len(cliente.equipos) > 0:
-        # Si tiene equipos, lanzamos advertencia y bloqueamos el borrado
-        flash(f'BLOQUEO DE SEGURIDAD: La sede "{cliente.nombre}" tiene {len(cliente.equipos)} equipos vinculados. Debes eliminarlos o reasignarlos antes de borrar la sede.', 'warning')
-        return redirect(url_for('ver_clientes', user_id=user_id))
-    
-    # Si no tiene equipos, el borrado es seguro
-    nombre_borrado = cliente.nombre
-    db.session.delete(cliente)
-    db.session.commit()
-    
-    flash(f'Sede "{nombre_borrado}" eliminada exitosamente.', 'danger')
+    try:
+        nombre_borrado = cliente.nombre
+        # Eliminar registros dependientes en orden para evitar FK violations
+        VisitaProgramada.query.filter_by(cliente_id=cliente.id).delete(synchronize_session=False)
+        Bitacora.query.filter_by(cliente_id=cliente.id).delete(synchronize_session=False)
+        Equipo.query.filter_by(cliente_id=cliente.id).delete(synchronize_session=False)
+        db.session.delete(cliente)
+        db.session.commit()
+        flash(f'Sede "{nombre_borrado}" eliminada junto con sus equipos, visitas y bitácoras.', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error eliminando cliente: {e}")
+        flash(f'Error al eliminar la sede: {e}', 'danger')
     return redirect(url_for('ver_clientes', user_id=user_id))
 
 # --- EDITAR SEDE (POST) ---
