@@ -2811,6 +2811,7 @@ def eliminar_producto(producto_id):
         return jsonify({'ok': False, 'msg': 'Permiso denegado'}), 403
     prod = ProductoStock.query.get_or_404(producto_id)
     try:
+        MovimientoStock.query.filter_by(producto_id=prod.id).delete(synchronize_session=False)
         db.session.delete(prod)
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'Producto eliminado'})
