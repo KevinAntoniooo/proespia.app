@@ -38,31 +38,31 @@
             </form>
 
             <div class="text-center mt-3">
-                <a href="{{ url_for('olvido_contrasena') }}" class="small" style="color:#64748b;text-decoration:none;">
+                <a href="{{ url_for('olvido_contrasena') }}" class="small" style="color:var(--text-muted, #64748b);text-decoration:none;">
                     <i class="fa-solid fa-key me-1"></i>¿Olvidaste tu contraseña?
                 </a>
             </div>
 
-            <div class="d-flex align-items-center justify-content-center gap-3 mt-3 pt-3 border-top">
-                <a href="{{ url_for('registro') }}" class="btn btn-sm" style="color:#0f172a;border:1px solid #cbd5e1;border-radius:20px;padding:6px 18px;font-size:0.8rem;text-decoration:none;">
+            <div class="d-flex align-items-center justify-content-center gap-3 mt-3 pt-3" style="border-top:1px solid var(--border-subtle);">
+                <a href="{{ url_for('registro') }}" class="btn btn-sm" style="color:var(--text-heading);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 18px;font-size:0.8rem;text-decoration:none;">
                     <i class="fa-solid fa-user-plus me-1"></i>Crear cuenta
                 </a>
-                <button type="button" class="btn btn-sm d-none" id="btnInstalarPWA" style="color:#0f172a;border:1px solid #cbd5e1;border-radius:20px;padding:6px 18px;font-size:0.8rem;transition:all 0.3s ease;">
+                <button type="button" class="btn btn-sm d-none" id="btnInstalarPWA" style="color:var(--text-heading);border:1px solid var(--border-subtle);border-radius:20px;padding:6px 18px;font-size:0.8rem;transition:all 0.3s ease;">
                     <i class="fa-solid fa-download me-1"></i>Descargar Aplicación
                 </button>
             </div>
 
             <div class="text-center mt-3">
-                <a href="mailto:soporte.proespia@gmail.com" class="small" style="color:#94a3b8;text-decoration:none;">
+                <a href="mailto:soporte.proespia@gmail.com" class="small" style="color:var(--text-muted, #94a3b8);text-decoration:none;">
                     <i class="fa-regular fa-envelope me-1"></i>Contacta con soporte
                 </a>
             </div>
 
             <div class="d-flex align-items-center justify-content-center gap-3 mt-2">
-                <small class="d-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.65rem;">
+                <small class="d-flex align-items-center gap-1" style="color:var(--text-muted, #94a3b8);font-size:0.65rem;">
                     <i class="fa-solid fa-lock" style="font-size:0.5rem;"></i> Conexión segura
                 </small>
-                <small class="d-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.65rem;">
+                <small class="d-flex align-items-center gap-1" style="color:var(--text-muted, #94a3b8);font-size:0.65rem;">
                     <i class="fa-solid fa-shield" style="font-size:0.5rem;"></i> Datos cifrados
                 </small>
         </div>
