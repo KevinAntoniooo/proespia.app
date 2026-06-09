@@ -218,6 +218,16 @@
                             </option>
                             {% endfor %}
                         </select>
+                        <div class="d-flex gap-3 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tipo_asignacion" id="tipoA cargo{{ u.id }}" value="a_cargo" {% if u.tipo_asignacion == 'a_cargo' %}checked{% endif %}>
+                                <label class="form-check-label small" for="tipoA cargo{{ u.id }}">A cargo</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tipo_asignacion" id="tipoAcompanante{{ u.id }}" value="acompanante" {% if u.tipo_asignacion == 'acompanante' %}checked{% endif %}>
+                                <label class="form-check-label small" for="tipoAcompanante{{ u.id }}">Acompañante</label>
+                            </div>
+                        </div>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">Guardar cambios</button>

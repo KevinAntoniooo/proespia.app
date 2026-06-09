@@ -2023,13 +2023,18 @@ def cambiar_estado_usuario(target_id, admin_id):
         u_target.rol = nuevo_rol
 
     vehiculo_id = request.form.get('vehiculo_id')
+    tipo_asignacion = request.form.get('tipo_asignacion')
     if nuevo_rol == 'tecnico' and vehiculo_id:
         try:
             v = Vehiculo.query.get(int(vehiculo_id))
             if v:
                 u_target.ubicacion_id = v.ubicacion_id
+                u_target.tipo_asignacion = tipo_asignacion if tipo_asignacion in ('a_cargo', 'acompanante') else None
         except (ValueError, TypeError):
             pass
+    elif nuevo_rol == 'tecnico' and not vehiculo_id:
+        u_target.ubicacion_id = None
+        u_target.tipo_asignacion = None
     elif nuevo_rol and nuevo_rol != 'tecnico':
         u_target.ubicacion_id = None
         u_target.tipo_asignacion = None
