@@ -1541,7 +1541,7 @@ def historial_pdf(cliente_id, user_id):
     output.seek(0)
     return make_response(output.read(), {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': f'attachment; filename=Historial_{cliente.nombre}.pdf'
+        'Content-Disposition': f'inline; filename=Historial_{cliente.nombre}.pdf'
     })
 
 # --- ELIMINAR SEDE ---

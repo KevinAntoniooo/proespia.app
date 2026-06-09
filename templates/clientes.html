@@ -71,9 +71,6 @@
                             <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarCliente{{ c.id }}" title="Editar">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
-                            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#historialCliente{{ c.id }}" title="Ver Historial">
-                                <i class="fa-solid fa-clock-rotate-left"></i>
-                            </button>
                             <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminarCliente{{ c.id }}" title="Eliminar">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
@@ -225,78 +222,56 @@
     </div>
 </div>
 
-<div class="modal fade" id="historialCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalEliminarCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>Historial: {{ c.nombre }}</h5>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-exclamation-triangle me-2"></i>¡Atención Crítica!</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-3 col-6">
-                        <span class="badge bg-info fs-6 w-100 py-2">{{ c.estado_monitoreo }}</span>
-                    </div>
-                    <div class="col-md-3 col-6">
-                        <span class="badge bg-secondary fs-6 w-100 py-2"><i class="fa-solid fa-map-pin me-1"></i>{{ c.direccion[:40] }}{% if c.direccion|length > 40 %}...{% endif %}</span>
+                <div class="text-center mb-3">
+                    <i class="fa-solid fa-shield-slash text-danger" style="font-size: 2.5rem;"></i>
+                    <h4 class="mt-2">¿Eliminar {{ c.nombre }}?</h4>
+                    <p class="text-muted">Esta acción es irreversible. Se eliminarán equipos, bitácoras y visitas asociadas a <strong>{{ c.direccion }}</strong>.</p>
+                    <div class="alert alert-warning small">
+                        <i class="fa-solid fa-circle-info me-1"></i> Revisa el historial antes de eliminar. Puedes descargar un PDF con los datos seleccionados.
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm rounded-3 mb-3">
-                    <div class="card-body">
-                        <h6 class="fw-bold mb-2"><i class="fa-solid fa-download me-1"></i>Exportar Historial</h6>
-                        <div class="d-flex flex-wrap gap-3 align-items-center">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input seccion-check" type="checkbox" id="chkEquipos{{ c.id }}" value="equipos" checked>
-                                <label class="form-check-label" for="chkEquipos{{ c.id }}">Equipos</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input seccion-check" type="checkbox" id="chkBitacoras{{ c.id }}" value="bitacoras" checked>
-                                <label class="form-check-label" for="chkBitacoras{{ c.id }}">Bitácoras</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input seccion-check" type="checkbox" id="chkVisitas{{ c.id }}" value="visitas" checked>
-                                <label class="form-check-label" for="chkVisitas{{ c.id }}">Visitas</label>
-                            </div>
-                            <button class="btn btn-danger btn-sm ms-auto" onclick="descargarHistorialPDF({{ c.id }})">
-                                <i class="fa-solid fa-file-pdf me-1"></i>Descargar PDF
-                            </button>
-                        </div>
+                <hr>
+
+                <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+                    <h6 class="fw-bold mb-0"><i class="fa-solid fa-download me-1"></i>Exportar antes de eliminar:</h6>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input seccion-pdf" type="checkbox" id="chkEquipos{{ c.id }}" value="equipos" checked>
+                        <label class="form-check-label" for="chkEquipos{{ c.id }}">Equipos</label>
                     </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input seccion-pdf" type="checkbox" id="chkBitacoras{{ c.id }}" value="bitacoras" checked>
+                        <label class="form-check-label" for="chkBitacoras{{ c.id }}">Bitácoras</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input seccion-pdf" type="checkbox" id="chkVisitas{{ c.id }}" value="visitas" checked>
+                        <label class="form-check-label" for="chkVisitas{{ c.id }}">Visitas</label>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="descargarHistorialPDF({{ c.id }})">
+                        <i class="fa-solid fa-file-pdf me-1"></i>Descargar PDF
+                    </button>
                 </div>
 
                 <div id="historialContent{{ c.id }}">
-                    <div class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status"></div>
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-danger" role="status"></div>
                         <p class="text-muted mt-2">Cargando historial...</p>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer border-top">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmarEliminarCliente{{ c.id }}">
-                    <i class="fa-solid fa-trash-can me-1"></i>Eliminar esta sede
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="confirmarEliminarCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h6 class="modal-title"><i class="fa-solid fa-exclamation-triangle me-1"></i>Confirmar Eliminación</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center p-4">
-                <i class="fa-solid fa-shield-slash text-danger" style="font-size: 2.5rem;"></i>
-                <h5 class="mt-2">¿Eliminar {{ c.nombre }}?</h5>
-                <p class="text-muted small">Esta acción es irreversible. Se eliminarán equipos, bitácoras y visitas asociadas.</p>
-            </div>
             <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                <a href="/clientes/eliminar/{{ c.id }}/{{ usuario.id }}" class="btn btn-danger btn-sm px-3">Confirmar</a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="/clientes/eliminar/{{ c.id }}/{{ usuario.id }}" class="btn btn-danger px-4">
+                    <i class="fa-solid fa-trash-can me-1"></i>Confirmar Eliminación
+                </a>
             </div>
         </div>
     </div>
@@ -607,7 +582,7 @@ function cargarHistorial(clienteId) {
 
 function descargarHistorialPDF(clienteId) {
     var secciones = [];
-    document.querySelectorAll('#historialCliente' + clienteId + ' .seccion-check:checked').forEach(function(cb) {
+    document.querySelectorAll('#modalEliminarCliente' + clienteId + ' .seccion-pdf:checked').forEach(function(cb) {
         secciones.push(cb.value);
     });
     if (secciones.length === 0) {
@@ -625,9 +600,9 @@ function escHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('[id^="historialCliente"]').forEach(function(m) {
+    document.querySelectorAll('[id^="modalEliminarCliente"]').forEach(function(m) {
         m.addEventListener('shown.bs.modal', function() {
-            var id = this.id.replace('historialCliente', '');
+            var id = this.id.replace('modalEliminarCliente', '');
             cargarHistorial(id);
         });
     });
