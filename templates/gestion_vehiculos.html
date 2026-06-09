@@ -260,6 +260,19 @@ function eliminarVehiculo(id) {
     </div>
 </div>
 
+<div class="modal fade" id="modalAdvertencia" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-warning">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-circle-exclamation text-warning fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2" id="advertenciaTitulo">Advertencia</h5>
+                <p class="text-muted small mb-3" id="advertenciaMensaje"></p>
+                <button type="button" class="btn btn-warning shadow-sm btn-sm fw-bold px-4" style="font-size:0.85rem;" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalDetalleVehiculo" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -317,6 +330,13 @@ function abrirModalEditar(id) {
     }, 300);
 }
 
+function mostrarAdvertencia(titulo, mensaje) {
+    document.getElementById('advertenciaTitulo').textContent = titulo;
+    document.getElementById('advertenciaMensaje').textContent = mensaje;
+    var el = document.getElementById('modalAdvertencia');
+    if (el) bootstrap.Modal.getOrCreateInstance(el).show();
+}
+
 var detalleVehiculoReabrir = false;
 
 document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click', function() {
@@ -333,13 +353,13 @@ document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click'
                 if (modal) modal.hide();
                 location.reload();
             } else {
-                alert(data.msg || 'Error al eliminar');
+                mostrarAdvertencia('No se puede eliminar', data.msg || 'Error al eliminar');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
             }
         })
         .catch(function() {
-            alert('Error de conexión');
+            mostrarAdvertencia('Error de conexión', 'Verifica tu conexión e inténtalo de nuevo.');
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
         });
