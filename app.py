@@ -2023,7 +2023,6 @@ def cambiar_estado_usuario(target_id, admin_id):
         u_target.rol = nuevo_rol
 
     vehiculo_id = request.form.get('vehiculo_id')
-    tipo_asignacion = request.form.get('tipo_asignacion')
     if nuevo_rol == 'tecnico':
         if vehiculo_id:
             try:
@@ -2034,8 +2033,13 @@ def cambiar_estado_usuario(target_id, admin_id):
                 pass
         else:
             u_target.ubicacion_id = None
-        if tipo_asignacion in ('a_cargo', 'acompanante'):
-            u_target.tipo_asignacion = tipo_asignacion
+        # Checkboxes mutuamente excluyentes
+        if request.form.get('tipo_asignacion_a_cargo'):
+            u_target.tipo_asignacion = 'a_cargo'
+        elif request.form.get('tipo_asignacion_acompanante'):
+            u_target.tipo_asignacion = 'acompanante'
+        else:
+            u_target.tipo_asignacion = None
     elif nuevo_rol and nuevo_rol != 'tecnico':
         u_target.ubicacion_id = None
         u_target.tipo_asignacion = None

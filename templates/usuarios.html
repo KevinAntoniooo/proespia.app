@@ -220,11 +220,11 @@
                         </select>
                         <div class="d-flex gap-3 mt-2">
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="tipo_asignacion" id="tipoA cargo{{ u.id }}" value="a_cargo" {% if u.tipo_asignacion == 'a_cargo' or not u.tipo_asignacion %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="tipo_asignacion_a_cargo" id="tipoA cargo{{ u.id }}" value="1" {% if u.tipo_asignacion == 'a_cargo' %}checked{% endif %} onchange="desmarcarOtro(this, 'tipoAcompanante{{ u.id }}')">
                                 <label class="form-check-label small" for="tipoA cargo{{ u.id }}">A cargo</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="tipo_asignacion" id="tipoAcompanante{{ u.id }}" value="acompanante" {% if u.tipo_asignacion == 'acompanante' %}checked{% endif %}>
+                                <input class="form-check-input" type="checkbox" name="tipo_asignacion_acompanante" id="tipoAcompanante{{ u.id }}" value="1" {% if u.tipo_asignacion == 'acompanante' %}checked{% endif %} onchange="desmarcarOtro(this, 'tipoA cargo{{ u.id }}')">
                                 <label class="form-check-label small" for="tipoAcompanante{{ u.id }}">Acompañante</label>
                             </div>
                         </div>
@@ -297,6 +297,11 @@ function filtrarUsuarios() {
         let texto = filas[i].textContent.toLowerCase();
         filas[i].style.display = texto.includes(filtro) ? "" : "none";
     }
+}
+
+function desmarcarOtro(el, otroId) {
+    const otro = document.getElementById(otroId);
+    if (otro && el.checked) otro.checked = false;
 }
 
 function toggleVehiculo(select, fieldId) {
