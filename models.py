@@ -222,7 +222,7 @@ class Vehiculo(db.Model):
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicacion_bodega.id'), nullable=True)
     rel_ubicacion = db.relationship('Ubicacion', backref=db.backref('vehiculo', uselist=False))
 
-    herramientas = db.relationship('Herramienta', backref='rel_vehiculo', lazy=True)
+    herramientas = db.relationship('Herramienta', backref='rel_vehiculo', lazy=True, cascade='all, delete-orphan')
 
 class Herramienta(db.Model):
     __tablename__ = 'herramienta'

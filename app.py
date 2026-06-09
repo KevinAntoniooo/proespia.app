@@ -2996,6 +2996,7 @@ def eliminar_vehiculo(id):
             if prod_count > 0:
                 return jsonify({'ok': False, 'msg': f'No se puede eliminar: hay {prod_count} producto(s) en este vehículo'}), 400
             db.session.delete(v.rel_ubicacion)
+        Herramienta.query.filter_by(vehiculo_id=v.id).delete(synchronize_session=False)
         db.session.delete(v)
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'Vehículo eliminado'})
