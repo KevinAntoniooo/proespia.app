@@ -397,12 +397,13 @@ document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click'
 });
 
 document.getElementById('btnAdvertenciaOk').addEventListener('click', function() {
-    var id = pendienteEliminar;
-    if (!id) return;
-    pendienteEliminar = null;
     var modalAd = bootstrap.Modal.getInstance(document.getElementById('modalAdvertencia'));
     if (modalAd) modalAd.hide();
-    ejecutarEliminarVehiculo(id);
+    if (pendienteEliminar) {
+        var id = pendienteEliminar;
+        pendienteEliminar = null;
+        ejecutarEliminarVehiculo(id);
+    }
 });
 
 document.addEventListener('hidden.bs.modal', function(e) {
