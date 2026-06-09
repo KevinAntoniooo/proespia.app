@@ -380,19 +380,22 @@ document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click'
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
             var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
-            if (data.tecnicos > 0 && data.herramientas > 0) {
+            if (data.tecnicos > 0) {
                 if (modalConfirm) modalConfirm.hide();
-                mostrarAdvertencia('No se puede eliminar',
-                    'Este vehículo tiene ' + data.tecnicos + ' técnico(s) asignado(s) y ' + data.herramientas + ' herramienta(s). Reasigna el técnico a otro vehículo antes de eliminar.');
-            } else if (data.tecnicos > 0) {
-                if (modalConfirm) modalConfirm.hide();
-                mostrarAdvertencia('No se puede eliminar',
-                    'Este vehículo tiene ' + data.tecnicos + ' técnico(s) asignado(s). Reasigna el técnico a otro vehículo antes de eliminar.');
-            } else if (data.herramientas > 0) {
+                var msg = 'Este vehículo tiene ' + data.tecnicos + ' técnico(s) asignado(s)';
+                if (data.herramientas > 0 || data.productos > 0) {
+                    msg += ', ' + data.herramientas + ' herramienta(s) y ' + data.productos + ' producto(s) en stock';
+                }
+                msg += '. Reasigna el técnico a otro vehículo antes de eliminar.';
+                mostrarAdvertencia('No se puede eliminar', msg);
+            } else if (data.herramientas > 0 || data.productos > 0) {
                 if (modalConfirm) modalConfirm.hide();
                 pendienteEliminar = id;
-                mostrarAdvertencia('Herramientas asignadas',
-                    'Este vehículo tiene ' + data.herramientas + ' herramienta(s). Se desasignarán y quedarán disponibles en Bodega Central.');
+                var partes = [];
+                if (data.herramientas > 0) partes.push(data.herramientas + ' herramienta(s)');
+                if (data.productos > 0) partes.push(data.productos + ' producto(s) en stock');
+                mostrarAdvertencia('Contenido del vehículo',
+                    'Este vehículo tiene ' + partes.join(' y ') + '. Se trasladarán a Bodega Central al eliminar.');
             } else {
                 ejecutarEliminarVehiculo(id);
             }

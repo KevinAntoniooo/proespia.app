@@ -81,7 +81,7 @@
                         <td class="d-none d-lg-table-cell">
                             {% if u.rol == 'tecnico' and u.rel_ubicacion %}
                             <span class="badge {% if u.tipo_asignacion == 'a_cargo' %}bg-success bg-opacity-10 text-success{% else %}bg-info bg-opacity-10 text-info{% endif %} rounded-pill">
-                                {{ 'A cargo' if u.tipo_asignacion == 'a_cargo' else 'Acompañante' }}
+                                {{ 'A cargo' if u.tipo_asignacion in ('a_cargo', None) else 'Acompañante' }}
                             </span>
                             {% else %}
                             <span class="text-muted">—</span>

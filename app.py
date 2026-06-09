@@ -2175,7 +2175,7 @@ def cambiar_estado_usuario(target_id, admin_id):
         elif request.form.get('tipo_asignacion_acompanante'):
             u_target.tipo_asignacion = 'acompanante'
         else:
-            u_target.tipo_asignacion = None
+            u_target.tipo_asignacion = 'a_cargo'
     elif nuevo_rol and nuevo_rol != 'tecnico':
         u_target.ubicacion_id = None
         u_target.tipo_asignacion = None
@@ -2989,7 +2989,8 @@ def vehiculo_check_eliminar(id):
     v = Vehiculo.query.get_or_404(id)
     tecnicos = Usuario.query.filter_by(ubicacion_id=v.ubicacion_id).count()
     herramientas = Herramienta.query.filter_by(vehiculo_id=v.id).count()
-    return jsonify({'tecnicos': tecnicos, 'herramientas': herramientas})
+    productos = ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).count() if v.ubicacion_id else 0
+    return jsonify({'tecnicos': tecnicos, 'herramientas': herramientas, 'productos': productos})
 
 @app.route('/api/vehiculos/eliminar/<int:id>', methods=['DELETE'])
 @login_required
