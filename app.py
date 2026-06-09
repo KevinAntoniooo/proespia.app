@@ -2845,9 +2845,6 @@ def traspaso_bodega():
                 return jsonify({'ok': False, 'msg': f'Stock insuficiente. Solo hay {prod.cantidad_actual}'}), 400
             prod.cantidad_actual -= cantidad
 
-        if hacia_id and desde_id and prod.cantidad_actual == 0:
-            db.session.delete(prod)
-
         if hacia_id:
             destino = ProductoStock.query.filter_by(
                 nombre=prod.nombre, marca=prod.marca, modelo=prod.modelo,
@@ -2870,6 +2867,8 @@ def traspaso_bodega():
             hacia_ubicacion_id=hacia_id, usuario_id=current_user.id
         )
         db.session.add(mov)
+        if desde_id and hacia_id and prod.cantidad_actual == 0:
+            db.session.delete(prod)
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'Traspaso realizado'})
     except Exception as e:
