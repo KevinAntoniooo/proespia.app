@@ -632,6 +632,15 @@ def registro_verificar_codigo():
         db.session.add(nuevo)
         db.session.commit()
 
+        # Notificar admins sobre nuevo registro pendiente
+        if rol_inicial == 'Pendiente':
+            notificar_admin(
+                'Nuevo registro pendiente',
+                f'{nuevo.nombre} ({nuevo.correo}) se ha registrado y espera activación.',
+                url_for('gestionar_usuarios', user_id=1),
+                tipo='info'
+            )
+
         # Limpiar sesión pendiente
         session.pop('pending_reg', None)
 
@@ -763,6 +772,13 @@ def login_google():
             )
             db.session.add(user)
             db.session.commit()
+            if rol_inicial == 'Pendiente':
+                notificar_admin(
+                    'Nuevo registro Google pendiente',
+                    f'{user.nombre} ({user.correo}) se registró con Google y espera activación.',
+                    url_for('gestionar_usuarios', user_id=1),
+                    tipo='info'
+                )
         except Exception as e:
             db.session.rollback()
             print(f"Error creando usuario Google: {e}")
@@ -1105,6 +1121,7 @@ def dashboard(user_id):
         total_equipos = Equipo.query.count()
         total_tecnicos = Usuario.query.filter_by(rol='tecnico').count()
         total_vehiculos = Vehiculo.query.count()
+        total_pendientes = Usuario.query.filter_by(rol='Pendiente').count()
 
         ultimas_bitacoras = Bitacora.query.order_by(Bitacora.fecha.desc()).limit(5).all()
         solicitudes_combustible = SolicitudCombustible.query.filter_by(estado='Pendiente').order_by(SolicitudCombustible.created_at.desc()).all()
@@ -1121,8 +1138,9 @@ def dashboard(user_id):
                                total_clientes=total_clientes,
                                total_equipos=total_equipos,
                                total_tecnicos=total_tecnicos,
-                               total_vehiculos=total_vehiculos,
-                               stock_total=total_items,
+                                total_vehiculos=total_vehiculos,
+                                total_pendientes=total_pendientes,
+                                stock_total=total_items,
                                stock_bodega=items_bodega,
                                 stock_criticos=criticos,
                                  ultimas_bitacoras=ultimas_bitacoras,
