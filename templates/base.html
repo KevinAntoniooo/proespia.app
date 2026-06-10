@@ -547,35 +547,39 @@
                     idSeleccionado: null,
                     datos: {},
                     cargando: false,
-                    seccionCargada: {},
-                    filtroClientes: '',
-                    filtroEquipos: '',
+                    pantallaAnterior: '',
                     cargarSeccion: function(seccion) {
                         var container = document.getElementById('spa-contenido-dinamico');
                         if (!container) { window.location.href = '/app#' + seccion; return; }
-                        if (this.seccionCargada[seccion] && this.pantallaActual === seccion) return;
-                        if (this.seccionCargada[seccion]) { this.pantallaActual = seccion; return; }
+                        if (this.pantallaActual === seccion) return;
+                        this.pantallaAnterior = this.pantallaActual;
                         this.cargando = true;
                         this.pantallaActual = seccion;
                         var self = this;
                         fetch('/api/spa/contenido/' + seccion + '?_=' + Date.now())
                             .then(function(r) { return r.json(); })
                             .then(function(resp) {
-                                if (resp.ok) {
-                                    self.seccionCargada[seccion] = true;
-                                    if (resp.html) {
-                                        container.innerHTML = resp.html;
-                                        var scripts = container.querySelectorAll('script');
-                                        scripts.forEach(function(os) {
-                                            var c = os.textContent.trim();
-                                            if (!c) return;
-                                            try { (new Function(c))(); } catch(e) { console.warn('SPA script error:', e); }
-                                        });
-                                    }
+                                if (resp.ok && resp.html) {
+                                    container.innerHTML = resp.html;
+                                    var scripts = container.querySelectorAll('script');
+                                    scripts.forEach(function(os) {
+                                        var c = os.textContent.trim();
+                                        if (!c) return;
+                                        try { (new Function(c))(); } catch(e) { console.warn('SPA script error:', e); }
+                                    });
+                                } else if (!resp.ok) {
+                                    var old = document.getElementById('spa-error-console');
+                                    if (!old) { old = document.createElement('div'); old.id = 'spa-error-console'; old.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:8px 16px;font-size:13px;font-family:monospace;max-height:120px;overflow:auto;'; document.body.appendChild(old); }
+                                    old.innerHTML = '<div><b>Error al cargar ' + seccion + ':</b> ' + (resp.error || 'desconocido') + '</div>' + old.innerHTML;
                                 }
                                 self.cargando = false;
                             })
-                            .catch(function() { self.cargando = false; });
+                            .catch(function() {
+                                self.cargando = false;
+                                var old = document.getElementById('spa-error-console');
+                                if (!old) { old = document.createElement('div'); old.id = 'spa-error-console'; old.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:8px 16px;font-size:13px;font-family:monospace;max-height:120px;overflow:auto;'; document.body.appendChild(old); }
+                                old.innerHTML = '<div><b>Error de red al cargar ' + seccion + '</b></div>' + old.innerHTML;
+                            });
                     }
                 };
             }
