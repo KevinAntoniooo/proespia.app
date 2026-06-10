@@ -1,6 +1,18 @@
 {% extends "base.html" %}
-
 {% block content %}
+
+<!-- Overlay de carga SPA -->
+<div x-show="cargando" x-transition.opacity.duration.200ms
+    class="spa-loader" style="display:none;">
+    <div class="spa-loader-box">
+        <i class="fa-solid fa-cloud fa-3x text-primary mb-2" style="animation: floatCloud 1.5s ease-in-out infinite;"></i>
+        <p class="text-muted fw-bold mb-0 mt-2" style="font-size:0.85rem;">Cargando...</p>
+    </div>
+</div>
+
+<!-- ===== INICIO (dashboard principal) ===== -->
+<div id="spa-inicio" x-show="pantallaActual === 'inicio'" x-transition.opacity.duration.300ms>
+
 <div class="row g-4 mb-3 align-items-center">
     <div class="col-12 col-md-6 text-start">
         <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-gauge-high me-2"></i>Panel de Control</h2>
@@ -545,23 +557,21 @@
             </div>
             <div class="modal-body p-4">
                 <div class="mb-3 text-start">
-                    <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Cliente / Empresa</label>
+                    <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Cliente</label>
                     <h5 class="fw-bold text-dark" id="modal-cliente-nombre">---</h5>
                 </div>
-                
                 <div class="row g-3 mb-3 text-start">
                     <div class="col-6">
-                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Hora Programada</label>
+                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Hora</label>
                         <p class="mb-0 fw-semibold" id="modal-hora">---</p>
                     </div>
                     <div class="col-6">
-                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Tipo de Trabajo</label>
+                        <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Tipo</label>
                         <p class="mb-0"><span class="badge bg-secondary-subtle text-secondary" id="modal-tipo">---</span></p>
                     </div>
                 </div>
-
                 <div class="mb-0 text-start">
-                    <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Instrucciones / Detalle</label>
+                    <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Detalle</label>
                     <div class="p-3 bg-light rounded-3 border">
                         <p class="mb-0 small" id="modal-descripcion">---</p>
                     </div>
@@ -574,63 +584,81 @@
                 </div>
             </div>
             <div class="modal-footer border-0 d-flex justify-content-between">
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-light btn-sm shadow-sm px-3 rounded-3" data-bs-dismiss="modal">Cerrar</button>
-                        <a id="modal-dash-btn-pdf" href="#" class="btn btn-outline-danger btn-sm shadow-sm px-3 rounded-3 d-none" target="_blank">
-                            <i class="fa-solid fa-file-pdf me-1"></i> PDF
-                        </a>
-                    </div>
-                    <div id="modal-footer-actions">
-                        <a id="modal-btn-gestionar" href="#" class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-3 d-none">
-                            <i class="fa-solid fa-wrench me-1"></i> Gestionar
-                        </a>
-                        <button id="modal-btn-listo" type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-3 d-none" onclick="confirmarFinalizarFromModal()">
-                            <i class="fa-solid fa-check me-1"></i> LISTO
-                        </button>
-                    </div>
+                <button type="button" class="btn btn-light btn-sm shadow-sm px-3 rounded-3" data-bs-dismiss="modal">Cerrar</button>
+                <div>
+                    <a id="modal-btn-gestionar" href="#" class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-3 d-none">
+                        <i class="fa-solid fa-wrench me-1"></i>Gestionar
+                    </a>
+                    <button id="modal-btn-listo" type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3 rounded-3 d-none" onclick="confirmarFinalizarFromModal()">
+                        <i class="fa-solid fa-check me-1"></i>LISTO
+                    </button>
                 </div>
+            </div>
+        </div>
     </div>
 </div>
+
 <script>
 function actualizarReloj() {
-    const ahora = new Date();
-    
-    // Configuración para la fecha
-    const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    
-    // Configuración para el reloj en formato 24h
-    const opcionesReloj = { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit', 
-        hour12: false  // <--- Esto es lo que activa el formato 24h
-    };
-
-    const reloj = document.getElementById('reloj');
-    const fecha = document.getElementById('fecha-actual');
-
-    if(reloj) {
-        // Aplicamos el formato 24h explícitamente
-        reloj.textContent = ahora.toLocaleTimeString('es-CL', opcionesReloj);
-    }
-    
-    if(fecha) {
-        // Formato para la fecha
-        fecha.textContent = ahora.toLocaleDateString('es-CL', opcionesFecha);
-    }
+    var ahora = new Date();
+    var reloj = document.getElementById('reloj');
+    var fecha = document.getElementById('fecha-actual');
+    if (reloj) reloj.textContent = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    if (fecha) fecha.textContent = ahora.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
-
 setInterval(actualizarReloj, 1000);
 actualizarReloj();
-document.addEventListener('DOMContentLoaded', function() {
-    var visitaFinalizarId = null;
-    function confirmarFinalizar(visitaId) {
-        visitaFinalizarId = visitaId;
-        document.getElementById('formFinalizarVisita').action = '/finalizar_visita/' + visitaId;
-        new bootstrap.Modal(document.getElementById('modalConfirmarFinalizar')).show();
-    }
-    window.confirmarFinalizar = confirmarFinalizar;
 
+// Cerrar offcanvas móvil al hacer clic en nav
+document.getElementById('sidebarMobile')?.addEventListener('click', function(e) {
+    var link = e.target.closest('a[href="#"]');
+    if (link) { var oc = bootstrap.Offcanvas.getInstance(this); if (oc) oc.hide(); }
+});
+
+// --- SPA Global API ---
+window.SPA = {
+    abrirModal: function(tipo, id) {
+        alert('Modal ' + tipo + ' ID: ' + id + ' - Implementación pendiente');
+    },
+    verVisita: function(id) {
+        fetch('/api/spa/visita/detalle', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id:id}) })
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+            if (!data.ok) { alert(data.error); return; }
+            document.getElementById('modal-cliente-nombre').textContent = data.cliente_nombre;
+            document.getElementById('modal-hora').textContent = data.fecha;
+            document.getElementById('modal-tipo').textContent = data.tipo_trabajo;
+            document.getElementById('modal-descripcion').textContent = data.descripcion || 'Sin descripción.';
+            var ub = document.getElementById('modal-ubicacion-container');
+            if (data.ubicacion) { ub.classList.remove('d-none'); document.getElementById('modal-ubicacion-maps').href = data.ubicacion; }
+            else { ub.classList.add('d-none'); }
+            var btnG = document.getElementById('modal-btn-gestionar');
+            var btnL = document.getElementById('modal-btn-listo');
+            var esOT = ['Instalación', 'Reparación', 'Emergencia'].indexOf(data.tipo_trabajo) !== -1 || data.tipo_trabajo.indexOf('Mantención') !== -1;
+            if (esOT) { btnG.classList.remove('d-none'); btnG.href = '/completar_visita/' + data.id + '/{{ usuario.id }}'; btnL.classList.add('d-none'); }
+            else { btnL.classList.remove('d-none'); btnL.setAttribute('data-visita-id', data.id); btnG.classList.add('d-none'); }
+            new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
+        });
+    },
+    buscar: function(seccion, q) {
+        fetch('/api/spa/contenido/' + seccion + '?q=' + encodeURIComponent(q))
+        .then(function(r){ return r.json(); })
+        .then(function(resp){ if(resp.ok && resp.html) document.getElementById('spa-'+seccion).innerHTML = resp.html; });
+    }
+};
+
+var visitaFinalizarId = null;
+window.confirmarFinalizar = function(visitaId) {
+    visitaFinalizarId = visitaId;
+    document.getElementById('formFinalizarVisita').action = '/finalizar_visita/' + visitaId;
+    new bootstrap.Modal(document.getElementById('modalConfirmarFinalizar')).show();
+};
+window.confirmarFinalizarFromModal = function() {
+    var id = document.getElementById('modal-btn-listo').getAttribute('data-visita-id');
+    if (id) window.confirmarFinalizar(id);
+};
+
+document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.marcar-atendido').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var id = this.getAttribute('data-id');
@@ -644,7 +672,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-
     var formComb = document.getElementById('formCombustible');
     if (formComb) {
         formComb.addEventListener('submit', function(e) {
@@ -673,85 +700,25 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    // Buscamos todas las cards que tengan la clase 'item-visita'
-    const items = document.querySelectorAll('.item-visita');
-    
-    items.forEach(item => {
-        item.addEventListener('click', function() {
-            var cliente = this.getAttribute('data-cliente');
-            var hora = this.getAttribute('data-hora');
-            var tipo = this.getAttribute('data-tipo');
-            var detalle = this.getAttribute('data-detalle');
-            var ubicacion = this.getAttribute('data-ubicacion');
+    var items = document.querySelectorAll('.item-visita');
+    items.forEach(function(item) {
+        item.addEventListener('click', function(e) {
+            if (e.target.closest('a,button')) return;
             var id = this.getAttribute('data-id');
-
-            document.getElementById('modal-cliente-nombre').textContent = cliente;
-            document.getElementById('modal-hora').textContent = hora;
-            document.getElementById('modal-tipo').textContent = tipo;
-            document.getElementById('modal-descripcion').textContent = detalle || "Sin descripción.";
-
-            var ubContainer = document.getElementById('modal-ubicacion-container');
-            var mapsBtn = document.getElementById('modal-ubicacion-maps');
-            if (ubicacion) {
-                ubContainer.classList.remove('d-none');
-                mapsBtn.href = ubicacion;
-            } else {
-                ubContainer.classList.add('d-none');
-            }
-
-            var btnGestionar = document.getElementById('modal-btn-gestionar');
-            var btnListo = document.getElementById('modal-btn-listo');
-            var btnPDF = document.getElementById('modal-dash-btn-pdf');
-            var informe = this.getAttribute('data-informe');
-            if (informe) {
-                btnPDF.href = '/reporte_visita_pdf/' + id + '/' + {{ usuario.id }};
-                btnPDF.classList.remove('d-none');
-            } else {
-                btnPDF.classList.add('d-none');
-            }
-            var esOT = ['Instalación', 'Reparación', 'Emergencia'].indexOf(tipo) !== -1 || tipo.indexOf('Mantención') !== -1;
-            if (esOT) {
-                btnGestionar.href = '/completar_visita/' + id + '/' + {{ usuario.id }};
-                btnGestionar.classList.remove('d-none');
-                btnListo.classList.add('d-none');
-            } else {
-                btnListo.setAttribute('data-visita-id', id);
-                btnListo.classList.remove('d-none');
-                btnGestionar.classList.add('d-none');
-            }
-
-            var myModal = new bootstrap.Modal(document.getElementById('modalDetalleVisita'));
-            myModal.show();
+            if (id) window.SPA.verVisita(parseInt(id));
         });
     });
-
-    window.confirmarFinalizarFromModal = function() {
-        var id = document.getElementById('modal-btn-listo').getAttribute('data-visita-id');
-        if (id) confirmarFinalizar(id);
-    };
 });
 </script>
 
 <style>
     .bg-primary-soft { background-color: #e0e7ff; }
     .bg-danger-soft { background-color: #fee2e2; }
-    .icon-box {
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+    .icon-box { border-radius: 10px; display: flex; align-items: center; justify-content: center; }
     .nav-tabs .nav-link { color: #6c757d; border: none; padding: 0.5rem 1rem; }
-    .nav-tabs .nav-link.active {
-        border: none;
-        border-bottom: 3px solid #0d6efd;
-        color: #0d6efd;
-        background: none;
-    }
+    .nav-tabs .nav-link.active { border: none; border-bottom: 3px solid #0d6efd; color: #0d6efd; background: none; }
     .badge.bg-success { background-color: #198754 !important; }
     .italic { font-style: italic; }
-    /* Ajuste para móviles */
     @media (max-width: 768px) {
         h2 { font-size: 1.4rem; }
         .card-body { padding: 0.75rem !important; }
@@ -759,4 +726,17 @@ document.addEventListener('DOMContentLoaded', function() {
         .item-visita .btn { font-size: 0.65rem !important; padding: 0.15rem 0.4rem !important; }
     }
 </style>
+
+</div><!-- /spa-inicio -->
+
+<!-- ===== SECCIONES VIRTUALES (cargadas vía AJAX) ===== -->
+<template x-for="sec in ['agenda','clientes','equipos','bitacora','fallas','boveda','personal','bodega']" :key="sec">
+    <div :id="'spa-'+sec" x-show="pantallaActual === sec" x-transition.opacity.duration.300ms>
+        <div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-spinner fa-spin fa-2x mb-3 d-block"></i>
+            <p class="fw-bold">Cargando sección...</p>
+        </div>
+    </div>
+</template>
+
 {% endblock %}

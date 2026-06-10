@@ -1,0 +1,35 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0"><i class="fa-solid fa-camera me-2"></i>Inventario de Equipos</h5>
+    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('equipo', null)">
+        <i class="fa-solid fa-plus me-1"></i>Nuevo
+    </button>
+</div>
+<div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar por serie..." x-model="filtroEquipos" @input.debounce="SPA.buscar('equipos', $el.value)">
+    </div>
+</div>
+<div class="table-responsive">
+    <table class="table table-borderless align-middle mb-0">
+        <thead class="text-muted small text-uppercase">
+            <tr><th>Serie</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Cliente</th><th class="text-end">Acción</th></tr>
+        </thead>
+        <tbody>
+            {% for e in equipos %}
+            <tr class="bg-white rounded-3 shadow-sm mb-1">
+                <td class="fw-bold font-monospace small">{{ e.serie }}</td>
+                <td class="small">{{ e.tipo or '—' }}</td>
+                <td class="small">{{ e.marca or '—' }}</td>
+                <td class="small">{{ e.modelo or '—' }}</td>
+                <td class="small">{{ e.cliente_nombre }}</td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary rounded-circle" style="width:30px;height:30px;" onclick="SPA.abrirModal('equipo', {{ e.id }})"><i class="fa-solid fa-pen"></i></button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center py-5 text-muted"><i class="fa-solid fa-box-open fa-2x mb-2 d-block"></i>Sin equipos registrados</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

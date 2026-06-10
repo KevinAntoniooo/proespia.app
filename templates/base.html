@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script defer src="{{ url_for('static', filename='js/alpine.min.js') }}"></script>
     <script>if (localStorage.getItem('darkMode') === 'enabled' || (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme:dark)').matches)) { document.documentElement.classList.add('dark-mode') }</script>
     <script>if (document.documentElement.classList.contains('dark-mode')){var _x=document.createElement('style');_x.textContent='body{background:#0f172a!important}[style*="background:#fff"],[style*="background: #fff"]{background:#1e293b!important}[style*="color:#1e293b"],[style*="color: #1e293b"]{color:#f1f5f9!important}[style*="border-color:#e2e8f0"],[style*="border-color: #e2e8f0"]{border-color:rgba(255,255,255,0.08)!important}';document.head.appendChild(_x)}</script>
     <style>
@@ -163,10 +164,15 @@
             background-color: rgba(56,189,248,0.2);
             transform: scale(0.98);
         }
+        .active-style { background: rgba(99,102,241,0.12) !important; color: #6366f1 !important; border-right: 3px solid #6366f1; }
+        html.dark-mode .active-style { background: rgba(99,102,241,0.2) !important; color: #818cf8 !important; }
+        .spa-loader { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); z-index:99998; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .spa-loader .spa-loader-box { background:#fff; border-radius:20px; padding:1.5rem 2rem; box-shadow:0 20px 40px rgba(0,0,0,0.25); text-align:center; }
+        @keyframes floatCloud{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
     </style>
 </head>
 
-<body>
+<body x-data="{ pantallaActual: 'agenda', modalAbierto: false, idSeleccionado: null, datos: {}, cargando: false, seccionCargada: {}, filtroClientes: '', filtroEquipos: '', cargarSeccion(seccion) { if (this.seccionCargada[seccion] && pantallaActual===seccion) return; if (this.seccionCargada[seccion]) { this.pantallaActual = seccion; return }; this.cargando = true; this.pantallaActual = seccion; fetch('/api/spa/contenido/' + seccion).then(r=>r.json()).then(resp=>{ if(resp.ok){ this.seccionCargada[seccion]=true; if(resp.html){ var el = document.getElementById('spa-'+seccion); if (el) el.innerHTML = resp.html; else document.getElementById('spa-inicio').insertAdjacentHTML('afterend', '<div id=\"spa-'+seccion+'\">'+resp.html+'</div>') } } this.cargando=false; }).catch(()=>{ this.cargando=false }) } }">
     <div id="loading-bar-mask"
         style="position:fixed;top:0;left:0;right:0;height:3px;background:#0f172a;z-index:99999;pointer-events:none;">
     </div>
@@ -215,73 +221,55 @@
                 <img src="{{ url_for('static', filename='img/logo-proespia.png') }}" class="img-fluid side-logo">
             </div>
             <nav class="nav flex-column px-2 mt-2 flex-grow-1" aria-label="Navegación principal">
-                <a href="{{ url_for('dashboard', user_id=usuario.id) }}"
-                    class="nav-link-pro {{ 'active' if 'dashboard' in request.endpoint }}">
+                <a href="#" @click="cargarSeccion('inicio')"
+                    class="nav-link-pro" :class="pantallaActual === 'inicio' ? 'active-style' : ''">
                     <i class="fa-solid fa-house"></i> <span>Inicio</span>
                 </a>
-                <a href="/equipos/{{ usuario.id }}" class="nav-link-pro {{ 'active' if 'equipo' in request.endpoint }}">
+                <a href="#" @click="cargarSeccion('equipos')"
+                    class="nav-link-pro" :class="pantallaActual === 'equipos' ? 'active-style' : ''">
                     <i class="fa-solid fa-camera"></i> <span>Inventario</span>
                 </a>
-                <a href="/clientes/{{ usuario.id }}"
-                    class="nav-link-pro {{ 'active' if 'cliente' in request.endpoint }}">
+                <a href="#" @click="cargarSeccion('clientes')"
+                    class="nav-link-pro" :class="pantallaActual === 'clientes' ? 'active-style' : ''">
                     <i class="fa-solid fa-users"></i> <span>Clientes</span>
                 </a>
 
                 {% if usuario.rol in ['super_su', 'admin', 'operador'] %}
-                <a href="/bitacora/{{ usuario.id }}"
-                    class="nav-link-pro {{ 'active' if 'bitacora' in request.endpoint }}">
+                <a href="#" @click="cargarSeccion('bitacora')"
+                    class="nav-link-pro" :class="pantallaActual === 'bitacora' ? 'active-style' : ''">
                     <i class="fa-solid fa-file-lines"></i> <span>Bitácora Digital</span>
                 </a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}"
-                    class="nav-link-pro {{ 'active' if 'tareas' in request.path }}">
+                <a href="#" @click="cargarSeccion('fallas')"
+                    class="nav-link-pro" :class="pantallaActual === 'fallas' ? 'active-style' : ''">
                     <i class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
                     {% if pendientes_fallas and pendientes_fallas > 0 %}<span class="badge bg-danger rounded-pill ms-auto">{{ pendientes_fallas }}</span>{% endif %}
                 </a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="{{ url_for('ver_agenda', user_id=usuario.id) }}"
-                    class="nav-link-pro {{ 'active' if 'agenda' in request.path }}">
+                <a href="#" @click="cargarSeccion('agenda')"
+                    class="nav-link-pro" :class="pantallaActual === 'agenda' ? 'active-style' : ''">
                     <i class="fa-solid fa-calendar-check"></i> <span>Agenda de Terreno</span>
                     {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}
                 </a>
-                {% endif %}
-
-                {% if usuario.rol in ['tecnico'] %}
-                <a href="{{ url_for('gestor_visitas', user_id=usuario.id) }}"
-                    class="nav-link-pro {{ 'active' if 'gestor_visitas' in request.endpoint }}">
-                    <i class="fa-solid fa-calendar-check"></i> <span>Agenda de Terreno</span>
-                    {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}
-                </a>
-                {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="/boveda/{{ usuario.id }}" class="nav-link-pro {{ 'active' if 'boveda' in request.endpoint }}">
+                <a href="#" @click="cargarSeccion('boveda')"
+                    class="nav-link-pro" :class="pantallaActual === 'boveda' ? 'active-style' : ''">
                     <i class="fa-solid fa-table-cells-large"></i> <span>Bóveda Apps</span>
                 </a>
-                <a href="/usuarios/{{ usuario.id }}"
-                    class="nav-link-pro {{ 'active' if 'usuario' in request.endpoint }}">
+                <a href="#" @click="cargarSeccion('personal')"
+                    class="nav-link-pro" :class="pantallaActual === 'personal' ? 'active-style' : ''">
                     <i class="fa-solid fa-user-gear"></i> <span>Personal</span>
                 </a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
-                <a href="/inventario/bodega/{{ usuario.id }}"
-                    class="nav-link-pro {{ 'active' if 'bodega' in request.endpoint }}">
+                <a href="#" @click="cargarSeccion('bodega')"
+                    class="nav-link-pro" :class="pantallaActual === 'bodega' ? 'active-style' : ''">
                     <i class="fa-solid fa-warehouse"></i> <span>Bodega Técnica</span>
-                </a>
-                {% endif %}
-                {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="/inventario/vehiculos" class="nav-link-pro {{ 'active' if 'vehiculos' in request.endpoint }}">
-                    <i class="fa-solid fa-truck"></i> <span>Vehículos</span>
-                </a>
-                {% endif %}
-                {% if usuario.rol in ['tecnico'] %}
-                <a href="/checklist/viernes" class="nav-link-pro {{ 'active' if 'checklist' in request.endpoint }}">
-                    <i class="fa-solid fa-clipboard-check"></i> <span>Checklist</span>
                 </a>
                 {% endif %}
             </nav>
@@ -302,7 +290,17 @@
         <div class="main-content-pro">
             <header class="top-bar-pro d-none d-md-flex">
                 <div class="page-title">
-                    <h5 class="mb-0 fw-bold heading-font" style="color: var(--text-heading);">Panel de Gestión</h5>
+                    <h5 class="mb-0 fw-bold heading-font" style="color: var(--text-heading);" x-text="{
+                        'inicio': 'Panel de Control',
+                        'equipos': 'Inventario de Equipos',
+                        'clientes': 'Clientes y Sedes',
+                        'bitacora': 'Bitácora Digital',
+                        'fallas': 'Gestión de Fallas',
+                        'agenda': 'Agenda de Terreno',
+                        'boveda': 'Bóveda Apps',
+                        'personal': 'Gestión de Personal',
+                        'bodega': 'Bodega Técnica',
+                    }[pantallaActual] || 'Panel de Gestión'">Panel de Gestión</h5>
                     <small style="color: var(--text-muted);">PRO ESPÍA - Central de Monitoreo</small>
                 </div>
                 <div class="d-flex align-items-center gap-3">
@@ -413,53 +411,46 @@
         </div>
         <div class="offcanvas-body p-0 d-flex flex-column">
             <nav class="nav flex-column p-3 flex-grow-1" aria-label="Navegación móvil">
-                <a href="{{ url_for('dashboard', user_id=usuario.id) }}" class="nav-link-pro"><i
+                <a href="#" @click="cargarSeccion('inicio')"
+                    class="nav-link-pro" :class="pantallaActual === 'inicio' ? 'active-style' : ''"><i
                         class="fa-solid fa-house"></i> <span>Inicio</span></a>
-                <a href="/equipos/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-camera"></i>
+                <a href="#" @click="cargarSeccion('equipos')"
+                    class="nav-link-pro" :class="pantallaActual === 'equipos' ? 'active-style' : ''"><i class="fa-solid fa-camera"></i>
                     <span>Inventario</span></a>
-                <a href="/clientes/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-users"></i>
+                <a href="#" @click="cargarSeccion('clientes')"
+                    class="nav-link-pro" :class="pantallaActual === 'clientes' ? 'active-style' : ''"><i class="fa-solid fa-users"></i>
                     <span>Clientes</span></a>
 
                 {% if usuario.rol in ['super_su', 'admin', 'operador'] %}
-                <a href="/bitacora/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-file-lines"></i>
+                <a href="#" @click="cargarSeccion('bitacora')"
+                    class="nav-link-pro" :class="pantallaActual === 'bitacora' ? 'active-style' : ''"><i class="fa-solid fa-file-lines"></i>
                     <span>Bitácora Digital</span></a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="{{ url_for('ver_todas_las_tareas', user_id=usuario.id) }}" class="nav-link-pro"><i
+                <a href="#" @click="cargarSeccion('fallas')"
+                    class="nav-link-pro" :class="pantallaActual === 'fallas' ? 'active-style' : ''"><i
                         class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
                     {% if pendientes_fallas and pendientes_fallas > 0 %}<span class="badge bg-danger rounded-pill ms-auto">{{ pendientes_fallas }}</span>{% endif %}</a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="{{ url_for('ver_agenda', user_id=usuario.id) }}" class="nav-link-pro"><i
+                <a href="#" @click="cargarSeccion('agenda')"
+                    class="nav-link-pro" :class="pantallaActual === 'agenda' ? 'active-style' : ''"><i
                         class="fa-solid fa-calendar-check"></i> <span>Agenda de Terreno</span>
                     {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}</a>
-                {% endif %}
-
-                {% if usuario.rol in ['tecnico'] %}
-                <a href="{{ url_for('gestor_visitas', user_id=usuario.id) }}" class="nav-link-pro"><i
-                        class="fa-solid fa-calendar-check"></i> <span>Agenda de Terreno</span>
-                    {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}</a>
-                {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="/boveda/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-table-cells-large"></i>
+                <a href="#" @click="cargarSeccion('boveda')"
+                    class="nav-link-pro" :class="pantallaActual === 'boveda' ? 'active-style' : ''"><i class="fa-solid fa-table-cells-large"></i>
                     <span>Bóveda Apps</span></a>
-                <a href="/usuarios/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-user-gear"></i>
+                <a href="#" @click="cargarSeccion('personal')"
+                    class="nav-link-pro" :class="pantallaActual === 'personal' ? 'active-style' : ''"><i class="fa-solid fa-user-gear"></i>
                     <span>Personal</span></a>
                 {% endif %}
                 {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
-                <a href="/inventario/bodega/{{ usuario.id }}" class="nav-link-pro"><i class="fa-solid fa-warehouse"></i>
+                <a href="#" @click="cargarSeccion('bodega')"
+                    class="nav-link-pro" :class="pantallaActual === 'bodega' ? 'active-style' : ''"><i class="fa-solid fa-warehouse"></i>
                     <span>Bodega Técnica</span></a>
-                {% endif %}
-                {% if usuario.rol in ['super_su', 'admin'] %}
-                <a href="/inventario/vehiculos" class="nav-link-pro"><i class="fa-solid fa-truck"></i>
-                    <span>Vehículos</span></a>
-                {% endif %}
-                {% if usuario.rol in ['tecnico'] %}
-                <a href="/checklist/viernes" class="nav-link-pro"><i class="fa-solid fa-clipboard-check"></i>
-                    <span>Checklist</span></a>
                 {% endif %}
             </nav>
 

@@ -60,12 +60,13 @@ _db_url = os.environ.get('DATABASE_URL', 'sqlite:///database.db')
 if _db_url.startswith('postgres://'):
     _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = _db_url
+_is_postgres = _db_url.startswith('postgresql://')
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
     'pool_recycle': 300,
     'pool_size': 10,
     'max_overflow': 20,
-    'connect_args': {'sslmode': 'require', 'connect_timeout': 10}
+    'connect_args': {'sslmode': 'require', 'connect_timeout': 10} if _is_postgres else {}
 }
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'proespiapt_seguridad_2026')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -3872,6 +3873,164 @@ with app.app_context():
         db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
         db.session.commit()
         print('Ubicación Bodega Central creada por defecto.')
+
+# ==========================================
+# 12.13 API SPA — CONTENIDO PARCIAL PARA ENRUTAMIENTO VIRTUAL
+# ==========================================
+from functools import wraps
+
+def json_api(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'ok': False, 'error': str(e)}), 500
+    return decorated
+
+@app.route('/api/spa/contenido/<seccion>', methods=['GET'])
+@login_required
+def api_spa_contenido(seccion):
+    """Retorna HTML parcial para inyectar en el SPA vía AJAX."""
+    user_id = current_user.id
+    u = current_user
+    data = {}
+
+    if seccion == 'inicio':
+        # Dashboard stats inline — ya está en dashboard.html
+        return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=user_id)})
+
+    elif seccion == 'clientes':
+        if not u.puede_acceder():
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        busqueda = request.args.get('q', '')
+        page = request.args.get('page', 1, type=int)
+        query = Cliente.query.order_by(Cliente.nombre)
+        if busqueda:
+            query = query.filter(Cliente.nombre.ilike(f'%{busqueda}%'))
+        pagination = query.paginate(page=page, per_page=15, error_out=False)
+        data = {
+            'clientes': [{'id': c.id, 'nombre': c.nombre, 'direccion': c.direccion or '', 'telefono': c.telefono or '', 'contacto': c.contacto or '', 'equipos_count': c.equipos.count()} for c in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'page': page,
+            'busqueda': busqueda,
+        }
+        html = render_template('partials/spa_clientes.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': pagination.total})
+
+    elif seccion == 'equipos':
+        if not u.puede_acceder():
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        busqueda = request.args.get('q', '')
+        page = request.args.get('page', 1, type=int)
+        query = Equipo.query.order_by(Equipo.serie)
+        if busqueda:
+            query = query.filter(Equipo.serie.ilike(f'%{busqueda}%'))
+        pagination = query.paginate(page=page, per_page=15, error_out=False)
+        data = {
+            'equipos': [{'id': e.id, 'serie': e.serie, 'tipo': e.tipo or '', 'marca': e.marca or '', 'modelo': e.modelo or '', 'cliente_nombre': e.rel_cliente.nombre if e.rel_cliente else '—'} for e in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'page': page,
+            'busqueda': busqueda,
+            'usuario': u,
+        }
+        html = render_template('partials/spa_equipos.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': pagination.total})
+
+    elif seccion == 'bitacora':
+        if u.rol not in ['super_su', 'admin', 'operador']:
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        page = request.args.get('page', 1, type=int)
+        pagination = Bitacora.query.order_by(Bitacora.fecha.desc()).paginate(page=page, per_page=15, error_out=False)
+        data = {
+            'bitacoras': [{'id': b.id, 'cliente_nombre': b.rel_cliente.nombre if b.rel_cliente else '—', 'tipo_visita': b.tipo_visita or '—', 'fecha': b.fecha.strftime('%d/%m/%Y'), 'descripcion': b.descripcion or '', 'prioridad': b.prioridad} for b in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'page': page,
+        }
+        html = render_template('partials/spa_bitacora.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': pagination.total})
+
+    elif seccion == 'agenda':
+        if u.rol not in ['super_su', 'admin', 'tecnico']:
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        visitas = VisitaProgramada.query.filter(
+            VisitaProgramada.estado == 'Pendiente'
+        ).order_by(VisitaProgramada.fecha_programada.asc()).limit(20).all()
+        data = {
+            'visitas': [{
+                'id': v.id,
+                'cliente_nombre': v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo',
+                'tipo_trabajo': v.tipo_trabajo,
+                'fecha': v.fecha_programada.strftime('%d/%m/%Y %H:%M'),
+                'descripcion': v.descripcion or '',
+                'ubicacion': v.ubicacion or '',
+                'estado': v.estado,
+                'informe': bool(v.informe_tecnico),
+            } for v in visitas],
+            'total': len(visitas),
+            'usuario': u,
+        }
+        html = render_template('partials/spa_agenda.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': len(visitas)})
+
+    elif seccion == 'bodega':
+        if u.rol not in ['super_su', 'admin', 'tecnico']:
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        page = request.args.get('page', 1, type=int)
+        pagination = ProductoStock.query.order_by(ProductoStock.nombre).paginate(page=page, per_page=20, error_out=False)
+        data = {
+            'productos': [{'id': p.id, 'nombre': p.nombre, 'codigo': p.codigo or '', 'cantidad': p.cantidad, 'categoria': p.categoria_rel.nombre if p.categoria_rel else '—', 'ubicacion': p.ubicacion_rel.nombre if p.ubicacion_rel else '—'} for p in pagination.items],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'page': page,
+        }
+        html = render_template('partials/spa_bodega.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': pagination.total})
+
+    elif seccion == 'personal':
+        if u.rol not in ['super_su', 'admin']:
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        usuarios = Usuario.query.order_by(Usuario.nombre).all()
+        data = {
+            'usuarios': [{'id': us.id, 'nombre': us.nombre, 'correo': us.correo or '', 'rol': us.rol, 'estado': us.estado} for us in usuarios],
+            'total': len(usuarios),
+        }
+        html = render_template('partials/spa_personal.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': len(usuarios)})
+
+    else:
+        return jsonify({'ok': False, 'error': 'Sección no encontrada'}), 404
+
+
+@app.route('/api/spa/visita/detalle', methods=['POST'])
+@login_required
+@json_api
+def api_spa_visita_detalle():
+    data = request.get_json()
+    visita_id = data.get('id')
+    if not visita_id:
+        return jsonify({'ok': False, 'error': 'ID requerido'}), 400
+    v = VisitaProgramada.query.get_or_404(visita_id)
+    # Seguridad: técnico solo ve sus visitas
+    if current_user.rol == 'tecnico' and v.usuario_id != current_user.id:
+        return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+    return jsonify({
+        'ok': True,
+        'id': v.id,
+        'cliente_nombre': v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo',
+        'tipo_trabajo': v.tipo_trabajo,
+        'fecha': v.fecha_programada.strftime('%d/%m/%Y %H:%M'),
+        'descripcion': v.descripcion or '',
+        'ubicacion': v.ubicacion or '',
+        'estado': v.estado,
+        'tiene_informe': bool(v.informe_tecnico),
+        'informe_tecnico': v.informe_tecnico or '',
+    })
+
 
 # ==========================================
 # 13. MANEJADORES DE ERROR (404 / 500)

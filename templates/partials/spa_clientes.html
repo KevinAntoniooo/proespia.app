@@ -1,0 +1,40 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0"><i class="fa-solid fa-users me-2"></i>Clientes</h5>
+    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('cliente', null)">
+        <i class="fa-solid fa-plus me-1"></i>Nuevo
+    </button>
+</div>
+<div class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar cliente..." x-model="filtroClientes" @input.debounce="SPA.buscar('clientes', $el.value)">
+    </div>
+</div>
+<div class="table-responsive">
+    <table class="table table-borderless align-middle mb-0">
+        <thead class="text-muted small text-uppercase">
+            <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Contacto</th>
+                <th class="text-center">Equipos</th>
+                <th class="text-end">Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in clientes %}
+            <tr class="bg-white rounded-3 shadow-sm mb-1" style="border-radius:12px!important;">
+                <td class="fw-bold">{{ c.nombre }}</td>
+                <td class="small text-muted">{{ c.direccion or '—' }}</td>
+                <td class="small">{{ c.contacto or '—' }}</td>
+                <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">{{ c.equipos_count }}</span></td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" style="width:30px;height:30px;" onclick="SPA.abrirModal('cliente', {{ c.id }})"><i class="fa-solid fa-pen"></i></button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>Sin clientes registrados</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

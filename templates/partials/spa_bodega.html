@@ -1,0 +1,28 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2"></i>Bodega Técnica</h5>
+    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('producto', null)">
+        <i class="fa-solid fa-plus me-1"></i>Agregar
+    </button>
+</div>
+<div class="table-responsive">
+    <table class="table table-borderless align-middle mb-0">
+        <thead class="text-muted small text-uppercase">
+            <tr><th>Producto</th><th>Código</th><th>Categoría</th><th>Ubicación</th><th class="text-center">Stock</th></tr>
+        </thead>
+        <tbody>
+            {% for p in productos %}
+            <tr class="bg-white rounded-3 shadow-sm mb-1">
+                <td class="fw-bold small">{{ p.nombre }}</td>
+                <td class="font-monospace small text-muted">{{ p.codigo or '—' }}</td>
+                <td><span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ p.categoria }}</span></td>
+                <td class="small text-muted">{{ p.ubicacion }}</td>
+                <td class="text-center">
+                    <span class="badge bg-{{ 'danger' if p.cantidad <= 3 else 'success' }} rounded-pill">{{ p.cantidad }}</span>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-box-open fa-2x mb-2 d-block"></i>Bodega vacía</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

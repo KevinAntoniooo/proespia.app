@@ -1,0 +1,25 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0"><i class="fa-solid fa-user-gear me-2"></i>Personal</h5>
+    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('usuario', null)">
+        <i class="fa-solid fa-plus me-1"></i>Nuevo
+    </button>
+</div>
+<div class="table-responsive">
+    <table class="table table-borderless align-middle mb-0">
+        <thead class="text-muted small text-uppercase">
+            <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+            {% for us in usuarios %}
+            <tr class="bg-white rounded-3 shadow-sm mb-1">
+                <td class="fw-bold small">{{ us.nombre }}</td>
+                <td class="small text-muted">{{ us.correo }}</td>
+                <td><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">{{ us.rol }}</span></td>
+                <td><span class="badge bg-{{ 'success' if us.estado == 'Activo' else 'danger' }} rounded-pill">{{ us.estado }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center py-5 text-muted"><i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>Sin usuarios</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

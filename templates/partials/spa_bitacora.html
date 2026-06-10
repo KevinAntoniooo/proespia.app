@@ -1,0 +1,26 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0"><i class="fa-solid fa-file-lines me-2"></i>Bitácora Digital</h5>
+    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('bitacora', null)">
+        <i class="fa-solid fa-plus me-1"></i>Nuevo
+    </button>
+</div>
+<div class="table-responsive">
+    <table class="table table-borderless align-middle mb-0">
+        <thead class="text-muted small text-uppercase">
+            <tr><th>Cliente</th><th>Tipo</th><th>Fecha</th><th>Prioridad</th><th>Acción</th></tr>
+        </thead>
+        <tbody>
+            {% for b in bitacoras %}
+            <tr class="bg-white rounded-3 shadow-sm mb-1">
+                <td class="fw-bold small">{{ b.cliente_nombre }}</td>
+                <td><span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ b.tipo_visita }}</span></td>
+                <td class="small text-muted">{{ b.fecha }}</td>
+                <td><span class="badge bg-{{ {1:'danger',2:'warning',3:'primary'}[b.prioridad] or 'secondary' }} rounded-pill">P{{ b.prioridad }}</span></td>
+                <td><button class="btn btn-sm btn-outline-secondary rounded-circle" style="width:30px;height:30px;"><i class="fa-solid fa-eye"></i></button></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-file-circle-plus fa-2x mb-2 d-block"></i>Sin registros en bitácora</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
