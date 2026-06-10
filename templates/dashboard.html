@@ -24,16 +24,16 @@
             <p class="text-muted small mb-0" id="fecha-actual" style="font-size: 0.7rem;"></p>
         </div>
         {% if usuario.rol in ['admin', 'super_su'] and total_pendientes > 0 %}
-        <div class="d-block d-lg-none mt-2">
-            <a href="{{ url_for('gestionar_usuarios', user_id=usuario.id) }}" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 py-2 px-3 border-start border-3 border-warning pulse-card">
-                    <div class="d-flex align-items-center gap-2">
+        <div class="d-block d-lg-none mt-2 w-100">
+            <a href="{{ url_for('gestionar_usuarios', user_id=usuario.id) }}" class="text-decoration-none d-block w-100">
+                <div class="card border-0 shadow-sm rounded-4 py-3 px-4 border-start border-3 border-warning pulse-card">
+                    <div class="d-flex align-items-center gap-3">
                         <div class="bg-warning bg-opacity-10 rounded-3 p-2 lh-1">
                             <i class="fa-solid fa-user-clock fs-5 text-warning"></i>
                         </div>
-                        <div class="lh-1">
-                            <small class="text-muted text-uppercase fw-bold" style="font-size:0.55rem!important;letter-spacing:0.5px">Activaciones Pendientes</small>
-                            <h5 class="fw-bold mb-0 text-warning">{{ total_pendientes }}</h5>
+                        <div class="text-start">
+                            <small class="text-muted text-uppercase fw-bold" style="font-size:0.6rem!important;letter-spacing:0.5px">Activaciones Pendientes</small>
+                            <h5 class="fw-bold mb-0 text-warning">{{ total_pendientes }} usuario(s) esperando</h5>
                         </div>
                     </div>
                 </div>
