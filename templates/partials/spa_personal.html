@@ -6,16 +6,20 @@
 <ul class="nav nav-pills nav-justified mb-4" id="usersTab" role="tablist" style="background:var(--bg-card);border-radius:14px;padding:6px;border:1px solid var(--border-subtle);">
     <li class="nav-item" role="presentation">
         <button class="nav-link active fw-semibold" id="tab-personal-btn" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab">
-            <i class="fa-solid fa-users-gear me-1"></i> Personal Activo
-            <span class="badge bg-dark ms-1">{{ usuarios|length }}</span>
+            <span class="d-inline-flex align-items-center gap-1 text-nowrap">
+                <i class="fa-solid fa-users-gear"></i> Personal Activo
+                <span class="badge bg-dark">{{ usuarios|length }}</span>
+            </span>
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link fw-semibold position-relative" id="tab-pendientes-btn" data-bs-toggle="tab" data-bs-target="#tab-pendientes" type="button" role="tab">
-            <i class="fa-solid fa-user-clock me-1"></i> Pendientes
-            {% if pendientes %}
-            <span class="badge bg-warning text-dark ms-1">{{ pendientes|length }}</span>
-            {% endif %}
+            <span class="d-inline-flex align-items-center gap-1 text-nowrap">
+                <i class="fa-solid fa-user-clock"></i> Pendientes
+                {% if pendientes %}
+                <span class="badge bg-warning text-dark">{{ pendientes|length }}</span>
+                {% endif %}
+            </span>
         </button>
     </li>
 </ul>
