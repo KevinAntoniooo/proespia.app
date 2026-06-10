@@ -561,14 +561,12 @@
                                         var el = document.getElementById('spa-contenido-dinamico');
                                         if (el) {
                                             el.innerHTML = resp.html;
-                                            // Re-ejecutar scripts inline (try/catch para que un error no mate los demas)
-                                            el.querySelectorAll('script').forEach(function(os) {
-                                                try {
-                                                    var ns = document.createElement('script');
-                                                    os.getAttributeNames().forEach(function(a) { ns.setAttribute(a, os.getAttribute(a)); });
-                                                    ns.textContent = os.textContent;
-                                                    os.parentNode.replaceChild(ns, os);
-                                                } catch(e) { console.warn('Script error:', e); }
+                                            // Ejecutar scripts inline via new Function (global scope)
+                                            var scripts = el.querySelectorAll('script');
+                                            scripts.forEach(function(os) {
+                                                var c = os.textContent.trim();
+                                                if (!c) return;
+                                                try { (new Function(c))(); } catch(e) { console.warn('SPA script error:', e); }
                                             });
                                         }
                                     }
@@ -582,6 +580,11 @@
         };
     </script>
     <script>
+        window.addEventListener('error', function(e) {
+            var div = document.getElementById('spa-error-console');
+            if (!div) { div = document.createElement('div'); div.id = 'spa-error-console'; div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:8px 16px;font-size:13px;font-family:monospace;max-height:120px;overflow:auto;'; document.body.appendChild(div); }
+            div.innerHTML = '<div>' + (e.message || e.error || 'Error') + '</div>' + div.innerHTML;
+        });
         function recargarSeccionSPA(seccion) {
             var el = document.getElementById('spa-contenido-dinamico');
             if (!el) return;
@@ -591,12 +594,9 @@
                     if (resp.ok && resp.html) {
                         el.innerHTML = resp.html;
                         el.querySelectorAll('script').forEach(function(os) {
-                            try {
-                                var ns = document.createElement('script');
-                                os.getAttributeNames().forEach(function(a) { ns.setAttribute(a, os.getAttribute(a)); });
-                                ns.textContent = os.textContent;
-                                os.parentNode.replaceChild(ns, os);
-                            } catch(e) { console.warn('Script error:', e); }
+                            var c = os.textContent.trim();
+                            if (!c) return;
+                            try { (new Function(c))(); } catch(e) { console.warn('SPA script error:', e); }
                         });
                     }
                 });
