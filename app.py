@@ -174,7 +174,7 @@ def requiere_admin(view):
             return redirect(url_for('login'))
         if current_user.rol not in ('admin', 'super_su'):
             flash('Acceso restringido a administradores.', 'danger')
-            return redirect(url_for('dashboard', user_id=current_user.id))
+            return redirect(url_for('app_home'))
         if not current_user.puede_acceder():
             return redirect(url_for('espera'))
         return view(*args, **kwargs)
@@ -426,7 +426,7 @@ def login():
     # 1. Redirección automática si ya hay sesión activa
     if current_user.is_authenticated:
         if current_user.puede_acceder():
-            return redirect(url_for('dashboard', user_id=current_user.id))
+            return redirect(url_for('app_home'))
         return redirect(url_for('espera'))
 
     if request.method == 'POST':
@@ -451,7 +451,7 @@ def login():
                 flash('Tu cuenta está en trámite de activación.', 'info')
                 return redirect(url_for('espera'))
             flash(f'Bienvenido de nuevo, {user.nombre}', 'success')
-            return redirect(url_for('dashboard', user_id=user.id))
+            return redirect(url_for('app_home'))
 
         flash('Credenciales incorrectas. Por favor, verifique sus datos.', 'warning')
 
@@ -463,7 +463,7 @@ def login():
 @app.route('/registro', methods=['GET'])
 def registro():
     if current_user.is_authenticated:
-        return redirect(url_for('espera') if not current_user.puede_acceder() else url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('espera') if not current_user.puede_acceder() else url_for('app_home'))
     return render_template('registro.html')
 
 
@@ -641,7 +641,7 @@ def registro_verificar_codigo():
 
         if nuevo.rol == 'Pendiente':
             return jsonify({'ok': True, 'redirect': url_for('espera')})
-        return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=nuevo.id)})
+        return jsonify({'ok': True, 'redirect': url_for('app_home')})
     except IntegrityError:
         db.session.rollback()
         return jsonify({'ok': False, 'msg': 'Conflicto: ese nombre de usuario ya existe. Contacta al administrador.'}), 409
@@ -779,7 +779,7 @@ def login_google():
     login_user(user)
     if user.rol == 'Pendiente':
         return jsonify({'ok': True, 'redirect': url_for('espera')})
-    return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=user.id)})
+    return jsonify({'ok': True, 'redirect': url_for('app_home')})
 
 @app.route('/login/google/callback')
 def login_google_callback():
@@ -878,7 +878,7 @@ def espera():
     if not current_user.is_authenticated:
         return redirect(url_for('login'))
     if current_user.puede_acceder():
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('app_home'))
     return render_template('espera.html', usuario=current_user)
 
 @app.route('/logout')
@@ -965,6 +965,11 @@ def admin_wipe_db():
 # 4. DASHBOARD PRINCIPAL
 # ==========================================
 from datetime import datetime, time, date
+
+@app.route('/app')
+@require_active_user
+def app_home():
+    return dashboard(current_user.id)
 
 @app.route('/dashboard/<int:user_id>')
 @require_active_user
@@ -3095,7 +3100,7 @@ def solicitar_combustible():
         notificar_admin(
             'Solicitud de Combustible',
             f'{current_user.nombre} solicita ${monto:,} para {vehiculo.placa}. KM actual: {km:,}',
-            url_for('dashboard', user_id=1),
+            url_for('app_home'),
             tipo='combustible'
         )
         return jsonify({'ok': True, 'msg': 'Solicitud enviada al administrador'})
@@ -3127,11 +3132,11 @@ DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
 def checklist_viernes():
     if current_user.rol != 'tecnico':
         flash('Solo técnicos pueden acceder al checklist.', 'warning')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('app_home'))
     vehiculo = Vehiculo.query.filter(Vehiculo.ubicacion_id == current_user.ubicacion_id).first()
     if not vehiculo:
         flash('No tienes un vehículo asignado. Contacta al administrador.', 'danger')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('app_home'))
     hoy = datetime.now().weekday()
     dia_config = vehiculo.dia_checklist
     dia_habilitado = (hoy == dia_config)
@@ -3194,7 +3199,7 @@ def checklist_enviar():
 def checklist_vehiculo_admin(vehiculo_id):
     if current_user.rol not in ['admin', 'super_su']:
         flash('No autorizado', 'danger')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('app_home'))
     vehiculo = Vehiculo.query.get_or_404(vehiculo_id)
     if request.method == 'POST':
         try:
@@ -3241,7 +3246,7 @@ def checklist_reporte_pdf(checklist_id):
     ck = ChecklistSemanal.query.get_or_404(checklist_id)
     if current_user.rol not in ['admin', 'super_su'] and ck.usuario_id != current_user.id:
         flash('No autorizado', 'danger')
-        return redirect(url_for('dashboard', user_id=current_user.id))
+        return redirect(url_for('app_home'))
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font('helvetica', 'B', 20)
@@ -3899,7 +3904,7 @@ def api_spa_contenido(seccion):
 
     if seccion == 'inicio':
         # Dashboard stats inline — ya está en dashboard.html
-        return jsonify({'ok': True, 'redirect': url_for('dashboard', user_id=user_id)})
+        return jsonify({'ok': True, 'redirect': url_for('app_home')})
 
     elif seccion == 'clientes':
         if not u.puede_acceder():
@@ -4039,7 +4044,7 @@ def api_spa_visita_detalle():
 def page_not_found(e):
     try:
         if current_user.is_authenticated and current_user.puede_acceder():
-            destino = url_for('dashboard', user_id=current_user.id)
+            destino = url_for('app_home')
         else:
             destino = url_for('login')
     except Exception:
@@ -4064,7 +4069,7 @@ def internal_server_error(e):
 def forbidden(e):
     try:
         if current_user.is_authenticated and current_user.puede_acceder():
-            destino = url_for('dashboard', user_id=current_user.id)
+            destino = url_for('app_home')
         else:
             destino = url_for('login')
     except Exception:
@@ -4099,7 +4104,7 @@ def handle_db_operational_error(e):
     flash('Error de conexión. Por favor intenta de nuevo.', 'warning')
     try:
         if current_user.is_authenticated and current_user.puede_acceder():
-            return redirect(url_for('dashboard', user_id=current_user.id))
+            return redirect(url_for('app_home'))
     except Exception:
         pass
     return redirect(url_for('login'))
