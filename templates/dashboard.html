@@ -615,12 +615,14 @@ document.getElementById('sidebarMobile')?.addEventListener('click', function(e) 
     if (link) { var oc = bootstrap.Offcanvas.getInstance(this); if (oc) oc.hide(); }
 });
 
-// --- SPA Global API ---
-window.SPA = {
-    abrirModal: function(tipo, id) {
+// --- SPA Global API (merge con state de base.html) ---
+(function() {
+    var base = window.SPA || {};
+    window.SPA = base;
+    base.abrirModal = function(tipo, id) {
         alert('Modal ' + tipo + ' ID: ' + id + ' - Implementación pendiente');
-    },
-    verVisita: function(id) {
+    };
+    base.verVisita = function(id) {
         fetch('/api/spa/visita/detalle', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id:id}) })
         .then(function(r){ return r.json(); })
         .then(function(data) {
@@ -639,13 +641,13 @@ window.SPA = {
             else { btnL.classList.remove('d-none'); btnL.setAttribute('data-visita-id', data.id); btnG.classList.add('d-none'); }
             new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
         });
-    },
-    buscar: function(seccion, q) {
+    };
+    base.buscar = function(seccion, q) {
         fetch('/api/spa/contenido/' + seccion + '?q=' + encodeURIComponent(q))
         .then(function(r){ return r.json(); })
         .then(function(resp){ if(resp.ok && resp.html) document.getElementById('spa-'+seccion).innerHTML = resp.html; });
-    }
-};
+    };
+})();
 
 var visitaFinalizarId = null;
 window.confirmarFinalizar = function(visitaId) {

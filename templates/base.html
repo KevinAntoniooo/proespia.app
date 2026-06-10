@@ -179,7 +179,7 @@
     <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
 
     {% if request.path != '/' and usuario %}
-    <div x-data="{ pantallaActual: 'agenda', modalAbierto: false, idSeleccionado: null, datos: {}, cargando: false, seccionCargada: {}, filtroClientes: '', filtroEquipos: '', cargarSeccion(seccion) { if (this.seccionCargada[seccion] && pantallaActual===seccion) return; if (this.seccionCargada[seccion]) { this.pantallaActual = seccion; return }; this.cargando = true; this.pantallaActual = seccion; fetch('/api/spa/contenido/' + seccion).then(r=>r.json()).then(resp=>{ if(resp.ok){ this.seccionCargada[seccion]=true; if(resp.html){ var el = document.getElementById('spa-'+seccion); if (el) el.innerHTML = resp.html; else document.getElementById('spa-inicio').insertAdjacentHTML('afterend', '<div id=\"spa-'+seccion+'\">'+resp.html+'</div>') } } this.cargando=false; }).catch(()=>{ this.cargando=false }) } }">
+    <div x-data="SPA.state()">
 
     <nav class="navbar navbar-dark d-md-none sticky-top shadow-sm" style="background-color: #0f172a !important;">
         <div class="container-fluid">
@@ -530,6 +530,43 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // SPA state factory - must be global for Alpine x-data
+        window.SPA = {
+            state: function() {
+                return {
+                    pantallaActual: 'agenda',
+                    modalAbierto: false,
+                    idSeleccionado: null,
+                    datos: {},
+                    cargando: false,
+                    seccionCargada: {},
+                    filtroClientes: '',
+                    filtroEquipos: '',
+                    cargarSeccion: function(seccion) {
+                        if (this.seccionCargada[seccion] && this.pantallaActual === seccion) return;
+                        if (this.seccionCargada[seccion]) { this.pantallaActual = seccion; return; }
+                        this.cargando = true;
+                        this.pantallaActual = seccion;
+                        var self = this;
+                        fetch('/api/spa/contenido/' + seccion)
+                            .then(function(r) { return r.json(); })
+                            .then(function(resp) {
+                                if (resp.ok) {
+                                    self.seccionCargada[seccion] = true;
+                                    if (resp.html) {
+                                        var el = document.getElementById('spa-' + seccion);
+                                        if (el) el.innerHTML = resp.html;
+                                    }
+                                }
+                                self.cargando = false;
+                            })
+                            .catch(function() { self.cargando = false; });
+                    }
+                };
+            }
+        };
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
