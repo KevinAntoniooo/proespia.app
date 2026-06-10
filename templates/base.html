@@ -540,6 +540,7 @@
             abrirModal: function(tipo, id) {
                 window.location.href = '/' + tipo + 's/nuevo/' + window.USUARIO_ID;
             },
+            cargarSeccion: null,
             state: function() {
                 return {
                     pantallaActual: 'inicio',
@@ -580,7 +581,8 @@
                                 if (!old) { old = document.createElement('div'); old.id = 'spa-error-console'; old.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:8px 16px;font-size:13px;font-family:monospace;max-height:120px;overflow:auto;'; document.body.appendChild(old); }
                                 old.innerHTML = '<div><b>Error de red al cargar ' + seccion + '</b></div>' + old.innerHTML;
                             });
-                    }
+                    },
+                    init: function() { window.SPA.cargarSeccion = this.cargarSeccion.bind(this); }
                 };
             }
         };
@@ -907,13 +909,9 @@
                         if (url && url !== '#' && url !== '/') {
                             var dd = bootstrap.Dropdown.getInstance(document.getElementById('notifBell'));
                             if (dd) dd.hide();
-                            if (url.indexOf('/app#') === 0) {
-                                var sec = url.replace('/app#', '');
-                                var al = window.Alpine;
-                                var wrapper = document.querySelector('[x-data]');
-                                if (al && wrapper) {
-                                    try { var comp = al.$data(wrapper); if (comp && comp.cargarSeccion) { comp.cargarSeccion(sec); return; } } catch(e) {}
-                                }
+                            if (url.indexOf('/app#') === 0 && window.SPA.cargarSeccion) {
+                                window.SPA.cargarSeccion(url.replace('/app#', ''));
+                                return;
                             }
                             window.location.href = url;
                         } else {
@@ -1030,6 +1028,10 @@
                             var canvasEl = document.getElementById('offcanvasNotif');
                             var canvas = bootstrap.Offcanvas.getInstance(canvasEl);
                             if (canvas) canvas.hide();
+                            if (url.indexOf('/app#') === 0 && window.SPA.cargarSeccion) {
+                                window.SPA.cargarSeccion(url.replace('/app#', ''));
+                                return;
+                            }
                             window.location.href = url;
                         }
                     });
