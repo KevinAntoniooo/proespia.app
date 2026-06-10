@@ -172,13 +172,14 @@
     </style>
 </head>
 
-<body x-data="{ pantallaActual: 'agenda', modalAbierto: false, idSeleccionado: null, datos: {}, cargando: false, seccionCargada: {}, filtroClientes: '', filtroEquipos: '', cargarSeccion(seccion) { if (this.seccionCargada[seccion] && pantallaActual===seccion) return; if (this.seccionCargada[seccion]) { this.pantallaActual = seccion; return }; this.cargando = true; this.pantallaActual = seccion; fetch('/api/spa/contenido/' + seccion).then(r=>r.json()).then(resp=>{ if(resp.ok){ this.seccionCargada[seccion]=true; if(resp.html){ var el = document.getElementById('spa-'+seccion); if (el) el.innerHTML = resp.html; else document.getElementById('spa-inicio').insertAdjacentHTML('afterend', '<div id=\"spa-'+seccion+'\">'+resp.html+'</div>') } } this.cargando=false; }).catch(()=>{ this.cargando=false }) } }">
+<body>
     <div id="loading-bar-mask"
         style="position:fixed;top:0;left:0;right:0;height:3px;background:#0f172a;z-index:99999;pointer-events:none;">
     </div>
     <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
 
     {% if request.path != '/' and usuario %}
+    <div x-data="{ pantallaActual: 'agenda', modalAbierto: false, idSeleccionado: null, datos: {}, cargando: false, seccionCargada: {}, filtroClientes: '', filtroEquipos: '', cargarSeccion(seccion) { if (this.seccionCargada[seccion] && pantallaActual===seccion) return; if (this.seccionCargada[seccion]) { this.pantallaActual = seccion; return }; this.cargando = true; this.pantallaActual = seccion; fetch('/api/spa/contenido/' + seccion).then(r=>r.json()).then(resp=>{ if(resp.ok){ this.seccionCargada[seccion]=true; if(resp.html){ var el = document.getElementById('spa-'+seccion); if (el) el.innerHTML = resp.html; else document.getElementById('spa-inicio').insertAdjacentHTML('afterend', '<div id=\"spa-'+seccion+'\">'+resp.html+'</div>') } } this.cargando=false; }).catch(()=>{ this.cargando=false }) } }">
 
     <nav class="navbar navbar-dark d-md-none sticky-top shadow-sm" style="background-color: #0f172a !important;">
         <div class="container-fluid">
@@ -482,6 +483,7 @@
         </div>
     </div>
 
+    </div>
     {% else %}
     <main class="p-0 m-0 w-100 min-vh-100" id="main-content" tabindex="-1">
         {% block content_login %}{% endblock %}
