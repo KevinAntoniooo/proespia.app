@@ -659,9 +659,17 @@
             if (window.location.hash && window.location.pathname === '/app') {
                 var sec = window.location.hash.replace('#', '');
                 if (sec && typeof SPA !== 'undefined' && SPA.state) {
-                    // Disparar clic en el sidebar correspondiente
-                    var link = document.querySelector('[data-seccion="' + sec + '"]');
-                    if (link) { link.click(); }
+                    setTimeout(function() {
+                        var link = document.querySelector('[data-seccion="' + sec + '"]');
+                        if (link) link.click();
+                        else {
+                            var al = document.querySelector('[x-data]');
+                            if (al && window.Alpine) {
+                                var comp = Alpine.$data(al);
+                                if (comp && comp.cargarSeccion) comp.cargarSeccion(sec);
+                            }
+                        }
+                    }, 200);
                 }
             }
 
@@ -892,6 +900,14 @@
                         if (url && url !== '#' && url !== '/') {
                             var dd = bootstrap.Dropdown.getInstance(document.getElementById('notifBell'));
                             if (dd) dd.hide();
+                            if (url.indexOf('/app#') === 0) {
+                                var sec = url.replace('/app#', '');
+                                var al = window.Alpine;
+                                var wrapper = document.querySelector('[x-data]');
+                                if (al && wrapper) {
+                                    try { var comp = al.$data(wrapper); if (comp && comp.cargarSeccion) { comp.cargarSeccion(sec); return; } } catch(e) {}
+                                }
+                            }
                             window.location.href = url;
                         } else {
                             cargarNotificaciones();
