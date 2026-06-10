@@ -731,14 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </div><!-- /spa-inicio -->
 
-<!-- ===== SECCIONES VIRTUALES (cargadas vía AJAX) ===== -->
-<template x-for="sec in ['agenda','clientes','equipos','bitacora','fallas','boveda','personal','bodega']" :key="sec">
-    <div :id="'spa-'+sec" x-show="pantallaActual === sec" x-transition.opacity.duration.300ms>
-        <div class="text-center py-5 text-muted">
-            <i class="fa-solid fa-spinner fa-spin fa-2x mb-3 d-block"></i>
-            <p class="fw-bold">Cargando sección...</p>
-        </div>
-    </div>
-</template>
+<!-- ===== CONTENEDOR DINÁMICO SPA (sin x-for para evitar que Alpine sobreescriba) ===== -->
+<div id="spa-contenido-dinamico" x-show="pantallaActual !== 'inicio'" x-transition.opacity.duration.300ms></div>
 
 {% endblock %}

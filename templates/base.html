@@ -538,7 +538,7 @@
         window.SPA = {
             state: function() {
                 return {
-                    pantallaActual: 'agenda',
+                    pantallaActual: 'inicio',
                     modalAbierto: false,
                     idSeleccionado: null,
                     datos: {},
@@ -552,21 +552,23 @@
                         this.cargando = true;
                         this.pantallaActual = seccion;
                         var self = this;
-                        fetch('/api/spa/contenido/' + seccion)
+                        fetch('/api/spa/contenido/' + seccion + '?_=' + Date.now())
                             .then(function(r) { return r.json(); })
                             .then(function(resp) {
                                 if (resp.ok) {
                                     self.seccionCargada[seccion] = true;
                                     if (resp.html) {
-                                        var el = document.getElementById('spa-' + seccion);
+                                        var el = document.getElementById('spa-contenido-dinamico');
                                         if (el) {
                                             el.innerHTML = resp.html;
-                                            // Re-ejecutar scripts inline
+                                            // Re-ejecutar scripts inline (try/catch para que un error no mate los demas)
                                             el.querySelectorAll('script').forEach(function(os) {
-                                                var ns = document.createElement('script');
-                                                os.getAttributeNames().forEach(function(a) { ns.setAttribute(a, os.getAttribute(a)); });
-                                                ns.textContent = os.textContent;
-                                                os.parentNode.replaceChild(ns, os);
+                                                try {
+                                                    var ns = document.createElement('script');
+                                                    os.getAttributeNames().forEach(function(a) { ns.setAttribute(a, os.getAttribute(a)); });
+                                                    ns.textContent = os.textContent;
+                                                    os.parentNode.replaceChild(ns, os);
+                                                } catch(e) { console.warn('Script error:', e); }
                                             });
                                         }
                                     }
@@ -580,6 +582,25 @@
         };
     </script>
     <script>
+        function recargarSeccionSPA(seccion) {
+            var el = document.getElementById('spa-contenido-dinamico');
+            if (!el) return;
+            fetch('/api/spa/contenido/' + seccion + '?_=' + Date.now())
+                .then(function(r) { return r.json(); })
+                .then(function(resp) {
+                    if (resp.ok && resp.html) {
+                        el.innerHTML = resp.html;
+                        el.querySelectorAll('script').forEach(function(os) {
+                            try {
+                                var ns = document.createElement('script');
+                                os.getAttributeNames().forEach(function(a) { ns.setAttribute(a, os.getAttribute(a)); });
+                                ns.textContent = os.textContent;
+                                os.parentNode.replaceChild(ns, os);
+                            } catch(e) { console.warn('Script error:', e); }
+                        });
+                    }
+                });
+        }
         document.addEventListener('DOMContentLoaded', function () {
 
             var toastElList = [].slice.call(document.querySelectorAll('.toast'))

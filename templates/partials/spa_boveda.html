@@ -71,7 +71,7 @@
             <div class="modal fade" id="editModal{{ app.id }}" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
-                        <form action="{{ url_for('editar_credencial', creden_id=app.id, user_id=usuario.id) }}" method="POST">
+                        <form onsubmit="return bovedaEditar(event, {{ app.id }})">
                             <div class="modal-header bg-primary text-white border-0">
                                 <h5 class="modal-title fw-bold">Editar Credencial</h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -116,7 +116,7 @@
                             <p class="text-muted small">Se borrarán permanentemente los datos de <strong>{{ app.nombre_app }}</strong>.</p>
                             <div class="d-flex gap-2 justify-content-center mt-4">
                                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                                <a href="{{ url_for('eliminar_credencial', creden_id=app.id, user_id=usuario.id) }}" class="btn btn-danger px-3">
+                                <a href="#" onclick="bovedaEliminar({{ app.id }}); return false;" class="btn btn-danger px-3">
                                     Sí, eliminar
                                 </a>
                             </div>
@@ -136,7 +136,7 @@
                 <h5 class="modal-title fw-bold">Registrar Nueva Credencial</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('ver_boveda', user_id=usuario.id) }}" method="POST">
+            <form onsubmit="return bovedaNueva(event)">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Pagina / Servicio / App</label>
@@ -282,4 +282,49 @@ setTimeout(function() {
     var inputBuscador = document.getElementById("buscadorBoveda");
     if(inputBuscador) inputBuscador.value = "";
 }, 100);
+
+function bovedaNueva(e) {
+    e.preventDefault(); var f = e.target;
+    var data = new URLSearchParams();
+    data.append('nombre_app', f.nombre_app.value);
+    if (f.usuario_app.value) data.append('usuario_app', f.usuario_app.value);
+    data.append('password_app', f.password_app.value);
+    fetch('/boveda/{{ usuario.id }}', { method: 'POST', body: data })
+    .then(function(r) {
+        if (r.ok) {
+            var m = bootstrap.Modal.getInstance(document.getElementById('nuevaAppModal'));
+            if (m) m.hide();
+            recargarSeccionSPA('boveda');
+        } else { alert('Error al guardar'); }
+    }).catch(function() { alert('Error de conexion'); });
+    return false;
+}
+
+function bovedaEditar(e, id) {
+    e.preventDefault(); var f = e.target;
+    var data = new URLSearchParams();
+    data.append('nombre_app', f.nombre_app.value);
+    if (f.usuario_app.value) data.append('usuario_app', f.usuario_app.value);
+    data.append('password_app', f.password_app.value);
+    fetch('/boveda/editar/' + id + '/{{ usuario.id }}', { method: 'POST', body: data })
+    .then(function(r) {
+        if (r.ok) {
+            var m = bootstrap.Modal.getInstance(document.getElementById('editModal' + id));
+            if (m) m.hide();
+            recargarSeccionSPA('boveda');
+        } else { alert('Error al editar'); }
+    }).catch(function() { alert('Error de conexion'); });
+    return false;
+}
+
+function bovedaEliminar(id) {
+    fetch('/boveda/eliminar/' + id + '/{{ usuario.id }}')
+    .then(function(r) {
+        if (r.ok) {
+            var m = bootstrap.Modal.getInstance(document.getElementById('deleteModal' + id));
+            if (m) m.hide();
+            recargarSeccionSPA('boveda');
+        } else { alert('Error al eliminar'); }
+    }).catch(function() { alert('Error de conexion'); });
+}
 </script>
