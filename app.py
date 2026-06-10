@@ -3925,6 +3925,43 @@ def api_spa_contenido(seccion):
         html = render_template('partials/spa_clientes.html', **data)
         return jsonify({'ok': True, 'html': html, 'total': pagination.total})
 
+    elif seccion == 'fallas':
+        if u.rol not in ['super_su', 'admin']:
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        tareas = Bitacora.query.filter(
+            Bitacora.tipo_visita.ilike('%Falla%'),
+            ~Bitacora.tipo_visita.ilike('%RESUELTA%')
+        ).order_by(Bitacora.prioridad.asc(), Bitacora.fecha.desc()).all()
+        data = {
+            'tareas': [{
+                'id': t.id,
+                'cliente_nombre': t.rel_cliente.nombre if t.rel_cliente else '—',
+                'descripcion': t.descripcion or '',
+                'fecha': t.fecha.strftime('%d/%m/%Y %H:%M'),
+                'prioridad': t.prioridad,
+            } for t in tareas],
+            'total': len(tareas),
+        }
+        html = render_template('partials/spa_fallas.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': len(tareas)})
+
+    elif seccion == 'boveda':
+        if u.rol not in ['super_su', 'admin']:
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        from models import Boveda
+        apps = Boveda.query.order_by(Boveda.nombre_app).all()
+        data = {
+            'apps': [{
+                'id': a.id,
+                'nombre_app': a.nombre_app,
+                'url_app': a.url_app or '',
+                'username': a.username or '—',
+            } for a in apps],
+            'total': len(apps),
+        }
+        html = render_template('partials/spa_boveda.html', **data)
+        return jsonify({'ok': True, 'html': html, 'total': len(apps)})
+
     elif seccion == 'equipos':
         if not u.puede_acceder():
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
@@ -3988,7 +4025,7 @@ def api_spa_contenido(seccion):
         page = request.args.get('page', 1, type=int)
         pagination = ProductoStock.query.order_by(ProductoStock.nombre).paginate(page=page, per_page=20, error_out=False)
         data = {
-            'productos': [{'id': p.id, 'nombre': p.nombre, 'codigo': p.codigo or '', 'cantidad': p.cantidad, 'categoria': p.categoria_rel.nombre if p.categoria_rel else '—', 'ubicacion': p.ubicacion_rel.nombre if p.ubicacion_rel else '—'} for p in pagination.items],
+            'productos': [{'id': p.id, 'nombre': p.nombre, 'marca': p.marca or '', 'cantidad': p.cantidad_actual, 'categoria': p.rel_categoria.nombre if p.rel_categoria else '—', 'ubicacion': p.rel_ubicacion.nombre if p.rel_ubicacion else '—'} for p in pagination.items],
             'total': pagination.total,
             'pages': pagination.pages,
             'page': page,
