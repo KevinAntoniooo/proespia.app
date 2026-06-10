@@ -637,7 +637,7 @@ def registro_verificar_codigo():
             notificar_admin(
                 'Nuevo registro pendiente',
                 f'{nuevo.nombre} ({nuevo.correo}) se ha registrado y espera activación.',
-                url_for('gestionar_usuarios', user_id=1),
+                '/app#personal',
                 tipo='info'
             )
 
@@ -776,7 +776,7 @@ def login_google():
                 notificar_admin(
                     'Nuevo registro Google pendiente',
                     f'{user.nombre} ({user.correo}) se registró con Google y espera activación.',
-                    url_for('gestionar_usuarios', user_id=1),
+                    '/app#personal',
                     tipo='info'
                 )
         except Exception as e:
@@ -2061,6 +2061,8 @@ def verificar_clave_admin():
 @requiere_admin
 def gestionar_usuarios(user_id):
     usuario_admin = db.session.get(Usuario, user_id)
+    if not usuario_admin:
+        return redirect(url_for('app_home'))
 
     usuarios = Usuario.query.order_by(Usuario.rol.asc(), Usuario.nombre.asc()).all()
     pendientes = Usuario.query.filter_by(rol='Pendiente').order_by(Usuario.created_at.desc()).all()
