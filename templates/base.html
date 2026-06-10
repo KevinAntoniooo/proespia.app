@@ -595,6 +595,13 @@
             div.innerHTML = '<div><b>' + (e.message || 'Error') + '</b><br><small>' + stack.split('\n').slice(0,2).join(' ') + '</small></div>' + div.innerHTML;
         });
         window.USUARIO_ID = {{ current_user.id }};
+        document.addEventListener('click', function(e) {
+            var link = e.target.closest('#sidebarMobile a[href="#"]');
+            if (link) {
+                var oc = bootstrap.Offcanvas.getInstance(document.getElementById('sidebarMobile'));
+                if (oc) oc.hide();
+            }
+        });
         function recargarSeccionSPA(seccion) {
             var el = document.getElementById('spa-contenido-dinamico');
             if (!el) return;

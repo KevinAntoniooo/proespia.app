@@ -636,12 +636,6 @@ function actualizarReloj() {
 setInterval(actualizarReloj, 1000);
 actualizarReloj();
 
-// Cerrar offcanvas móvil al hacer clic en nav
-document.getElementById('sidebarMobile')?.addEventListener('click', function(e) {
-    var link = e.target.closest('a[href="#"]');
-    if (link) { var oc = bootstrap.Offcanvas.getInstance(this); if (oc) oc.hide(); }
-});
-
 // --- SPA Global API (merge con state de base.html) ---
 (function() {
     var base = window.SPA || {};
