@@ -583,9 +583,12 @@
     </script>
     <script>
         window.addEventListener('error', function(e) {
+            if (window._spa_error_count > 10) return;
+            window._spa_error_count = (window._spa_error_count || 0) + 1;
             var div = document.getElementById('spa-error-console');
             if (!div) { div = document.createElement('div'); div.id = 'spa-error-console'; div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:8px 16px;font-size:13px;font-family:monospace;max-height:120px;overflow:auto;'; document.body.appendChild(div); }
-            div.innerHTML = '<div><b>' + (e.message || 'Error') + '</b><br><small>' + ((e.error && e.error.stack) || e.filename || (e.lineno ? 'L:'+e.lineno : '') || '') + '</small></div>' + div.innerHTML;
+            var stack = (e.error && e.error.stack) || '';
+            div.innerHTML = '<div><b>' + (e.message || 'Error') + '</b><br><small>' + stack.split('\n').slice(0,2).join(' ') + '</small></div>' + div.innerHTML;
         });
         window.USUARIO_ID = {{ current_user.id }};
         function recargarSeccionSPA(seccion) {
