@@ -219,8 +219,8 @@ function togglePassLocal(inputId, event) {
 function solicitarClave(credenId, event) {
     event.preventDefault();
     credencialActiva = credenId;
-    document.getElementById('inputClaveAdmin').value = '';
-    document.getElementById('errorClaveAdmin').classList.add('d-none');
+    var inpClave = document.getElementById('inputClaveAdmin'); if (inpClave) inpClave.value = '';
+    var errClave = document.getElementById('errorClaveAdmin'); if (errClave) errClave.classList.add('d-none');
     var modal = new bootstrap.Modal(document.getElementById('modalVerificarClave'));
     modal.show();
     setTimeout(function() { document.getElementById('inputClaveAdmin').focus(); }, 300);

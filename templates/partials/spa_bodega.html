@@ -538,8 +538,8 @@ function initAutoProducto(inputId, hiddenId, listId, stockId, stockNumId) {
                 if (hidden) hidden.value = p.id;
                 list.classList.add('d-none');
                 if (stockId && stockNumId) {
-                    document.getElementById(stockId).classList.remove('d-none');
-                    document.getElementById(stockNumId).textContent = p.cantidad;
+                    var elStock = document.getElementById(stockId); if (elStock) elStock.classList.remove('d-none');
+                    var elNum = document.getElementById(stockNumId); if (elNum) elNum.textContent = p.cantidad;
                 }
             });
             list.appendChild(item);
@@ -553,7 +553,7 @@ function initAutoProducto(inputId, hiddenId, listId, stockId, stockNumId) {
 
     input.addEventListener('input', function() {
         if (hidden) hidden.value = '';
-        if (stockId) document.getElementById(stockId).classList.add('d-none');
+        if (stockId) { var el = document.getElementById(stockId); if (el) el.classList.add('d-none'); }
         var texto = this.value.trim().toLowerCase();
         var filtrados = !texto ? productosData : productosData.filter(function(p) {
             return p.nombre.toLowerCase().includes(texto) || (p.marca && p.marca.toLowerCase().includes(texto)) || (p.modelo && p.modelo.toLowerCase().includes(texto));
