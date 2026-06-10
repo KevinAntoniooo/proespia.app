@@ -80,23 +80,6 @@
             </div>
         </div>
     </div>
-    {% if total_pendientes > 0 %}
-    <div class="col-6 col-md-3">
-        <a href="{{ url_for('gestionar_usuarios', user_id=usuario.id) }}" class="text-decoration-none">
-            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-3 border-warning pulse-card">
-                <div class="card-body d-flex align-items-center gap-2 p-2 p-sm-3">
-                    <div class="bg-warning bg-opacity-10 rounded-3 p-1 p-sm-2 lh-1">
-                        <i class="fa-solid fa-user-clock fs-6 text-warning"></i>
-                    </div>
-                    <div class="lh-1">
-                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.5rem!important;letter-spacing:0.5px">Pendientes</small>
-                        <h5 class="fw-bold mb-0 text-warning">{{ total_pendientes }}</h5>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-    {% endif %}
 </div>
 {% endif %}
 
@@ -507,11 +490,21 @@
             </div>
         </div>
         {% endif %}
-        <div class="card border-0 shadow-sm rounded-4 p-3 bg-dark text-white">
-            <h6 class="fw-bold mb-2 small text-warning text-start" style="font-size: 0.75rem;"><i class="fa-solid fa-headset me-1"></i>Soporte</h6>
-            <p class="mb-2 text-start opacity-75" style="font-size: 0.65rem;">¿Problemas con el sistema?</p>
-            <a href="mailto:soporte@proespia.cl" class="btn btn-outline-warning btn-sm w-100 rounded-pill py-1" style="font-size: 0.65rem;">Enviar Ticket</a>
-        </div>
+        {% if usuario.rol in ['admin', 'super_su'] and total_pendientes > 0 %}
+        <a href="{{ url_for('gestionar_usuarios', user_id=usuario.id) }}" class="text-decoration-none">
+            <div class="card border-0 shadow-sm rounded-4 p-3 mb-3 border border-warning border-opacity-50 pulse-card">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-warning bg-opacity-10 rounded-3 p-2 lh-1">
+                        <i class="fa-solid fa-user-clock fs-5 text-warning"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-warning" style="font-size:0.75rem;">Activaciones Pendientes</h6>
+                        <small class="text-muted" style="font-size:0.6rem;">{{ total_pendientes }} usuario(s) esperando aprobación</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endif %}
     </div>
 </div>
 
@@ -730,6 +723,15 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<hr class="my-4">
+<div class="text-center py-2">
+    <small class="text-muted" style="font-size:0.65rem;">
+        <i class="fa-solid fa-headset me-1 text-warning"></i>
+        ¿Problemas con el sistema?
+        <a href="mailto:soporte@proespia.cl" class="text-warning text-decoration-none fw-bold ms-1">soporte@proespia.cl</a>
+    </small>
+</div>
+
 <style>
     .bg-primary-soft { background-color: #e0e7ff; }
     .bg-danger-soft { background-color: #fee2e2; }
@@ -738,6 +740,8 @@ document.addEventListener('DOMContentLoaded', function() {
     .nav-tabs .nav-link.active { border: none; border-bottom: 3px solid #0d6efd; color: #0d6efd; background: none; }
     .badge.bg-success { background-color: #198754 !important; }
     .italic { font-style: italic; }
+    .pulse-card { animation: pulse-border 2s infinite; }
+    @keyframes pulse-border { 0%,100% { border-color: rgba(255,193,7,0.3); } 50% { border-color: rgba(255,193,7,0.8); } }
     @media (max-width: 768px) {
         h2 { font-size: 1.4rem; }
         .card-body { padding: 0.75rem !important; }
