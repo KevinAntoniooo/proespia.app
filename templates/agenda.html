@@ -16,13 +16,13 @@
         <div class="col-12 order-1 order-lg-2 d-flex flex-column" style="gap:0.75rem;">
             <div class="d-flex flex-column flex-md-row align-items-md-center gap-2" style="flex-wrap:wrap;">
                 <div class="rounded-4 p-2 d-flex align-items-center justify-content-between shadow-sm border flex-shrink-0 agenda-card-bg" style="max-width:360px;width:100%;">
-                    <button id="btnFechaPrev" class="btn d-flex align-items-center justify-content-center rounded-3 agenda-btn-light flex-shrink-0" style="width:38px;height:38px;">
+                    <button id="btnFechaPrev" class="btn d-flex align-items-center justify-content-center rounded-3 agenda-btn-light flex-shrink-0" style="width:38px;height:38px;" title="Día anterior" aria-label="Día anterior">
                         <i class="fa-solid fa-chevron-left" style="font-size:0.85rem;"></i>
                     </button>
                     <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-center px-2">
                         <input type="date" id="fechaSelector" class="form-control border-0 text-center fw-bold agenda-text-primary" style="font-size:0.9rem;background:transparent;max-width:180px;cursor:pointer;" value="{{ hoy }}">
                     </div>
-                    <button id="btnFechaNext" class="btn d-flex align-items-center justify-content-center rounded-3 agenda-btn-light flex-shrink-0" style="width:38px;height:38px;">
+                    <button id="btnFechaNext" class="btn d-flex align-items-center justify-content-center rounded-3 agenda-btn-light flex-shrink-0" style="width:38px;height:38px;" title="Día siguiente" aria-label="Día siguiente">
                         <i class="fa-solid fa-chevron-right" style="font-size:0.85rem;"></i>
                     </button>
                 </div>
@@ -60,7 +60,7 @@
                 <i class="fa-solid fa-circle-info text-white" style="font-size:1rem;opacity:0.9;"></i>
                 <h6 class="fw-bold mb-0 text-white" style="font-size:0.95rem;">Detalle de la Visita</h6>
             </div>
-            <button id="btnCerrarDetalle" class="detalle-close-btn" type="button">
+            <button id="btnCerrarDetalle" class="detalle-close-btn" type="button" title="Cerrar detalle" aria-label="Cerrar detalle">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -213,7 +213,7 @@
                             <div class="input-group mb-2">
                                 <span class="input-group-text bg-white rounded-start-3"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
                                 <input type="text" id="inputBuscarDireccion" class="form-control" placeholder="Buscar dirección..." autocomplete="off">
-                                <button class="btn rounded-end-3" style="background:#6366f1;color:#fff;border:none;" type="button" onclick="buscarEnMapa()"><i class="fa-solid fa-search"></i></button>
+                                <button class="btn rounded-end-3" style="background:#6366f1;color:#fff;border:none;" type="button" onclick="buscarEnMapa()" title="Buscar en el mapa" aria-label="Buscar en el mapa"><i class="fa-solid fa-search"></i></button>
                             </div>
                             <div id="mapa-ubicacion" style="height:250px;border-radius:12px;border:2px solid #e2e8f0;cursor:crosshair;"></div>
                             <input type="hidden" name="ubicacion" id="input-ubicacion">
@@ -391,6 +391,7 @@
         align-items: center;
         justify-content: center;
         background-color: rgba(15, 23, 42, 0.6);
+        -webkit-backdrop-filter: blur(4px);
         backdrop-filter: blur(4px);
     }
     .detalle-modal-container.active { display: flex; }

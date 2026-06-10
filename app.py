@@ -350,6 +350,14 @@ def _muro_contencion_global():
         return None
     return redirect(url_for('espera'))
 
+@app.after_request
+def _seguridad_headers(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    response.headers['Content-Security-Policy'] = "frame-ancestors 'none'"
+    return response
+
 def vapid_public_b64():
     """La clave pública ya está en formato raw base64url que necesita el navegador."""
     return app.config['VAPID_PUBLIC_KEY']

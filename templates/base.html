@@ -90,8 +90,8 @@
         }
         .modal-backdrop {
             background-color: var(--modal-overlay) !important;
-            backdrop-filter: blur(5px) !important;
             -webkit-backdrop-filter: blur(5px) !important;
+            backdrop-filter: blur(5px) !important;
         }
         .modal-backdrop.show { opacity: 1 !important; }
 
@@ -169,7 +169,7 @@
         }
         .active-style { background: rgba(99,102,241,0.12) !important; color: #6366f1 !important; border-right: 3px solid #6366f1; }
         html.dark-mode .active-style { background: rgba(99,102,241,0.2) !important; color: #818cf8 !important; }
-        .spa-loader { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); z-index:99998; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+        .spa-loader { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.6); z-index:99998; display:flex; align-items:center; justify-content:center; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
         .spa-loader .spa-loader-box { background:#fff; border-radius:20px; padding:1.5rem 2rem; box-shadow:0 20px 40px rgba(0,0,0,0.25); text-align:center; }
         @keyframes floatCloud{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
     </style>
@@ -188,7 +188,7 @@
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center ms-1" href="#">
                 <img src="{{ url_for('static', filename='img/logo-proespia.png') }}"
-                    style="max-height:32px;filter:brightness(0) invert(1);">
+                    alt="PRO ESPÍA" style="max-height:32px;filter:brightness(0) invert(1);">
             </a>
             <div class="d-flex align-items-center gap-2">
                 <div class="text-end me-2 d-none d-sm-block">
@@ -211,7 +211,7 @@
                         style="font-size:0.45rem;display:none;">0</span>
                 </button>
                 <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
-                    data-bs-target="#sidebarMobile">
+                    data-bs-target="#sidebarMobile" title="Abrir menú" aria-label="Abrir menú">
                     <i class="fa-solid fa-bars text-white"></i>
                 </button>
             </div>
@@ -222,7 +222,7 @@
 
         <aside class="sidebar-pro d-none d-md-flex">
             <div class="brand-logo-container">
-                <img src="{{ url_for('static', filename='img/logo-proespia.png') }}" class="img-fluid side-logo">
+                <img src="{{ url_for('static', filename='img/logo-proespia.png') }}" class="img-fluid side-logo" alt="PRO ESPÍA">
             </div>
             <nav class="nav flex-column px-2 mt-2 flex-grow-1" aria-label="Navegación principal">
                 <a href="#" data-seccion="inicio" @click="cargarSeccion('inicio')"
@@ -333,7 +333,7 @@
                                 <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidas"
                                     style="font-size:0.75rem;color:var(--bs-info);">Marcar todas leídas</button>
                                 <button class="btn btn-link btn-sm p-0 text-decoration-none ms-2" id="borrarTodasNotif"
-                                    style="font-size:0.75rem;color:#dc3545;"><i class="fa-regular fa-trash-can"></i></button>
+                                    style="font-size:0.75rem;color:#dc3545;" title="Borrar todas las notificaciones" aria-label="Borrar todas las notificaciones"><i class="fa-regular fa-trash-can"></i></button>
                             </div>
                             <div id="notifList">
                                 <div class="text-center py-3"><small class="text-muted">Cargando...</small></div>
@@ -477,7 +477,7 @@
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidasMovil"
                     style="font-size:0.7rem;color:var(--bs-info);">Leídas</button>
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" id="borrarTodasNotifMovil"
-                    style="font-size:0.7rem;color:#dc3545;"><i class="fa-regular fa-trash-can"></i></button>
+                    style="font-size:0.7rem;color:#dc3545;" title="Borrar todas las notificaciones" aria-label="Borrar todas las notificaciones"><i class="fa-regular fa-trash-can"></i></button>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" style="filter:invert(.5);"></button>
             </div>
         </div>
@@ -504,7 +504,7 @@
                 <button id="btnActualizarApp" class="btn btn-success btn-sm fw-bold px-3 rounded-pill" style="font-size:0.8rem;">
                     <i class="fa-solid fa-download me-1"></i>Actualizar
                 </button>
-                <button id="btnCerrarUpdate" class="btn btn-sm px-2" style="color:#94a3b8;" onclick="this.closest('#updateBanner').classList.add('d-none')">
+                <button id="btnCerrarUpdate" class="btn btn-sm px-2" style="color:#94a3b8;" onclick="this.closest('#updateBanner').classList.add('d-none')" title="Cerrar aviso" aria-label="Cerrar aviso">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
