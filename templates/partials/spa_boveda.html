@@ -1,21 +1,285 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold mb-0"><i class="fa-solid fa-table-cells-large me-2"></i>Bóveda Apps</h5>
+<div class="container-fluid px-4 mt-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-vault me-2"></i>Bóveda de Aplicaciones</h2>
 </div>
-<div class="table-responsive">
-    <table class="table table-borderless align-middle mb-0">
-        <thead class="text-muted small text-uppercase">
-            <tr><th>App</th><th>URL</th><th>Usuario</th></tr>
-        </thead>
-        <tbody>
-            {% for a in apps %}
-            <tr class="bg-white rounded-3 shadow-sm mb-1">
-                <td class="fw-bold small">{{ a.nombre_app }}</td>
-                <td class="small text-muted">{{ a.url_app or '—' }}</td>
-                <td class="small">{{ a.username }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="3" class="text-center py-5 text-muted"><i class="fa-solid fa-vault fa-2x mb-2 d-block"></i>Sin credenciales guardadas</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+<div class="row align-items-center mb-3">
+    <div class="col-md-8 col-lg-6">
+        <div class="d-flex align-items-center gap-2">
+            <div style="flex:8">
+                <div class="input-group">
+                    <span class="input-group-text bg-danger text-white border-0 shadow-sm">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="buscadorBoveda" class="form-control shadow-sm" 
+                           placeholder="Buscar por nombre de app o usuario..." 
+                           onkeyup="filtrarBoveda()">
+                </div>
+            </div>
+            <div style="flex:2" class="d-md-none">
+                <button class="btn btn-danger shadow-sm btn-sm fw-bold w-100" style="font-size:0.75rem;height:38px;" data-bs-toggle="modal" data-bs-target="#nuevaAppModal">
+                    <i class="bi bi-plus-circle"></i><span class="d-none d-sm-inline ms-1"> Registrar Credencial</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-6 text-md-end mt-3 mt-md-0 d-none d-md-block">
+        <button class="btn btn-danger shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#nuevaAppModal">
+            <i class="bi bi-plus-circle me-1"></i> Registrar Credencial
+        </button>
+    </div>
 </div>
+
+    <div class="row" id="contenedorTarjetas">
+        {% for app in aplicaciones %}
+        <div class="col-md-4 mb-4 tarjeta-boveda">
+            <div class="card shadow-sm border-danger h-100">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pb-0">
+                    <small class="text-muted font-monospace">ID: #{{ app.id }}</small>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-link text-primary p-0" data-bs-toggle="modal" data-bs-target="#editModal{{ app.id }}">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-link text-danger p-0" data-bs-toggle="modal" data-bs-target="#deleteModal{{ app.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-danger mb-3">{{ app.nombre_app }}</h5>
+                    <p class="mb-1 small text-secondary"><strong>Usuario / ID:</strong></p>
+                    <p class="mb-3">{{ app.usuario_app or 'N/A' }}</p>
+                    
+                    <p class="mb-1 small text-secondary"><strong>Contraseña:</strong></p>
+                    <div class="input-group mb-2">
+                        <input type="password" class="form-control form-control-sm border-danger" 
+                               value="****************" id="pass-card-{{ app.id }}" readonly>
+                        <button class="btn btn-outline-danger btn-sm" type="button" onclick="solicitarClave({{ app.id }}, event)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                    
+                    {% if app.url_acceso %}
+                    <a href="{{ app.url_acceso }}" target="_blank" class="btn btn-sm btn-link p-0 text-decoration-none">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Ir al sitio
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="modal fade" id="editModal{{ app.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form action="{{ url_for('editar_credencial', creden_id=app.id, user_id=usuario.id) }}" method="POST">
+                            <div class="modal-header bg-primary text-white border-0">
+                                <h5 class="modal-title fw-bold">Editar Credencial</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">App / Servicio / NVR</label>
+                                    <input type="text" name="nombre_app" class="form-control" value="{{ app.nombre_app }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Usuario / ID Técnico</label>
+                                    <input type="text" name="usuario_app" class="form-control" value="{{ app.usuario_app }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Contraseña</label>
+                                    <div class="input-group">
+                                        <input type="password" name="password_app" id="pass_edit_{{ app.id }}" 
+                                               class="form-control" value="{{ app.password_app }}" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassLocal('pass_edit_{{ app.id }}', event)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-primary px-4">Actualizar Datos</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="deleteModal{{ app.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered">
+                    <div class="modal-content border-danger">
+                        <div class="modal-body text-center p-4">
+                            <div class="text-danger mb-3">
+                                <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="fw-bold">¿Eliminar acceso?</h5>
+                            <p class="text-muted small">Se borrarán permanentemente los datos de <strong>{{ app.nombre_app }}</strong>.</p>
+                            <div class="d-flex gap-2 justify-content-center mt-4">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                                <a href="{{ url_for('eliminar_credencial', creden_id=app.id, user_id=usuario.id) }}" class="btn btn-danger px-3">
+                                    Sí, eliminar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="modal fade" id="nuevaAppModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title fw-bold">Registrar Nueva Credencial</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('ver_boveda', user_id=usuario.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Pagina / Servicio / App</label>
+                        <input type="text" name="nombre_app" class="form-control" placeholder="Ej: Hik-Connect Bodega" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Usuario / ID / Correo</label>
+                        <input type="text" name="usuario_app" class="form-control" placeholder="Ej: admin">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Contraseña</label>
+                        <div class="input-group">
+                            <input type="password" name="password_app" id="pass_nuevo" 
+                                   class="form-control border-danger" placeholder="Ingrese clave" required>
+                            <button class="btn btn-outline-danger" type="button" onclick="togglePassLocal('pass_nuevo', event)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger px-4">Guardar en Bóveda</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalVerificarClave" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>Confirmación de Seguridad</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="text-warning mb-3">
+                    <i class="bi bi-key-fill" style="font-size: 2.5rem;"></i>
+                </div>
+                <p class="fw-bold text-dark mb-3">Ingrese su contraseña de usuario para visualizar esta credencial</p>
+                <input type="password" id="inputClaveAdmin" class="form-control form-control-lg text-center mb-3" 
+                       placeholder="Contraseña" autocomplete="off">
+                <div id="errorClaveAdmin" class="alert alert-danger d-none py-2 small mb-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Contraseña incorrecta
+                </div>
+                <button id="btnConfirmarClave" class="btn btn-dark w-100 fw-bold rounded-3" onclick="confirmarClave()">
+                    <i class="bi bi-check-circle me-1"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var credencialActiva = null;
+
+function filtrarBoveda() {
+    let filtro = document.getElementById("buscadorBoveda").value.toLowerCase();
+    let tarjetas = document.getElementsByClassName("tarjeta-boveda");
+    for (let i = 0; i < tarjetas.length; i++) {
+        let contenido = tarjetas[i].textContent.toLowerCase();
+        tarjetas[i].style.display = contenido.includes(filtro) ? "" : "none";
+    }
+}
+
+function togglePassLocal(inputId, event) {
+    const e = event || window.event;
+    const input = document.getElementById(inputId);
+    const icon = e.currentTarget.querySelector('i');
+    if (input.type === "password") {
+        input.type = "text";
+        if(icon) { icon.classList.remove('bi-eye'); icon.classList.add('bi-eye-slash'); }
+    } else {
+        input.type = "password";
+        if(icon) { icon.classList.remove('bi-eye-slash'); icon.classList.add('bi-eye'); }
+    }
+}
+
+function solicitarClave(credenId, event) {
+    event.preventDefault();
+    credencialActiva = credenId;
+    document.getElementById('inputClaveAdmin').value = '';
+    document.getElementById('errorClaveAdmin').classList.add('d-none');
+    var modal = new bootstrap.Modal(document.getElementById('modalVerificarClave'));
+    modal.show();
+    setTimeout(function() { document.getElementById('inputClaveAdmin').focus(); }, 300);
+}
+
+function confirmarClave() {
+    var password = document.getElementById('inputClaveAdmin').value;
+    var btn = document.getElementById('btnConfirmarClave');
+    var errorDiv = document.getElementById('errorClaveAdmin');
+
+    if (!password) {
+        errorDiv.textContent = 'Debe ingresar su contraseña';
+        errorDiv.classList.remove('d-none');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Verificando...';
+
+    fetch('/boveda/verificar_clave_admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            password_ingresada: password,
+            creden_id: credencialActiva
+        })
+    })
+    .then(function(response) {
+        if (response.status === 401) {
+            throw new Error('Contraseña incorrecta');
+        }
+        if (!response.ok) {
+            throw new Error('Error del servidor');
+        }
+        return response.json();
+    })
+    .then(function(data) {
+        var inputPass = document.getElementById('pass-card-' + credencialActiva);
+        if (inputPass) {
+            inputPass.value = data.password;
+            inputPass.type = 'text';
+        }
+        var modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalVerificarClave'));
+        if (modalInstance) modalInstance.hide();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirmar';
+    })
+    .catch(function(err) {
+        errorDiv.textContent = err.message || 'Error al verificar la contraseña';
+        errorDiv.classList.remove('d-none');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirmar';
+        document.getElementById('inputClaveAdmin').value = '';
+        document.getElementById('inputClaveAdmin').focus();
+    });
+}
+
+setTimeout(function() {
+    var inputBuscador = document.getElementById("buscadorBoveda");
+    if(inputBuscador) inputBuscador.value = "";
+}, 100);
+</script>

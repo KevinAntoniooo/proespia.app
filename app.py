@@ -3926,41 +3926,37 @@ def api_spa_contenido(seccion):
         return jsonify({'ok': True, 'html': html, 'total': pagination.total})
 
     elif seccion == 'fallas':
-        if u.rol not in ['super_su', 'admin']:
+        if u.rol not in ['super_su', 'admin', 'tecnico']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        tareas = Bitacora.query.filter(
-            Bitacora.tipo_visita.ilike('%Falla%'),
-            ~Bitacora.tipo_visita.ilike('%RESUELTA%')
-        ).order_by(Bitacora.prioridad.asc(), Bitacora.fecha.desc()).all()
+        from sqlalchemy import case
+        page = request.args.get('page', 1, type=int)
+        query = Bitacora.query.filter(Bitacora.tipo_visita.ilike('%Falla%'))
+        paginado = query.order_by(
+            case((Bitacora.fecha_resolucion == None, 0), else_=1),
+            Bitacora.prioridad.asc(),
+            Bitacora.fecha.desc()
+        ).paginate(page=page, per_page=15, error_out=False)
         data = {
-            'tareas': [{
-                'id': t.id,
-                'cliente_nombre': t.rel_cliente.nombre if t.rel_cliente else '—',
-                'descripcion': t.descripcion or '',
-                'fecha': t.fecha.strftime('%d/%m/%Y %H:%M'),
-                'prioridad': t.prioridad,
-            } for t in tareas],
-            'total': len(tareas),
+            'tareas': paginado.items,
+            'paginacion': paginado,
+            'usuario': u,
+            'hoy_iso': date.today().isoformat(),
         }
         html = render_template('partials/spa_fallas.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': len(tareas)})
+        return jsonify({'ok': True, 'html': html, 'total': paginado.total})
 
     elif seccion == 'boveda':
         if u.rol not in ['super_su', 'admin']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        from models import Boveda
-        apps = Boveda.query.order_by(Boveda.nombre_app).all()
+        aplicaciones = Boveda.query.filter_by(usuario_id=u.id).all()
+        for app in aplicaciones:
+            app.password_app = app.decrypt_password()
         data = {
-            'apps': [{
-                'id': a.id,
-                'nombre_app': a.nombre_app,
-                'url_app': a.url_app or '',
-                'username': a.username or '—',
-            } for a in apps],
-            'total': len(apps),
+            'aplicaciones': aplicaciones,
+            'usuario': u,
         }
         html = render_template('partials/spa_boveda.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': len(apps)})
+        return jsonify({'ok': True, 'html': html, 'total': len(aplicaciones)})
 
     elif seccion == 'equipos':
         if not u.puede_acceder():
@@ -3999,36 +3995,47 @@ def api_spa_contenido(seccion):
     elif seccion == 'agenda':
         if u.rol not in ['super_su', 'admin', 'tecnico']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        visitas = VisitaProgramada.query.filter(
-            VisitaProgramada.estado == 'Pendiente'
-        ).order_by(VisitaProgramada.fecha_programada.asc()).limit(20).all()
+        clientes = Cliente.query.order_by(Cliente.nombre).all()
+        tecnicos = Usuario.query.filter(Usuario.rol.in_(['tecnico', 'admin', 'super_su'])).order_by(Usuario.nombre).all()
         data = {
-            'visitas': [{
-                'id': v.id,
-                'cliente_nombre': v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo',
-                'tipo_trabajo': v.tipo_trabajo,
-                'fecha': v.fecha_programada.strftime('%d/%m/%Y %H:%M'),
-                'descripcion': v.descripcion or '',
-                'ubicacion': v.ubicacion or '',
-                'estado': v.estado,
-                'informe': bool(v.informe_tecnico),
-            } for v in visitas],
-            'total': len(visitas),
+            'clientes': clientes,
+            'tecnicos': tecnicos,
             'usuario': u,
+            'hoy': date.today().isoformat(),
         }
         html = render_template('partials/spa_agenda.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': len(visitas)})
+        return jsonify({'ok': True, 'html': html})
 
     elif seccion == 'bodega':
         if u.rol not in ['super_su', 'admin', 'tecnico']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
         page = request.args.get('page', 1, type=int)
-        pagination = ProductoStock.query.order_by(ProductoStock.nombre).paginate(page=page, per_page=20, error_out=False)
+        if u.rol == 'tecnico' and u.ubicacion_id:
+            base_query = ProductoStock.query.filter_by(ubicacion_id=u.ubicacion_id)
+        else:
+            base_query = ProductoStock.query
+        base_query = base_query.filter(ProductoStock.cantidad_actual > 0)
+        pagination = base_query.order_by(ProductoStock.nombre.asc()).paginate(page=page, per_page=20, error_out=False)
+        productos = pagination.items
+        categorias = CategoriaItem.query.order_by(CategoriaItem.nombre.asc()).all()
+        ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre.asc()).all()
+        todos_productos_db = ProductoStock.query.filter(ProductoStock.cantidad_actual > 0).order_by(ProductoStock.nombre.asc()).all()
+        if u.rol == 'tecnico' and u.ubicacion_id:
+            productos_autocomplete = [p for p in todos_productos_db if p.ubicacion_id == u.ubicacion_id]
+        else:
+            productos_autocomplete = todos_productos_db
+        todos_productos = [{'id': p.id, 'nombre': p.nombre, 'marca': p.marca or '', 'modelo': p.modelo or '', 'cantidad': p.cantidad_actual, 'ubicacion_nombre': p.rel_ubicacion.nombre if p.rel_ubicacion else 'Sin ubicación', 'categoria_nombre': p.rel_categoria.nombre if p.rel_categoria else ''} for p in productos_autocomplete]
+        criticos = [p for p in todos_productos_db if p.cantidad_actual < p.cantidad_minima]
+        total_bodega = sum(p.cantidad_actual for p in todos_productos_db if p.rel_ubicacion and 'Central' in p.rel_ubicacion.nombre)
         data = {
-            'productos': [{'id': p.id, 'nombre': p.nombre, 'marca': p.marca or '', 'cantidad': p.cantidad_actual, 'categoria': p.rel_categoria.nombre if p.rel_categoria else '—', 'ubicacion': p.rel_ubicacion.nombre if p.rel_ubicacion else '—'} for p in pagination.items],
-            'total': pagination.total,
-            'pages': pagination.pages,
-            'page': page,
+            'productos': productos,
+            'categorias': categorias,
+            'ubicaciones': ubicaciones,
+            'criticos': criticos,
+            'total_bodega': total_bodega,
+            'pagination': pagination,
+            'todos_productos': todos_productos,
+            'usuario': u,
         }
         html = render_template('partials/spa_bodega.html', **data)
         return jsonify({'ok': True, 'html': html, 'total': pagination.total})

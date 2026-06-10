@@ -29,6 +29,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script defer src="{{ url_for('static', filename='js/alpine.min.js') }}"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
     <script>if (localStorage.getItem('darkMode') === 'enabled' || (localStorage.getItem('darkMode') === null && window.matchMedia('(prefers-color-scheme:dark)').matches)) { document.documentElement.classList.add('dark-mode') }</script>
     <script>if (document.documentElement.classList.contains('dark-mode')){var _x=document.createElement('style');_x.textContent='body{background:#0f172a!important}[style*="background:#fff"],[style*="background: #fff"]{background:#1e293b!important}[style*="color:#1e293b"],[style*="color: #1e293b"]{color:#f1f5f9!important}[style*="border-color:#e2e8f0"],[style*="border-color: #e2e8f0"]{border-color:rgba(255,255,255,0.08)!important}';document.head.appendChild(_x)}</script>
     <style>
@@ -556,7 +559,16 @@
                                     self.seccionCargada[seccion] = true;
                                     if (resp.html) {
                                         var el = document.getElementById('spa-' + seccion);
-                                        if (el) el.innerHTML = resp.html;
+                                        if (el) {
+                                            el.innerHTML = resp.html;
+                                            // Re-ejecutar scripts inline
+                                            el.querySelectorAll('script').forEach(function(os) {
+                                                var ns = document.createElement('script');
+                                                os.getAttributeNames().forEach(function(a) { ns.setAttribute(a, os.getAttribute(a)); });
+                                                ns.textContent = os.textContent;
+                                                os.parentNode.replaceChild(ns, os);
+                                            });
+                                        }
                                     }
                                 }
                                 self.cargando = false;

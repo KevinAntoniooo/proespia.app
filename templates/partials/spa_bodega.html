@@ -1,28 +1,771 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold mb-0"><i class="fa-solid fa-warehouse me-2"></i>Bodega Técnica</h5>
-    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('producto', null)">
-        <i class="fa-solid fa-plus me-1"></i>Agregar
-    </button>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-warehouse me-2"></i>Bodega y Stock Técnico
+        {% if usuario.rol == 'tecnico' and usuario.rel_ubicacion %}
+        <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill fs-6 fw-normal ms-3 mt-1">{{ usuario.rel_ubicacion.nombre }}</span>
+        {% endif %}
+    </h2>
+    <div class="d-flex gap-2 d-none d-sm-flex">
+        <button class="btn btn-outline-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalTraspaso">
+            <i class="fa-solid fa-arrow-right-arrow-left me-1"></i>Traspaso
+        </button>
+        <button class="btn btn-outline-danger shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalConsumo">
+            <i class="fa-solid fa-minus-circle me-1"></i>Consumo
+        </button>
+        {% if usuario.rol in ['admin', 'super_su'] %}
+        <button class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
+            <i class="fa-solid fa-plus me-1"></i>Nuevo Ítem
+        </button>
+        <button class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevaHerramienta">
+            <i class="fa-solid fa-wrench me-1"></i>Agregar Herramienta
+        </button>
+        {% endif %}
+    </div>
 </div>
-<div class="table-responsive">
-    <table class="table table-borderless align-middle mb-0">
-        <thead class="text-muted small text-uppercase">
-            <tr><th>Producto</th><th>Marca</th><th>Categoría</th><th>Ubicación</th><th class="text-center">Stock</th></tr>
-        </thead>
-        <tbody>
-            {% for p in productos %}
-            <tr class="bg-white rounded-3 shadow-sm mb-1">
-                <td class="fw-bold small">{{ p.nombre }}</td>
-                <td class="small text-muted">{{ p.marca or '—' }}</td>
-                <td><span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ p.categoria }}</span></td>
-                <td class="small text-muted">{{ p.ubicacion }}</td>
-                <td class="text-center">
-                    <span class="badge bg-{{ 'danger' if p.cantidad <= 3 else 'success' }} rounded-pill">{{ p.cantidad }}</span>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-box-open fa-2x mb-2 d-block"></i>Bodega vacía</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+{% set criticos_count = criticos|length %}
+
+<div class="row g-3 mb-2 mb-sm-4">
+    <div class="col-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-3 border-primary">
+            <div class="card-body d-flex align-items-center gap-2 p-2 p-sm-3">
+                <div class="bg-primary bg-opacity-10 rounded-3 p-1 p-sm-2 lh-1">
+                    <i class="fa-solid fa-boxes-stacked fs-6 text-primary"></i>
+                </div>
+                <div class="lh-1">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.5rem!important;letter-spacing:0.5px">Bodega Central</small>
+                    <h5 class="fw-bold mb-0 mt-1 text-dark">{{ total_bodega }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-3 border-danger">
+            <div class="card-body d-flex align-items-center gap-2 p-2 p-sm-3">
+                <div class="bg-danger bg-opacity-10 rounded-3 p-1 p-sm-2 lh-1">
+                    <i class="fa-solid fa-triangle-exclamation fs-6 text-danger"></i>
+                </div>
+                <div class="lh-1">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.5rem!important;letter-spacing:0.5px">Stock Crítico</small>
+                    <h5 class="fw-bold mb-0 mt-1 text-dark">{{ criticos_count }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="row gx-3 gy-1 mb-3 d-sm-none px-2">
+    <div class="col-6">
+        <button class="btn btn-outline-primary shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalTraspaso">
+            <i class="fa-solid fa-arrow-right-arrow-left me-1"></i>Traspaso
+        </button>
+    </div>
+    <div class="col-6">
+        <button class="btn btn-outline-danger shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalConsumo">
+            <i class="fa-solid fa-minus-circle me-1"></i>Consumo
+        </button>
+    </div>
+    {% if usuario.rol in ['admin', 'super_su'] %}
+    <div class="col-6">
+        <button class="btn btn-primary shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevoProducto">
+            <i class="fa-solid fa-plus me-1"></i>Ítem
+        </button>
+    </div>
+    <div class="col-6">
+        <button class="btn btn-success shadow-sm btn-sm w-100 fw-bold" style="font-size:0.85rem;" data-bs-toggle="modal" data-bs-target="#modalNuevaHerramienta">
+            <i class="fa-solid fa-wrench me-1"></i>Herram.
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-2 p-md-3">
+        <div class="row g-3 mb-0 align-items-end">
+            <div class="col-md-4">
+                <label class="small fw-bold text-muted text-uppercase">Buscar</label>
+                <input type="text" id="buscadorBodega" class="form-control form-control-sm shadow-sm" placeholder="Nombre, marca, modelo..." onkeyup="filtrarBodega()">
+            </div>
+            <div class="col-md-3 {% if usuario.rol == 'tecnico' %}d-none{% endif %}">
+                <label class="small fw-bold text-muted text-uppercase">Ubicación</label>
+                <select id="filtroUbicacion" class="form-select form-select-sm shadow-sm" onchange="filtrarBodega()">
+                    <option value="">Todas</option>
+                    {% for u in ubicaciones %}
+                    <option value="{{ u.id }}">{{ u.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="small fw-bold text-muted text-uppercase">Categoría</label>
+                <select id="filtroCategoria" class="form-select form-select-sm shadow-sm" onchange="filtrarBodega()">
+                    <option value="">Todas</option>
+                    {% for c in categorias %}
+                    <option value="{{ c.id }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-outline-secondary rounded-pill btn-sm" onclick="limpiarFiltros()">
+                    <i class="fa-solid fa-rotate-left me-1"></i>Limpiar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="tablaBodega">
+            <thead class="table-dark">
+                <tr>
+                    <th>Ítem</th>
+                    <th class="d-none d-md-table-cell">Categoría</th>
+                    <th class="{% if usuario.rol == 'tecnico' %}d-none{% endif %}">Ubicación</th>
+                    <th class="text-center">Stock</th>
+                    <th class="d-none d-md-table-cell">Estado</th>
+                    {% if usuario.rol in ['admin', 'super_su'] %}
+                    <th class="text-center">Acción</th>
+                    {% endif %}
+                </tr>
+            </thead>
+                <tbody>
+                    {% for p in productos %}
+                    <tr class="fila-bodega align-middle" style="cursor:pointer;" onclick="abrirConsumoRapido(event, {{ p.id }}, '{{ p.nombre|e }}', {{ p.cantidad_actual }})" data-nombre="{{ p.nombre|lower }}" data-marca="{{ (p.marca or '')|lower }}" data-modelo="{{ (p.modelo or '')|lower }}" data-ubicacion="{{ p.ubicacion_id }}" data-categoria="{{ p.categoria_id }}" data-categoria-nombre="{{ p.rel_categoria.nombre if p.rel_categoria else '—' }}" data-estado="{{ p.estado }}">
+                        <td>
+                            <div class="fw-bold text-dark">{{ p.nombre }}</div>
+                            <small class="text-muted">{{ p.marca }} {% if p.modelo %}/ {{ p.modelo }}{% endif %}</small>
+                        </td>
+                        <td class="d-none d-md-table-cell"><span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill">{{ p.rel_categoria.nombre if p.rel_categoria else '—' }}</span></td>
+                        <td class="{% if usuario.rol == 'tecnico' %}d-none{% endif %}">
+                            {% set ub = p.rel_ubicacion %}
+                            {% set color = 'primary' if ub and 'Central' in ub.nombre else 'warning' if ub and 'Camioneta' in ub.nombre else 'info' %}
+                            <span class="badge bg-{{ color }} bg-opacity-10 text-{{ color }} rounded-pill">{{ ub.nombre if ub else '—' }}</span>
+                        </td>
+                        <td class="text-center">
+                            {% if p.cantidad_actual <= p.cantidad_minima %}
+                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill fw-bold fs-6 px-3">{{ p.cantidad_actual }}</span>
+                            {% else %}
+                            <span class="fw-bold fs-6">{{ p.cantidad_actual }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell">
+                            {% set ec = 'success' if p.estado == 'Nuevo' else 'warning' if p.estado == 'Usado' else 'info' %}
+                            <span class="badge bg-{{ ec }} bg-opacity-10 text-{{ ec }} rounded-pill">{{ p.estado }}</span>
+                        </td>
+                        {% if usuario.rol in ['admin', 'super_su'] %}
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarProducto{{ p.id }}" title="Editar" onclick="event.stopPropagation();">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="event.stopPropagation(); eliminarProducto({{ p.id }})" title="Eliminar">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if usuario.rol in ['admin', 'super_su'] %}6{% else %}5{% endif %}" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-box-open fs-1 mb-3 d-block"></i>
+                            No hay productos registrados en bodega.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav aria-label="Paginación de bodega" class="mt-4">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+        <li class="page-item {% if pagination.page == 1 %}disabled{% endif %}">
+            <a class="page-link rounded-start-pill" href="/inventario/bodega/{{ usuario.id }}/{{ pagination.prev_num }}"><i class="fa-solid fa-chevron-left"></i></a>
+        </li>
+        {% for p in range(1, pagination.pages + 1) %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+            <a class="page-link" href="/inventario/bodega/{{ usuario.id }}/{{ p }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if pagination.page == pagination.pages %}disabled{% endif %}">
+            <a class="page-link rounded-end-pill" href="/inventario/bodega/{{ usuario.id }}/{{ pagination.next_num }}"><i class="fa-solid fa-chevron-right"></i></a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+<div class="modal fade" id="modalConfirmarEliminarProducto" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-danger">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2">¿Eliminar producto?</h5>
+                <p class="text-muted small mb-3">Esta acción no se puede deshacer.</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" id="btnConfirmarEliminarProducto"><i class="fa-solid fa-trash-can me-1"></i>Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if usuario.rol in ['admin', 'super_su'] %}
+<div class="modal fade" id="modalNuevoProducto" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2"></i>Nuevo Ítem</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formNuevoProducto" onsubmit="return guardarProducto(event)">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Nombre del Ítem</label>
+                            <input type="text" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Marca</label>
+                            <input type="text" name="marca" class="form-control">
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Modelo</label>
+                            <input type="text" name="modelo" class="form-control">
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label small fw-bold">Cantidad</label>
+                            <input type="number" name="cantidad" class="form-control" value="1" min="0" required>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label small fw-bold">Stock Mínimo</label>
+                            <input type="number" name="cantidad_minima" class="form-control" value="1" min="0">
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <label class="form-label small fw-bold">Categoría</label>
+                            <select name="categoria_id" class="form-select" required>
+                                <option value="">Selecciona una categoría</option>
+                                {% for c in categorias %}
+                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Ubicación</label>
+                            <select name="ubicacion_id" class="form-select">
+                                {% for u in ubicaciones %}
+                                <option value="{{ u.id }}" {% if u.nombre == 'Bodega Central' %}selected{% endif %}>{{ u.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Estado</label>
+                            <select name="estado" class="form-select">
+                                <option value="Nuevo">Nuevo</option>
+                                <option value="Usado">Usado</option>
+                                <option value="Reparación">Reparación</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Herramienta -->
+<div class="modal fade" id="modalNuevaHerramienta" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-wrench me-2"></i>Nueva Herramienta</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formNuevaHerramienta" onsubmit="return guardarHerramienta(event)">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Nombre de la Herramienta</label>
+                            <input type="text" name="nombre" class="form-control" placeholder="Ej: Taladro Inalámbrico" required>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label small fw-bold">Cantidad</label>
+                            <input type="number" name="cantidad" class="form-control" value="1" min="1" required>
+                        </div>
+                        <div class="col-12 col-sm-8">
+                            <label class="form-label small fw-bold">Ubicación</label>
+                            <select name="ubicacion_id" class="form-select">
+                                {% for u in ubicaciones %}
+                                <option value="{{ u.id }}" {% if u.nombre == 'Bodega Central' %}selected{% endif %}>{{ u.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar Herramienta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% for p in productos %}
+<div class="modal fade" id="modalEditarProducto{{ p.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen me-2"></i>Editar {{ p.nombre }}</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="return editarProducto(event, {{ p.id }})">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Nombre</label>
+                            <input type="text" name="nombre" class="form-control" value="{{ p.nombre }}" required>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Marca</label>
+                            <input type="text" name="marca" class="form-control" value="{{ p.marca or '' }}">
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Modelo</label>
+                            <input type="text" name="modelo" class="form-control" value="{{ p.modelo or '' }}">
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label small fw-bold">Cantidad</label>
+                            <input type="number" name="cantidad" class="form-control" value="{{ p.cantidad_actual }}" min="0" required>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label small fw-bold">Stock Mínimo</label>
+                            <input type="number" name="cantidad_minima" class="form-control" value="{{ p.cantidad_minima }}" min="0">
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <label class="form-label small fw-bold">Categoría</label>
+                            <select name="categoria_id" class="form-select" required>
+                                <option value="">Sin categoría</option>
+                                {% for c in categorias %}
+                                <option value="{{ c.id }}" {% if p.categoria_id == c.id %}selected{% endif %}>{{ c.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Ubicación</label>
+                            <select name="ubicacion_id" class="form-select">
+                                {% for u in ubicaciones %}
+                                <option value="{{ u.id }}" {% if p.ubicacion_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label small fw-bold">Estado</label>
+                            <select name="estado" class="form-select">
+                                <option value="Nuevo" {% if p.estado == 'Nuevo' %}selected{% endif %}>Nuevo</option>
+                                <option value="Usado" {% if p.estado == 'Usado' %}selected{% endif %}>Usado</option>
+                                <option value="Reparación" {% if p.estado == 'Reparación' %}selected{% endif %}>Reparación</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="modal fade" id="modalTraspaso" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Traspaso de Material</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formTraspaso" onsubmit="return ejecutarTraspaso(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label small fw-bold">Ítem a Traspasar</label>
+                        <input type="text" id="buscarProductoTraspaso" class="form-control" placeholder="Escribe el nombre del ítem..." autocomplete="off" required>
+                        <input type="hidden" name="producto_id" id="producto_id_traspaso" value="">
+                        <div id="listaProductosTraspaso" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></div>
+                        <small id="stockTraspaso" class="text-muted d-none mt-1"><i class="fa-solid fa-box me-1"></i>Stock actual: <span id="stockTraspasoNum">0</span></small>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-5">
+                            <label class="form-label small fw-bold">Origen</label>
+                            <select name="desde_id" class="form-select" required {% if usuario.rol == 'tecnico' and usuario.ubicacion_id %}disabled{% endif %}>
+                                <option value="">Desde...</option>
+                                {% for u in ubicaciones %}
+                                <option value="{{ u.id }}" {% if usuario.rol == 'tecnico' and usuario.ubicacion_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if usuario.rol == 'tecnico' and usuario.ubicacion_id %}
+                            <input type="hidden" name="desde_id" value="{{ usuario.ubicacion_id }}">
+                            {% endif %}
+                        </div>
+                        <div class="col-2 text-center pt-4">
+                            <i class="fa-solid fa-arrow-right text-primary fs-5"></i>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small fw-bold">Destino</label>
+                            <select name="hacia_id" class="form-select" required>
+                                <option value="">Hacia...</option>
+                                {% for u in ubicaciones %}
+                                <option value="{{ u.id }}">{{ u.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Cantidad</label>
+                        <input type="number" name="cantidad" class="form-control" placeholder="0" min="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-check me-1"></i>Ejecutar Traspaso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsumo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-minus-circle me-2 text-danger"></i>Registrar Consumo</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formConsumo" onsubmit="return ejecutarConsumo(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label small fw-bold">Ítem Consumido</label>
+                        <input type="text" id="buscarProductoConsumo" class="form-control" placeholder="Escribe el nombre del ítem..." autocomplete="off" required>
+                        <input type="hidden" name="producto_id" id="producto_id_consumo" value="">
+                        <div id="listaProductosConsumo" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></div>
+                        <small id="stockConsumo" class="text-muted d-none mt-1"><i class="fa-solid fa-box me-1"></i>Stock actual: <span id="stockConsumoNum">0</span></small>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Cantidad</label>
+                        <input type="number" name="cantidad" class="form-control" placeholder="0" min="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-check me-1"></i>Registrar Consumo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConsumoRapido" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-danger text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-minus-circle me-2"></i>Consumir Ítem</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="return ejecutarConsumoRapido(event)">
+                <input type="hidden" name="producto_id" id="rapido_producto_id" value="">
+                <div class="modal-body p-4">
+                    <p class="fw-bold text-dark mb-2 rapido-nombre-mobile" id="rapido_producto_nombre"></p>
+                    <div class="d-md-none mb-2 rapido-info-mobile">
+                        <span class="text-muted d-block">Categoría: <span id="rapido_categoria" class="text-dark">—</span></span>
+                        <span class="text-muted d-block">Estado: <span id="rapido_estado" class="text-dark">—</span></span>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Cantidad a consumir</label>
+                        <input type="number" name="cantidad" class="form-control" placeholder="0" min="1" required>
+                    </div>
+                    <small class="text-muted mt-2 d-block">Stock actual: <span id="rapido_stock_actual">0</span></small>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-check me-1"></i>Consumir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Advertencia -->
+<div class="modal fade" id="modalAdvertencia" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 border-warning">
+            <div class="modal-body text-center p-4">
+                <i class="fa-solid fa-circle-exclamation text-warning fs-1 mb-3"></i>
+                <h5 class="fw-bold mb-2" id="modalAdvertenciaTitulo">Aviso</h5>
+                <p class="text-muted small mb-3" id="modalAdvertenciaTexto"></p>
+                <button type="button" class="btn btn-warning shadow-sm btn-sm fw-bold px-4" style="font-size:0.85rem;" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var productosData = {{ todos_productos|tojson }};
+productosData.sort(function(a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+
+function initAutoProducto(inputId, hiddenId, listId, stockId, stockNumId) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var hidden = document.getElementById(hiddenId);
+    var list = document.getElementById(listId);
+
+    function renderizar(items) {
+        list.innerHTML = '';
+        if (items.length === 0) { list.classList.add('d-none'); return; }
+        items.forEach(function(p) {
+            var item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'list-group-item list-group-item-action py-2 small';
+            item.textContent = p.nombre + ' (' + (p.ubicacion_nombre || 'Sin ubicación') + ')';
+            item.addEventListener('click', function() {
+                input.value = p.nombre;
+                if (hidden) hidden.value = p.id;
+                list.classList.add('d-none');
+                if (stockId && stockNumId) {
+                    document.getElementById(stockId).classList.remove('d-none');
+                    document.getElementById(stockNumId).textContent = p.cantidad;
+                }
+            });
+            list.appendChild(item);
+        });
+        list.classList.remove('d-none');
+    }
+
+    input.addEventListener('focus', function() {
+        renderizar(productosData);
+    });
+
+    input.addEventListener('input', function() {
+        if (hidden) hidden.value = '';
+        if (stockId) document.getElementById(stockId).classList.add('d-none');
+        var texto = this.value.trim().toLowerCase();
+        var filtrados = !texto ? productosData : productosData.filter(function(p) {
+            return p.nombre.toLowerCase().includes(texto) || (p.marca && p.marca.toLowerCase().includes(texto)) || (p.modelo && p.modelo.toLowerCase().includes(texto));
+        });
+        renderizar(filtrados);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (list && !e.target.closest('.position-relative')) {
+            list.classList.add('d-none');
+        }
+    });
+}
+
+initAutoProducto('buscarProductoTraspaso', 'producto_id_traspaso', 'listaProductosTraspaso', 'stockTraspaso', 'stockTraspasoNum');
+initAutoProducto('buscarProductoConsumo', 'producto_id_consumo', 'listaProductosConsumo', 'stockConsumo', 'stockConsumoNum');
+
+function filtrarBodega() {
+    var texto = document.getElementById('buscadorBodega').value.toLowerCase();
+    var ubFiltro = document.getElementById('filtroUbicacion').value;
+    var catFiltro = document.getElementById('filtroCategoria').value;
+    var filas = document.querySelectorAll('.fila-bodega');
+    filas.forEach(function(f) {
+        var nombre = f.getAttribute('data-nombre') + ' ' + f.getAttribute('data-marca') + ' ' + f.getAttribute('data-modelo');
+        var ub = f.getAttribute('data-ubicacion');
+        var cat = f.getAttribute('data-categoria');
+        var matchTexto = !texto || nombre.includes(texto);
+        var matchUb = !ubFiltro || ub === ubFiltro;
+        var matchCat = !catFiltro || cat === catFiltro;
+        f.style.display = (matchTexto && matchUb && matchCat) ? '' : 'none';
+    });
+}
+
+function limpiarFiltros() {
+    document.getElementById('buscadorBodega').value = '';
+    document.getElementById('filtroUbicacion').value = '';
+    document.getElementById('filtroCategoria').value = '';
+    filtrarBodega();
+}
+
+function guardarProducto(e) {
+    e.preventDefault();
+    var f = e.target;
+    var data = {
+        nombre: f.nombre.value,
+        marca: f.marca.value,
+        modelo: f.modelo.value,
+        cantidad: f.cantidad.value,
+        cantidad_minima: f.cantidad_minima.value,
+        estado: f.estado.value,
+        categoria_id: f.categoria_id.value,
+        ubicacion_id: f.ubicacion_id.value
+    };
+    fetch('/api/bodega/crear_producto', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { location.reload(); }
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
+    return false;
+}
+
+function guardarHerramienta(e) {
+    e.preventDefault();
+    var f = e.target;
+    var data = {
+        nombre: f.nombre.value,
+        cantidad: f.cantidad.value,
+        ubicacion_id: f.ubicacion_id.value
+    };
+    fetch('/api/bodega/crear_herramienta', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { location.reload(); }
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
+    return false;
+}
+
+function editarProducto(e, id) {
+    e.preventDefault();
+    var f = e.target;
+    var data = {
+        nombre: f.nombre.value,
+        marca: f.marca.value,
+        modelo: f.modelo.value,
+        cantidad: f.cantidad.value,
+        cantidad_minima: f.cantidad_minima.value,
+        estado: f.estado.value,
+        categoria_id: f.categoria_id.value,
+        ubicacion_id: f.ubicacion_id.value
+    };
+    fetch('/api/bodega/editar_producto/' + id, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { location.reload(); }
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
+    return false;
+}
+
+var productoAEliminar = null;
+function eliminarProducto(id) {
+    productoAEliminar = id;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminarProducto')).show();
+}
+document.getElementById('btnConfirmarEliminarProducto')?.addEventListener('click', function() {
+    if (!productoAEliminar) return;
+    fetch('/api/bodega/eliminar_producto/' + productoAEliminar, { method: 'DELETE' })
+    .then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { location.reload(); }
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
+});
+
+function ejecutarTraspaso(e) {
+    e.preventDefault();
+    var f = e.target;
+    var desde = f.querySelector('input[name="desde_id"]') ? f.querySelector('input[name="desde_id"]').value : f.desde_id.value;
+    var hacia = f.hacia_id.value;
+    if (desde && hacia && desde === hacia) {
+        mostrarAdvertencia('Error', 'No puedes transferir a la misma ubicación');
+        return;
+    }
+    var data = {
+        producto_id: document.getElementById('producto_id_traspaso').value,
+        desde_id: desde,
+        hacia_id: hacia,
+        cantidad: f.cantidad.value,
+        descripcion: 'Traspaso manual'
+    };
+    fetch('/api/bodega/traspaso', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalTraspaso')).hide(); location.reload(); }
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
+    return false;
+}
+
+function ejecutarConsumo(e) {
+    e.preventDefault();
+    var f = e.target;
+    var data = {
+        producto_id: document.getElementById('producto_id_consumo').value,
+        cantidad: f.cantidad.value,
+        descripcion: 'Consumo registrado'
+    };
+    fetch('/api/bodega/consumo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumo')).hide(); location.reload(); }
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
+    return false;
+}
+
+function abrirConsumoRapido(e, id, nombre, stock) {
+    var row = e.currentTarget;
+    if (row.dataset.categoriaNombre === 'Herramientas') {
+        document.getElementById('modalAdvertenciaTitulo').textContent = 'Herramienta no consumible';
+        document.getElementById('modalAdvertenciaTexto').textContent = 'Las herramientas no se pueden consumir. Usa Traspaso para moverlas a un vehículo.';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAdvertencia')).show();
+        return;
+    }
+    document.getElementById('rapido_producto_id').value = id;
+    document.getElementById('rapido_producto_nombre').textContent = nombre;
+    document.getElementById('rapido_stock_actual').textContent = stock;
+    document.getElementById('rapido_categoria').textContent = row.dataset.categoriaNombre || '—';
+    document.getElementById('rapido_estado').textContent = row.dataset.estado || '—';
+    new bootstrap.Modal(document.getElementById('modalConsumoRapido')).show();
+}
+
+function ejecutarConsumoRapido(e) {
+    e.preventDefault();
+    var f = e.target;
+    var data = {
+        producto_id: f.producto_id.value,
+        cantidad: f.cantidad.value,
+        descripcion: 'Consumo rápido'
+    };
+    fetch('/api/bodega/consumo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(resp) {
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumoRapido')).hide(); location.reload(); }
+        else { mostrarAdvertencia('Error', resp.msg); }
+    }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
+    return false;
+}
+
+function mostrarAdvertencia(titulo, texto) {
+    document.getElementById('modalAdvertenciaTitulo').textContent = titulo;
+    document.getElementById('modalAdvertenciaTexto').textContent = texto;
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAdvertencia')).show();
+}
+</script>
+<style>
+@media (max-width: 576px) {
+    #modalConsumoRapido .rapido-nombre-mobile { font-size: 0.95rem; }
+    #modalConsumoRapido .modal-body { font-size: 0.8rem; }
+    #modalConsumoRapido .rapido-info-mobile { font-size: 0.7rem; }
+}
+</style>
