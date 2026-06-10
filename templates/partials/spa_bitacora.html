@@ -398,10 +398,11 @@
 
     // Sede dropdown para el buscador
     function mostrarSedesBusq() {
-        document.getElementById('sede-dropdown-busq').classList.remove('d-none');
+        var el = document.getElementById('sede-dropdown-busq'); if (el) el.classList.remove('d-none');
     }
     function filtrarSedesBusq() {
-        const input = document.getElementById('busq_sede_input').value.toLowerCase();
+        var el = document.getElementById('busq_sede_input'); if (!el) return;
+        const input = el.value.toLowerCase();
         const items = document.querySelectorAll('#sede-dropdown-busq .list-group-item');
         let visible = 0;
         items.forEach(function(item) {
@@ -412,25 +413,26 @@
                 item.style.display = 'none';
             }
         });
-        document.getElementById('sede-dropdown-busq').classList.toggle('d-none', visible === 0);
+        var dd = document.getElementById('sede-dropdown-busq'); if (dd) dd.classList.toggle('d-none', visible === 0);
     }
     function seleccionarSedeBusq(btn) {
-        document.getElementById('busq_sede_input').value = btn.dataset.nombre;
-        document.getElementById('busq_sede_id').value = btn.dataset.id;
-        document.getElementById('sede-dropdown-busq').classList.add('d-none');
+        var el = document.getElementById('busq_sede_input'); if (el) el.value = btn.dataset.nombre;
+        var hid = document.getElementById('busq_sede_id'); if (hid) hid.value = btn.dataset.id;
+        var dd = document.getElementById('sede-dropdown-busq'); if (dd) dd.classList.add('d-none');
     }
     document.addEventListener('click', function(e) {
         if (!e.target.closest('#busq_sede_input') && !e.target.closest('#sede-dropdown-busq') && !e.target.closest('#cliente_search') && !e.target.closest('#sede-dropdown')) {
-            document.getElementById('sede-dropdown-busq').classList.add('d-none');
+            var el = document.getElementById('sede-dropdown-busq'); if (el) el.classList.add('d-none');
         }
     });
 
     // Sede dropdown
     function mostrarSedes() {
-        document.getElementById('sede-dropdown').classList.remove('d-none');
+        var el = document.getElementById('sede-dropdown'); if (el) el.classList.remove('d-none');
     }
     function filtrarSedes() {
-        const input = document.getElementById('cliente_search').value.toLowerCase();
+        var el = document.getElementById('cliente_search'); if (!el) return;
+        const input = el.value.toLowerCase();
         const items = document.querySelectorAll('#sede-dropdown .list-group-item');
         let visible = 0;
         items.forEach(function(item) {
@@ -441,16 +443,16 @@
                 item.style.display = 'none';
             }
         });
-        document.getElementById('sede-dropdown').classList.toggle('d-none', visible === 0);
+        var dd = document.getElementById('sede-dropdown'); if (dd) dd.classList.toggle('d-none', visible === 0);
     }
     function seleccionarSede(btn) {
-        document.getElementById('cliente_search').value = btn.dataset.nombre;
-        document.getElementById('cliente_id_real').value = btn.dataset.id;
-        document.getElementById('sede-dropdown').classList.add('d-none');
+        var el = document.getElementById('cliente_search'); if (el) el.value = btn.dataset.nombre;
+        var hid = document.getElementById('cliente_id_real'); if (hid) hid.value = btn.dataset.id;
+        var dd = document.getElementById('sede-dropdown'); if (dd) dd.classList.add('d-none');
     }
     document.addEventListener('click', function(e) {
         if (!e.target.closest('#cliente_search') && !e.target.closest('#sede-dropdown')) {
-            document.getElementById('sede-dropdown').classList.add('d-none');
+            var el = document.getElementById('sede-dropdown'); if (el) el.classList.add('d-none');
         }
     });
 </script>

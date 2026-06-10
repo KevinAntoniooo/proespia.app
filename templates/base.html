@@ -585,7 +585,7 @@
         window.addEventListener('error', function(e) {
             var div = document.getElementById('spa-error-console');
             if (!div) { div = document.createElement('div'); div.id = 'spa-error-console'; div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:8px 16px;font-size:13px;font-family:monospace;max-height:120px;overflow:auto;'; document.body.appendChild(div); }
-            div.innerHTML = '<div>' + (e.message || e.error || 'Error') + '</div>' + div.innerHTML;
+            div.innerHTML = '<div><b>' + (e.message || 'Error') + '</b><br><small>' + ((e.error && e.error.stack) || e.filename || (e.lineno ? 'L:'+e.lineno : '') || '') + '</small></div>' + div.innerHTML;
         });
         window.USUARIO_ID = {{ current_user.id }};
         function recargarSeccionSPA(seccion) {
