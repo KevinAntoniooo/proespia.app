@@ -1,35 +1,428 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold mb-0"><i class="fa-solid fa-camera me-2"></i>Inventario de Equipos</h5>
-    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('equipo', null)">
-        <i class="fa-solid fa-plus me-1"></i>Nuevo
-    </button>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-server me-2"></i>Inventario de Equipos</h2>
 </div>
-<div class="mb-3">
-    <div class="input-group">
-        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
-        <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar por serie..." x-model="filtroEquipos" @input.debounce="SPA.buscar('equipos', $el.value)">
+
+<div class="row align-items-center mb-3">
+    <div class="col-md-8 col-lg-6">
+        <div class="d-flex align-items-center gap-2">
+            <div style="flex:8">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-primary text-white border-0">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="buscadorEquipos" class="form-control"
+                           placeholder="Escribe para filtrar..."
+                           onkeyup="filtrarEquipos()">
+                </div>
+            </div>
+            <div style="flex:2" class="d-md-none">
+                <button class="btn btn-primary shadow-sm btn-sm fw-bold w-100" style="font-size:0.75rem;height:38px;" data-bs-toggle="modal" data-bs-target="#nuevoEquipoModal">
+                    <i class="fas fa-plus-circle"></i><span class="d-none d-sm-inline ms-1"> Nuevo Equipo</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-6 text-md-end mt-3 mt-md-0 d-none d-md-block">
+        <button class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#nuevoEquipoModal">
+            <i class="fas fa-plus-circle me-1"></i> Nuevo Equipo
+        </button>
     </div>
 </div>
-<div class="table-responsive">
-    <table class="table table-borderless align-middle mb-0">
-        <thead class="text-muted small text-uppercase">
-            <tr><th>Serie</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Cliente</th><th class="text-end">Acción</th></tr>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th>Sede/Cliente</th>
+                <th>Tipo</th>
+                <th>S/N (Serie)</th>
+                <th class="d-none d-lg-table-cell">IP</th>
+                <th class="d-none d-lg-table-cell">Usuario</th>
+                <th class="d-none d-lg-table-cell">Password</th>
+                <th>Acciones</th>
+            </tr>
         </thead>
         <tbody>
             {% for e in equipos %}
-            <tr class="bg-white rounded-3 shadow-sm mb-1">
-                <td class="fw-bold font-monospace small">{{ e.serie }}</td>
-                <td class="small">{{ e.tipo or '—' }}</td>
-                <td class="small">{{ e.marca or '—' }}</td>
-                <td class="small">{{ e.modelo or '—' }}</td>
-                <td class="small">{{ e.cliente_nombre }}</td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-secondary rounded-circle" style="width:30px;height:30px;" onclick="SPA.abrirModal('equipo', {{ e.id }})"><i class="fa-solid fa-pen"></i></button>
+            <tr class="fila-equipo" style="cursor:pointer;" onclick="verDetalleEquipo(this)"
+                data-sede="{{ e.rel_cliente.nombre if e.rel_cliente else 'Sin Sede Asignada' }}"
+                data-tipo="{{ e.tipo }}"
+                data-serie="{{ e.serie }}"
+                data-ip="{{ e.ip or 'Sin IP' }}"
+                data-usuario="{{ e.usuario_equipo or '---' }}"
+                data-pass="{{ e.pass_equipo|e }}">
+                <td class="text-truncate" style="max-width:160px;">
+                    {{ e.rel_cliente.nombre if e.rel_cliente else 'Sin Sede Asignada' }}
+                </td>
+                <td><span class="badge bg-secondary">{{ e.tipo }}</span></td>
+                <td><code>{{ e.serie }}</code></td>
+                <td class="d-none d-lg-table-cell">
+                    {% if e.ip %}
+                        <a href="http://{{ e.ip }}" target="_blank" class="text-decoration-none">
+                            <i class="fas fa-link"></i> {{ e.ip }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted small">Sin IP</span>
+                    {% endif %}
+                </td>
+                <td class="d-none d-lg-table-cell">{{ e.usuario_equipo or '---' }}</td>
+                <td class="d-none d-lg-table-cell">
+                    <code>{{ e.pass_equipo }}</code>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm shadow-sm">
+                        <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editEquipo{{ e.id }}" title="Editar" onclick="event.stopPropagation();">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ e.id }}" title="Eliminar" onclick="event.stopPropagation();">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
-            {% else %}
-            <tr><td colspan="6" class="text-center py-5 text-muted"><i class="fa-solid fa-box-open fa-2x mb-2 d-block"></i>Sin equipos registrados</td></tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
+</div>
+
+{% for e in equipos %}
+<div class="modal fade" id="editEquipo{{ e.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-pen me-2"></i>Editar Equipo: {{ e.tipo }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('editar_equipo', equipo_id=e.id, user_id=usuario.id) }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label fw-bold">Sede / Cliente Asignado</label>
+                        <input type="text" id="buscarClienteEdit{{ e.id }}" class="form-control" placeholder="Escriba el nombre del cliente..." autocomplete="off" value="{{ e.rel_cliente.nombre if e.rel_cliente else '' }}" required>
+                        <input type="hidden" name="cliente_id" id="cliente_id_edit_hidden{{ e.id }}" value="{{ e.cliente_id }}">
+                        <div id="listaClientesEdit{{ e.id }}" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></div>
+                        <small class="text-muted">Cambia la sede si el equipo fue reubicado.</small>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Tipo de Equipo</label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="NVR" {% if e.tipo == 'NVR' %}selected{% endif %}>NVR</option>
+                                <option value="DVR" {% if e.tipo == 'DVR' %}selected{% endif %}>DVR</option>
+                                <option value="Cámara IP" {% if e.tipo == 'Cámara IP' %}selected{% endif %}>Cámara IP</option>
+                                <option value="Cámara Análoga" {% if e.tipo == 'Cámara Análoga' %}selected{% endif %}>Cámara Análoga</option>
+                                <option value="Switch PoE" {% if e.tipo == 'Switch PoE' %}selected{% endif %}>Switch PoE</option>
+                                <option value="Panel de Alarma" {% if e.tipo == 'Panel de Alarma' %}selected{% endif %}>Panel de Alarma</option>
+                                <option value="Radio Enlace" {% if e.tipo == 'Radio Enlace' %}selected{% endif %}>Radio Enlace</option>
+                                <option value="Otro" {% if e.tipo == 'Otro' %}selected{% endif %}>Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Dirección IP</label>
+                            <input type="text" name="ip" class="form-control" value="{{ e.ip or '' }}" placeholder="192.168.1.100">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Número de Serie (S/N)</label>
+                        <input type="text" name="serie" class="form-control" value="{{ e.serie }}" required pattern="[A-Za-z0-9]+" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Usuario Acceso</label>
+                            <input type="text" name="usuario_equipo" class="form-control" value="{{ e.usuario_equipo or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Contraseña Acceso</label>
+                            <input type="text" name="pass_equipo" class="form-control" value="{{ e.pass_equipo or '' }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 p-4">
+                    <div class="d-grid gap-2 w-100">
+                        <button type="submit" class="btn btn-primary">Actualizar Datos del Equipo</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cerrar sin cambios</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal{{ e.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger shadow">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>¡Atención!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="text-danger mb-3">
+                    <i class="fas fa-shield-halved" style="font-size: 3.5rem;"></i>
+                </div>
+                <h4 class="fw-bold">¿Eliminar este equipo?</h4>
+                <p class="text-muted">
+                    Estás por borrar el <strong>{{ e.tipo }}</strong> con S/N <code>{{ e.serie }}</code>
+                    asignado a la sede <strong>{{ e.rel_cliente.nombre if e.rel_cliente else 'Sin Sede' }}</strong>.
+                </p>
+                <div class="alert alert-danger small mx-3">
+                    <i class="fas fa-circle-info me-1"></i>
+                    Esta acción es irreversible y se perderán todas las credenciales de acceso asociadas a este equipo.
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <div class="d-grid gap-2 w-75">
+                    <a href="{{ url_for('borrar_equipo', equipo_id=e.id, user_id=usuario.id) }}" class="btn btn-danger shadow-sm">Confirmar y Eliminar</a>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">No, cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="modal fade" id="nuevoEquipoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title mb-0">
+                    <i class="fas fa-microchip me-2"></i>Registrar Nuevo Equipo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('nuevo_equipo', user_id=usuario.id) }}" method="POST" id="formNuevoEquipo">
+                <div class="modal-body p-4">
+                    <div class="mb-3 position-relative">
+                        <label class="form-label fw-bold">Sede / Cliente</label>
+                        <input type="text" id="buscarClienteNuevo" class="form-control" placeholder="Escriba el nombre del cliente..." autocomplete="off" required>
+                        <input type="hidden" name="cliente_id" id="cliente_id_nuevo_hidden" value="">
+                        <div id="listaClientesNuevo" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Tipo de Equipo</label>
+                            <select name="tipo" class="form-select" required>
+                                <option value="" selected disabled>Seleccione...</option>
+                                <option value="NVR">NVR</option>
+                                <option value="DVR">DVR</option>
+                                <option value="Cámara IP">Cámara IP</option>
+                                <option value="Cámara Análoga">Cámara Análoga</option>
+                                <option value="Switch PoE">Switch PoE</option>
+                                <option value="Panel de Alarma">Panel de Alarma</option>
+                                <option value="Radio Enlace">Radio Enlace</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Dirección IP</label>
+                            <input type="text" name="ip" class="form-control" placeholder="192.168.1.100">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Número de Serie (S/N)</label>
+                        <input type="text" name="serie" class="form-control" placeholder="Ej: SN123456ABC" required pattern="[A-Za-z0-9]+" title="Solo se permiten letras y números" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Usuario Acceso</label>
+                            <input type="text" name="usuario_equipo" class="form-control" placeholder="admin">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Contraseña Acceso</label>
+                            <input type="text" name="pass_equipo" class="form-control" placeholder="*******">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 p-4">
+                    <div class="d-grid gap-2 w-100">
+                        <button type="submit" class="btn btn-primary">Guardar Equipo</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalClienteNoExiste" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body text-center p-4">
+                <div class="text-warning mb-3">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem;"></i>
+                </div>
+                <h5 class="fw-bold text-dark mb-2">Cliente no registrado</h5>
+                <p class="text-muted small mb-3">El cliente que escribió no existe en el sistema. Verifique el nombre o regístrelo primero.</p>
+                <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var clientesData = {{ clientes|tojson }};
+clientesData.sort(function(a, b) {
+    return a.nombre.localeCompare(b.nombre, 'es');
+});
+
+function renderizarLista(list, input, hidden, items) {
+    if (!list) return;
+    list.innerHTML = '';
+    if (items.length === 0) {
+        list.classList.add('d-none');
+        return;
+    }
+    items.forEach(function(c) {
+        var item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'list-group-item list-group-item-action py-2';
+        item.textContent = c.nombre;
+        item.addEventListener('click', function() {
+            input.value = c.nombre;
+            if (hidden) hidden.value = c.id;
+                            list.classList.add ('d-none');
+        });
+        list.appendChild(item);
+    });
+    list.classList.remove('d-none');
+}
+
+function initAutocomplete(inputId, hiddenId, listId, formId) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    var hidden = document.getElementById(hiddenId);
+    var list = document.getElementById(listId);
+    var form = formId ? document.getElementById(formId) : null;
+    var selected = false;
+
+    if (hidden && hidden.value) {
+        selected = true;
+    }
+
+    input.addEventListener('focus', function() {
+        renderizarLista(list, input, hidden, clientesData);
+    });
+
+    input.addEventListener('input', function() {
+        selected = false;
+        if (hidden) hidden.value = '';
+        var texto = this.value.trim().toLowerCase();
+        var filtrados = texto.length === 0
+            ? clientesData
+            : clientesData.filter(function(c) {
+                return c.nombre.toLowerCase().includes(texto);
+            });
+        renderizarLista(list, input, hidden, filtrados);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (list && !e.target.closest('.position-relative')) {
+            list.classList.add('d-none');
+        }
+    });
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            var texto = input.value.trim();
+            var match = null;
+            for (var i = 0; i < clientesData.length; i++) {
+                if (clientesData[i].nombre.toLowerCase() === texto.toLowerCase()) {
+                    match = clientesData[i];
+                    break;
+                }
+            }
+            if (!match) {
+                e.preventDefault();
+                var modal = new bootstrap.Modal(document.getElementById('modalClienteNoExiste'));
+                modal.show();
+            } else if (hidden) {
+                hidden.value = match.id;
+            }
+        });
+    }
+}
+
+setTimeout(function() {
+    initAutocomplete('buscarClienteNuevo', 'cliente_id_nuevo_hidden', 'listaClientesNuevo', 'formNuevoEquipo');
+    {% for e in equipos %}
+    initAutocomplete('buscarClienteEdit{{ e.id }}', 'cliente_id_edit_hidden{{ e.id }}', 'listaClientesEdit{{ e.id }}', null);
+    {% endfor %}
+}, 100);
+
+function filtrarEquipos() {
+    var input = document.getElementById("buscadorEquipos");
+    var filter = input.value.toLowerCase();
+    var filas = document.getElementsByClassName("fila-equipo");
+    for (var i = 0; i < filas.length; i++) {
+        var textoFila = filas[i].textContent.toLowerCase();
+        filas[i].style.display = textoFila.indexOf(filter) > -1 ? "" : "none";
+    }
+}
+
+function verPass(el, pass) {
+    el.innerHTML = '<i class="fas fa-eye-slash"></i> ' + pass;
+    setTimeout(function() {
+        el.innerHTML = '<i class="fas fa-eye"></i> ******';
+    }, 3000);
+}
+
+function verDetalleEquipo(row) {
+    document.getElementById('detalle-sede').textContent = row.getAttribute('data-sede');
+    document.getElementById('detalle-tipo').textContent = row.getAttribute('data-tipo');
+    document.getElementById('detalle-serie').textContent = row.getAttribute('data-serie');
+    document.getElementById('detalle-ip').textContent = row.getAttribute('data-ip');
+    document.getElementById('detalle-usuario').textContent = row.getAttribute('data-usuario');
+    var pass = row.getAttribute('data-pass');
+    document.getElementById('detalle-pass').innerHTML = pass && pass !== 'None' ?
+        '<code>' + pass + '</code>' : '<span class="text-muted">---</span>';
+    var modal = new bootstrap.Modal(document.getElementById('modalDetalleEquipo'));
+    modal.show();
+}
+</script>
+
+<!-- Modal detalle equipo (mobile) -->
+<div class="modal fade" id="modalDetalleEquipo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-server me-2"></i>Detalle del Equipo</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size:0.6rem;">Sede / Cliente</small>
+                    <p class="fw-bold mb-0" id="detalle-sede">---</p>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.6rem;">Tipo</small>
+                        <p class="mb-0" id="detalle-tipo">---</p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.6rem;">Serie</small>
+                        <p class="mb-0" id="detalle-serie">---</p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.6rem;">IP</small>
+                        <p class="mb-0" id="detalle-ip">---</p>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.6rem;">Usuario</small>
+                        <p class="mb-0" id="detalle-usuario">---</p>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.6rem;">Password</small>
+                        <p class="mb-0" id="detalle-pass">---</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
 </div>

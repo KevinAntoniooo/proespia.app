@@ -583,6 +583,13 @@
             if (!div) { div = document.createElement('div'); div.id = 'spa-error-console'; div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:8px 16px;font-size:13px;font-family:monospace;max-height:120px;overflow:auto;'; document.body.appendChild(div); }
             div.innerHTML = '<div>' + (e.message || e.error || 'Error') + '</div>' + div.innerHTML;
         });
+        window.USUARIO_ID = {{ current_user.id }};
+        function abrirModalSPA(tipo, id) {
+            if (tipo === 'cliente') window.location.href = '/clientes/nuevo/' + USUARIO_ID;
+            else if (tipo === 'equipo') window.location.href = '/equipos/nuevo/' + USUARIO_ID;
+            else if (tipo === 'bitacora') window.location.href = '/bitacora/nueva/' + USUARIO_ID;
+            else alert('Funcionalidad en restauración');
+        }
         function recargarSeccionSPA(seccion) {
             var el = document.getElementById('spa-contenido-dinamico');
             if (!el) return;

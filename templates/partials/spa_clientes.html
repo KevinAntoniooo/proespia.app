@@ -1,40 +1,605 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold mb-0"><i class="fa-solid fa-users me-2"></i>Clientes</h5>
-    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('cliente', null)">
-        <i class="fa-solid fa-plus me-1"></i>Nuevo
-    </button>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+#nuevoClienteModal .modal-dialog,
+[id^="modalEditarCliente"] .modal-dialog { max-width: 800px; }
+</style>
+<div class="container-fluid px-4 mt-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building me-2"></i>Gestión de Clientes / Sedes</h2>
 </div>
-<div class="mb-3">
-    <div class="input-group">
-        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-search text-muted"></i></span>
-        <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar cliente..." x-model="filtroClientes" @input.debounce="SPA.buscar('clientes', $el.value)">
+
+<div class="row align-items-center mb-3">
+    <div class="col-md-8 col-lg-6">
+        <div class="d-flex align-items-center gap-2">
+            <div style="flex:8">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-info text-white border-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" id="buscadorClientes" class="form-control shadow-sm" 
+                           placeholder="Buscar sede, dirección o estado..." 
+                           onkeyup="filtrarClientes()">
+                </div>
+            </div>
+            <div style="flex:2" class="d-md-none">
+                <button class="btn btn-primary shadow-sm btn-sm fw-bold w-100" style="font-size:0.75rem;height:38px;" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
+                    <i class="bi bi-person-plus-fill"></i><span class="d-none d-sm-inline ms-1"> Nuevo Cliente</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 col-lg-6 text-md-end mt-3 mt-md-0 d-none d-md-block">
+        <button class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#nuevoClienteModal">
+            <i class="bi bi-person-plus-fill me-1"></i> Nuevo Cliente
+        </button>
     </div>
 </div>
-<div class="table-responsive">
-    <table class="table table-borderless align-middle mb-0">
-        <thead class="text-muted small text-uppercase">
-            <tr>
-                <th>Nombre</th>
-                <th>Dirección</th>
-                <th>Contacto</th>
-                <th class="text-center">Equipos</th>
-                <th class="text-end">Acción</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for c in clientes %}
-            <tr class="bg-white rounded-3 shadow-sm mb-1" style="border-radius:12px!important;">
-                <td class="fw-bold">{{ c.nombre }}</td>
-                <td class="small text-muted">{{ c.direccion or '—' }}</td>
-                <td class="small">{{ c.contacto or '—' }}</td>
-                <td class="text-center"><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">{{ c.equipos_count }}</span></td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-secondary rounded-circle me-1" style="width:30px;height:30px;" onclick="SPA.abrirModal('cliente', {{ c.id }})"><i class="fa-solid fa-pen"></i></button>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>Sin clientes registrados</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+                <tr>
+                    <th>Nombre de la Sede</th>
+                    <th class="d-none d-md-table-cell">Dirección</th>
+                    <th class="d-none d-lg-table-cell">Plan Cuadrante</th>
+                    <th>Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in clientes %}
+                <tr class="fila-cliente">
+                    <td class="fw-bold cliente-nombre-sm">
+                        <i class="bi bi-building text-primary me-2"></i>{{ c.nombre }}
+                    </td>
+                    <td class="text-muted small d-none d-md-table-cell">{{ c.direccion }}</td>
+                    <td class="d-none d-lg-table-cell">{{ c.plan_cuadrante or '---' }}</td>
+                    <td>
+                        <span class="badge {% if c.estado_monitoreo == 'Activo' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ c.estado_monitoreo }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group btn-group-sm shadow-sm">
+                            <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalCliente{{ c.id }}" title="Ver Ficha">
+                                <i class="fa-solid fa-file-lines"></i>
+                            </button>
+                            <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarCliente{{ c.id }}" title="Editar">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminarCliente{{ c.id }}" title="Eliminar">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </div>
 </div>
+
+{% for c in clientes %}
+<div class="modal fade" id="modalCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>Ficha Técnica: {{ c.nombre }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-geo-alt-fill text-primary"></i> Ubicación</h6>
+                        <p>{{ c.direccion }}</p>
+                        <hr>
+                        <h6><i class="bi bi-shield-check text-primary"></i> Seguridad</h6>
+                        <p><strong>Plan Cuadrante:</strong> {{ c.plan_cuadrante or 'No registrado' }}</p>
+                        <p><strong>Estado:</strong> {{ c.estado_monitoreo }}</p>
+                        <p><strong>Contactos Emergencia:</strong></p>
+                        <div class="mb-2">
+                        {% if c.contacto_emergencia and c.contacto_emergencia != '' and c.contacto_emergencia[0] == '[' %}
+                            {% for contacto in c.contacto_emergencia|fromjson %}
+                            <span class="badge bg-light text-dark border px-2 py-1 me-1 mb-1" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-phone text-success fa-xs me-1"></i>{{ contacto.nombre }} - {{ contacto.telefono }}
+                            </span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="text-muted small">{{ c.contacto_emergencia or 'No registrado' }}</span>
+                        {% endif %}
+                        </div>
+                        {% if c.latitud and c.longitud %}
+                        <p><strong>Coordenadas:</strong> <span class="text-muted">{{ "%.6f"|format(c.latitud) }}, {{ "%.6f"|format(c.longitud) }}</span></p>
+                        {% endif %}
+                        <input type="hidden" id="latFicha{{ c.id }}" value="{{ c.latitud or '' }}">
+                        <input type="hidden" id="lngFicha{{ c.id }}" value="{{ c.longitud or '' }}">
+                        <div id="mapFicha{{ c.id }}" style="height:180px;border-radius:12px;" class="border mt-2 mb-3"></div>
+                        <button class="btn btn-outline-success btn-sm w-100 mb-3" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination={% if c.latitud and c.longitud %}{{ c.latitud }},{{ c.longitud }}{% else %}{{ c.direccion | replace(' ', '+') }}{% endif %}','_blank')">
+                            <i class="fa-solid fa-location-arrow me-1"></i>Ir
+                        </button>
+                    </div>
+                    <div class="col-md-6 border-start">
+                        <h6 class="mb-2"><i class="bi bi-cpu-fill text-primary"></i> Equipos Instalados</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for e in c.rel_cliente_equipos %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center small">
+                                {{ e.tipo }} <span class="text-muted">{{ e.serie }}</span>
+                            </li>
+                            {% else %}
+                            <li class="list-group-item small text-muted">Sin equipos registrados</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <form action="/clientes/reporte_pdf/{{ c.id }}/{{ usuario.id }}" method="GET" class="d-flex align-items-center w-100">
+                    <div class="form-check form-switch me-auto">
+                        <input class="form-check-input" type="checkbox" name="ver_pass" id="switchPass{{ c.id }}">
+                        <label class="form-check-label small text-muted" for="switchPass{{ c.id }}">Incluir contraseñas</label>
+                    </div>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar PDF
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="/clientes/editar/{{ c.id }}/{{ usuario.id }}" method="POST">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar Sede: {{ c.nombre }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre de la Sede</label>
+                                <input type="text" name="nombre" class="form-control" value="{{ c.nombre }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Dirección</label>
+                                <div class="input-group">
+                                    <input type="text" name="direccion" id="dirEditar{{ c.id }}" class="form-control" value="{{ c.direccion }}" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="buscarDireccion('Editar{{ c.id }}')" title="Buscar en mapa">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Plan Cuadrante (Contacto Policial)</label>
+                                <input type="text" name="plan_cuadrante" class="form-control" value="{{ c.plan_cuadrante or '' }}" placeholder="Ej: Cuadrante 5">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Contactos de Emergencia</label>
+                                <div class="d-flex gap-2 mb-2">
+                                    <input type="text" id="emergenciaNombre{{ c.id }}" class="form-control" placeholder="Nombre" style="flex:2;">
+                                    <input type="text" id="emergenciaTelefono{{ c.id }}" class="form-control" placeholder="Teléfono" style="flex:1;">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('{{ c.id }}')" style="white-space:nowrap;">
+                                        <i class="fa-solid fa-plus"></i><span class="d-none d-md-inline ms-1">Agregar</span>
+                                    </button>
+                                </div>
+                                <div id="listaEmergencia{{ c.id }}" class="d-flex flex-wrap gap-2 mb-1"></div>
+                                <input type="hidden" name="contacto_emergencia" id="contactoEmergencia{{ c.id }}" value="{{ c.contacto_emergencia or '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Estado</label>
+                                <select name="estado_monitoreo" class="form-select">
+                                    <option value="Activo" {% if c.estado_monitoreo == 'Activo' %}selected{% endif %}>Activo</option>
+                                    <option value="Inactivo" {% if c.estado_monitoreo == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                                    <option value="Suspendido" {% if c.estado_monitoreo == 'Suspendido' %}selected{% endif %}>Suspendido</option>
+                                    <option value="Pendiente" {% if c.estado_monitoreo == 'Pendiente' %}selected{% endif %}>Pendiente de Instalación</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ubicación en mapa</label>
+                            <div id="mapEditar{{ c.id }}" style="height:220px;border-radius:12px;" class="border mb-2"></div>
+                            <input type="hidden" name="latitud" id="latEditar{{ c.id }}" value="{{ c.latitud or '' }}">
+                            <input type="hidden" name="longitud" id="lngEditar{{ c.id }}" value="{{ c.longitud or '' }}">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="obtenerUbicacion('Editar{{ c.id }}')">
+                                <i class="fa-solid fa-location-dot me-1"></i>Obtener ubicación actual
+                            </button>
+                            <div id="coordInfoEditar{{ c.id }}" class="small text-muted mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEliminarCliente{{ c.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fa-solid fa-exclamation-triangle me-2"></i>¡Atención Crítica!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fa-solid fa-shield-slash text-danger" style="font-size: 2.5rem;"></i>
+                    <h4 class="mt-2">¿Eliminar {{ c.nombre }}?</h4>
+                    <p class="text-muted">Esta acción es irreversible. Se eliminarán equipos, bitácoras y visitas asociadas a <strong>{{ c.direccion }}</strong>.</p>
+                    <div class="alert alert-warning small">
+                        <i class="fa-solid fa-circle-info me-1"></i> Revisa el historial antes de eliminar. Puedes descargar un PDF con los datos seleccionados.
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+                    <h6 class="fw-bold mb-0"><i class="fa-solid fa-download me-1"></i>Exportar antes de eliminar:</h6>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input seccion-pdf" type="checkbox" id="chkEquipos{{ c.id }}" value="equipos" checked>
+                        <label class="form-check-label" for="chkEquipos{{ c.id }}">Equipos</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input seccion-pdf" type="checkbox" id="chkBitacoras{{ c.id }}" value="bitacoras" checked>
+                        <label class="form-check-label" for="chkBitacoras{{ c.id }}">Bitácoras</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input seccion-pdf" type="checkbox" id="chkVisitas{{ c.id }}" value="visitas" checked>
+                        <label class="form-check-label" for="chkVisitas{{ c.id }}">Visitas</label>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="descargarHistorialPDF({{ c.id }})">
+                        <i class="fa-solid fa-file-pdf me-1"></i>Descargar PDF
+                    </button>
+                </div>
+
+                <div id="historialContent{{ c.id }}">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-danger" role="status"></div>
+                        <p class="text-muted mt-2">Cargando historial...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="/clientes/eliminar/{{ c.id }}/{{ usuario.id }}" class="btn btn-danger px-4">
+                    <i class="fa-solid fa-trash-can me-1"></i>Confirmar Eliminación
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="modal fade" id="nuevoClienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title mb-0">
+                    <i class="bi bi-building-add me-2"></i>Nueva Sede / Cliente
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="{{ url_for('nuevo_cliente', user_id=usuario.id) }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre de la Sede</label>
+                                <input type="text" name="nombre" class="form-control" placeholder="Ej: Bodega Central Rancagua" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Dirección</label>
+                                <div class="input-group">
+                                    <input type="text" name="direccion" id="dirNuevo" class="form-control" placeholder="Calle, Número, Ciudad" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="buscarDireccion('Nuevo')" title="Buscar en mapa">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Plan Cuadrante (Contacto Policial)</label>
+                                <input type="text" name="plan_cuadrante" class="form-control" placeholder="Ej: Cuadrante 5 - +569...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Contactos de Emergencia</label>
+                                <div class="d-flex gap-2 mb-2">
+                                    <input type="text" id="emergenciaNombreNuevo" class="form-control" placeholder="Nombre" style="flex:2;">
+                                    <input type="text" id="emergenciaTelefonoNuevo" class="form-control" placeholder="Teléfono" style="flex:1;">
+                                    <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('Nuevo')" style="white-space:nowrap;">
+                                        <i class="fa-solid fa-plus"></i><span class="d-none d-md-inline ms-1">Agregar</span>
+                                    </button>
+                                </div>
+                                <div id="listaEmergenciaNuevo" class="d-flex flex-wrap gap-2 mb-1"></div>
+                                <input type="hidden" name="contacto_emergencia" id="contactoEmergenciaNuevo" value="">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Estado de Monitoreo</label>
+                                <select name="estado_monitoreo" class="form-select">
+                                    <option value="Activo">Activo</option>
+                                    <option value="Inactivo">Inactivo</option>
+                                    <option value="Pendiente">Pendiente de Instalación</option>
+                                    <option value="Suspendido">Suspendido morosidad</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ubicación en mapa</label>
+                            <div id="mapNuevo" style="height:220px;border-radius:12px;" class="border mb-2"></div>
+                            <input type="hidden" name="latitud" id="latNuevo" value="">
+                            <input type="hidden" name="longitud" id="lngNuevo" value="">
+                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="obtenerUbicacion('Nuevo')">
+                                <i class="fa-solid fa-location-dot me-1"></i>Obtener ubicación actual
+                            </button>
+                            <div id="coordInfoNuevo" class="small text-muted mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0 p-4">
+                    <div class="d-grid gap-2 w-100">
+                        <button type="submit" class="btn btn-success">Guardar Sede</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function filtrarClientes() {
+    let filtro = document.getElementById("buscadorClientes").value.toLowerCase();
+    let filas = document.getElementsByClassName("fila-cliente");
+    for (let i = 0; i < filas.length; i++) {
+        let texto = filas[i].textContent.toLowerCase();
+        filas[i].style.display = texto.includes(filtro) ? "" : "none";
+    }
+}
+
+var mapInstances = {};
+var mapMarkers = {};
+
+function initClienteMap(suffix, lat, lng, readonly) {
+    var mapId = 'map' + suffix;
+    var container = document.getElementById(mapId);
+    if (!container) return;
+    if (mapInstances[suffix]) {
+        mapInstances[suffix].invalidateSize();
+        if (lat !== undefined && lat !== null && !isNaN(lat)) {
+            mapMarkers[suffix].setLatLng([lat, lng]);
+            mapInstances[suffix].setView([lat, lng], 15);
+        }
+        return;
+    }
+    var defaultLat = (lat !== undefined && lat !== null && !isNaN(lat)) ? lat : -34.1700;
+    var defaultLng = (lng !== undefined && lng !== null && !isNaN(lng)) ? lng : -70.7400;
+    var zoom = (lat !== undefined && lat !== null && !isNaN(lat)) ? 15 : 13;
+    var map = L.map(mapId).setView([defaultLat, defaultLng], zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+        maxZoom: 19
+    }).addTo(map);
+    var marker = L.marker([defaultLat, defaultLng], {draggable: !readonly}).addTo(map);
+    if (!readonly) {
+        marker.on('dragend', function() {
+            var pos = marker.getLatLng();
+            document.getElementById('lat' + suffix).value = pos.lat.toFixed(6);
+            document.getElementById('lng' + suffix).value = pos.lng.toFixed(6);
+            document.getElementById('coordInfo' + suffix).textContent = pos.lat.toFixed(6) + ', ' + pos.lng.toFixed(6);
+        });
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            document.getElementById('lat' + suffix).value = e.latlng.lat.toFixed(6);
+            document.getElementById('lng' + suffix).value = e.latlng.lng.toFixed(6);
+            document.getElementById('coordInfo' + suffix).textContent = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+        });
+    }
+    if (lat !== undefined && lat !== null && !isNaN(lat)) {
+        document.getElementById('coordInfo' + suffix).textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+        marker.bindPopup('<div class="text-center"><strong>'+lat.toFixed(6)+', '+lng.toFixed(6)+'</strong><br><a href="https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng+'" target="_blank" class="btn btn-sm btn-success mt-1"><i class="fa-solid fa-location-arrow me-1"></i>Ir</a></div>').openPopup();
+    }
+    mapInstances[suffix] = map;
+    mapMarkers[suffix] = marker;
+}
+
+function obtenerUbicacion(suffix) {
+    if (!navigator.geolocation) {
+        alert('Geolocalización no soportada por este navegador.');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
+        document.getElementById('lat' + suffix).value = lat.toFixed(6);
+        document.getElementById('lng' + suffix).value = lng.toFixed(6);
+        document.getElementById('coordInfo' + suffix).textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+        if (mapInstances[suffix]) {
+            mapMarkers[suffix].setLatLng([lat, lng]);
+            mapInstances[suffix].setView([lat, lng], 17);
+        }
+    }, function() {
+        alert('No se pudo obtener la ubicaci\u00f3n. Verifica los permisos de GPS.');
+    });
+}
+
+function buscarDireccion(suffix) {
+    var input = document.getElementById('dir' + suffix);
+    if (!input) return;
+    var dir = input.value.trim();
+    if (!dir) return;
+    var btn = input.nextElementSibling;
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(dir) + '&limit=1&countrycodes=cl')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+            if (!data || data.length === 0) { alert('No se encontr\u00f3 la direcci\u00f3n. Intenta con m\u00e1s detalles.'); return; }
+            var lat = parseFloat(data[0].lat);
+            var lng = parseFloat(data[0].lon);
+            document.getElementById('lat' + suffix).value = lat.toFixed(6);
+            document.getElementById('lng' + suffix).value = lng.toFixed(6);
+            document.getElementById('coordInfo' + suffix).textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+            if (mapInstances[suffix]) {
+                mapMarkers[suffix].setLatLng([lat, lng]);
+                mapInstances[suffix].setView([lat, lng], 17);
+            } else {
+                initClienteMap(suffix, lat, lng);
+            }
+        })
+        .catch(function() {
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+            alert('Error al buscar la direcci\u00f3n. Verifica tu conexi\u00f3n.');
+        });
+}
+
+setTimeout(function() {
+    initClienteMap('Nuevo');
+    document.querySelectorAll('[id^="modalEditarCliente"]').forEach(function(m) {
+        m.addEventListener('shown.bs.modal', function() {
+            var id = this.id.replace('modalEditarCliente', '');
+            var lat = parseFloat(document.getElementById('latEditar' + id).value) || null;
+            var lng = parseFloat(document.getElementById('lngEditar' + id).value) || null;
+            initClienteMap('Editar' + id, lat, lng);
+        });
+    });
+    document.querySelectorAll('[id^="modalCliente"]').forEach(function(m) {
+        m.addEventListener('shown.bs.modal', function() {
+            var id = this.id.replace('modalCliente', '');
+            var lat = parseFloat(document.getElementById('latFicha' + id).value);
+            var lng = parseFloat(document.getElementById('lngFicha' + id).value);
+            initClienteMap('Ficha' + id, isNaN(lat) ? null : lat, isNaN(lng) ? null : lng, true);
+        });
+    });
+});
+
+// ===== Contactos de Emergencia =====
+var contactosEmergencia = {};
+
+function agregarContactoEmergencia(suffix) {
+    var nombre = document.getElementById('emergenciaNombre' + suffix).value.trim();
+    var telefono = document.getElementById('emergenciaTelefono' + suffix).value.trim();
+    if (!nombre || !telefono) return;
+    if (!contactosEmergencia[suffix]) contactosEmergencia[suffix] = [];
+    contactosEmergencia[suffix].push({nombre: nombre, telefono: telefono});
+    document.getElementById('emergenciaNombre' + suffix).value = '';
+    document.getElementById('emergenciaTelefono' + suffix).value = '';
+    renderizarContactos(suffix);
+}
+
+function renderizarContactos(suffix) {
+    var lista = document.getElementById('listaEmergencia' + suffix);
+    var hidden = document.getElementById('contactoEmergencia' + suffix);
+    var contactos = contactosEmergencia[suffix] || [];
+    lista.innerHTML = '';
+    contactos.forEach(function(c, i) {
+        var badge = document.createElement('span');
+        badge.className = 'badge bg-light text-dark d-inline-flex align-items-center gap-1 px-2 py-1';
+        badge.style.cssText = 'border:1px solid #dee2e6;font-size:0.75rem;border-radius:12px;';
+        badge.innerHTML = '<i class="fa-solid fa-phone text-success fa-xs"></i> ' + c.nombre + ' - ' + c.telefono +
+            ' <button type="button" class="btn-close btn-close-sm ms-1" style="font-size:0.4rem;" onclick="eliminarContactoEmergencia(' + i + ',\'' + suffix + '\')"></button>';
+        lista.appendChild(badge);
+    });
+    hidden.value = JSON.stringify(contactos);
+}
+
+function eliminarContactoEmergencia(index, suffix) {
+    contactosEmergencia[suffix].splice(index, 1);
+    renderizarContactos(suffix);
+}
+
+// Inicializar contactos existentes al abrir modales de edición
+setTimeout(function() {
+    document.querySelectorAll('[id^="modalEditarCliente"]').forEach(function(m) {
+        m.addEventListener('shown.bs.modal', function() {
+            var id = this.id.replace('modalEditarCliente', '');
+            var hidden = document.getElementById('contactoEmergencia' + id);
+            if (!hidden || !hidden.value || hidden.value === '') return;
+            try {
+                var parsed = JSON.parse(hidden.value);
+                if (Array.isArray(parsed)) {
+                    contactosEmergencia[id] = parsed;
+                    renderizarContactos(id);
+                }
+            } catch(e) {}
+        });
+    });
+});
+
+// ===== HISTORIAL CLIENTE =====
+function cargarHistorial(clienteId) {
+    var container = document.getElementById('historialContent' + clienteId);
+    if (!container) return;
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Cargando historial...</p></div>';
+    fetch('/api/cliente/' + clienteId + '/historial')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var html = '';
+            if (data.equipos.length > 0) {
+                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-microchip me-1"></i>Equipos (' + data.equipos.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Tipo</th><th>Serie</th><th>IP</th></tr></thead><tbody>';
+                data.equipos.forEach(function(e) {
+                    html += '<tr><td>' + escHtml(e.tipo) + '</td><td><code>' + escHtml(e.serie) + '</code></td><td>' + escHtml(e.ip) + '</td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            } else {
+                html += '<div class="alert alert-secondary py-2 small"><i class="fa-solid fa-circle-info me-1"></i>Sin equipos registrados</div>';
+            }
+            if (data.bitacoras.length > 0) {
+                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-book me-1"></i>Bitácoras (' + data.bitacoras.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo Visita</th><th>Descripción</th><th>Técnico</th></tr></thead><tbody>';
+                data.bitacoras.forEach(function(b) {
+                    html += '<tr><td class="small">' + escHtml(b.fecha) + '</td><td>' + escHtml(b.tipo_visita) + '</td><td class="small">' + escHtml(b.descripcion) + '</td><td>' + escHtml(b.tecnico) + '</td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            } else {
+                html += '<div class="alert alert-secondary py-2 small"><i class="fa-solid fa-circle-info me-1"></i>Sin bitácoras registradas</div>';
+            }
+            if (data.visitas.length > 0) {
+                html += '<div class="card border-0 shadow-sm rounded-3 mb-3"><div class="card-header bg-dark text-white py-2"><h6 class="mb-0"><i class="fa-solid fa-calendar-check me-1"></i>Visitas Programadas (' + data.visitas.length + ')</h6></div><div class="table-responsive"><table class="table table-sm table-borderless align-middle mb-0"><thead class="table-light"><tr><th>Fecha</th><th>Tipo Trabajo</th><th>Estado</th><th>Técnico</th></tr></thead><tbody>';
+                data.visitas.forEach(function(v) {
+                    var badgeEstado = {Pendiente:'bg-warning text-dark',Completada:'bg-success',Cancelada:'bg-secondary'};
+                    html += '<tr><td class="small">' + escHtml(v.fecha) + '</td><td>' + escHtml(v.tipo_trabajo) + '</td><td><span class="badge ' + (badgeEstado[v.estado]||'bg-secondary') + '">' + escHtml(v.estado) + '</span></td><td>' + escHtml(v.tecnico) + '</td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            } else {
+                html += '<div class="alert alert-secondary py-2 small"><i class="fa-solid fa-circle-info me-1"></i>Sin visitas programadas</div>';
+            }
+            container.innerHTML = html;
+        })
+        .catch(function() {
+            container.innerHTML = '<div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation me-1"></i>Error al cargar el historial</div>';
+        });
+}
+
+function descargarHistorialPDF(clienteId) {
+    var secciones = [];
+    document.querySelectorAll('#modalEliminarCliente' + clienteId + ' .seccion-pdf:checked').forEach(function(cb) {
+        secciones.push(cb.value);
+    });
+    if (secciones.length === 0) {
+        alert('Selecciona al menos una sección para exportar.');
+        return;
+    }
+    window.open('/clientes/historial_pdf/' + clienteId + '/' + {{ usuario.id }} + '?secciones=' + secciones.join(','), '_blank');
+}
+
+function escHtml(str) {
+    if (!str) return '---';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+setTimeout(function() {
+    document.querySelectorAll('[id^="modalEliminarCliente"]').forEach(function(m) {
+        m.addEventListener('shown.bs.modal', function() {
+            var id = this.id.replace('modalEliminarCliente', '');
+            cargarHistorial(id);
+        });
+    });
+});
+</script>

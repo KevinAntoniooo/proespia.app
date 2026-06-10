@@ -1,25 +1,327 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5 class="fw-bold mb-0"><i class="fa-solid fa-user-gear me-2"></i>Personal</h5>
-    <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" onclick="SPA.abrirModal('usuario', null)">
-        <i class="fa-solid fa-plus me-1"></i>Nuevo
-    </button>
+<div class="container-fluid px-4 mt-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0" style="color:var(--text-heading);"><i class="fa-solid fa-users me-2"></i>Gestión de Personal</h2>
 </div>
-<div class="table-responsive">
-    <table class="table table-borderless align-middle mb-0">
-        <thead class="text-muted small text-uppercase">
-            <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th></tr>
-        </thead>
-        <tbody>
-            {% for us in usuarios %}
-            <tr class="bg-white rounded-3 shadow-sm mb-1">
-                <td class="fw-bold small">{{ us.nombre }}</td>
-                <td class="small text-muted">{{ us.correo }}</td>
-                <td><span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">{{ us.rol }}</span></td>
-                <td><span class="badge bg-{{ 'success' if us.estado == 'Activo' else 'danger' }} rounded-pill">{{ us.estado }}</span></td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" class="text-center py-5 text-muted"><i class="fa-solid fa-users-slash fa-2x mb-2 d-block"></i>Sin usuarios</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+
+<ul class="nav nav-pills nav-justified mb-4" id="usersTab" role="tablist" style="background:var(--bg-card);border-radius:14px;padding:6px;border:1px solid var(--border-subtle);">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="tab-personal-btn" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab">
+            <i class="fa-solid fa-users-gear me-1"></i> Personal Activo
+            <span class="badge bg-dark ms-1">{{ usuarios|length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold position-relative" id="tab-pendientes-btn" data-bs-toggle="tab" data-bs-target="#tab-pendientes" type="button" role="tab">
+            <i class="fa-solid fa-user-clock me-1"></i> Pendientes
+            {% if pendientes %}
+            <span class="badge bg-warning text-dark ms-1">{{ pendientes|length }}</span>
+            {% endif %}
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="usersTabContent">
+
+<div class="tab-pane fade show active" id="tab-personal" role="tabpanel">
+<div class="row mb-3">
+    <div class="col-md-6 col-lg-5">
+        <div class="input-group">
+            <span class="input-group-text bg-primary text-white border-0 shadow-sm">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="buscadorUsuarios" class="form-control shadow-sm"
+                   placeholder="Buscar por nombre, usuario o rol..."
+                   style="background:var(--bg-input);color:var(--text-heading);border:1px solid var(--border-subtle);"
+                   onkeyup="filtrarUsuarios()">
+        </div>
+    </div>
 </div>
+
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background:var(--bg-card);">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre Completo</th>
+                        <th class="d-none d-md-table-cell">Usuario / Correo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th class="d-none d-lg-table-cell">Ubicación</th>
+                        <th class="d-none d-lg-table-cell">Asignación</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuarios">
+                    {% for u in usuarios %}
+                    {% set is_sa = (u.correo or '')|lower == super_admin_correo %}
+                    <tr class="fila-usuario">
+                        <td class="fw-bold">
+                            {{ u.nombre }}
+                            {% if is_sa %}<i class="fa-solid fa-crown text-warning ms-1" title="Súper Administrador"></i>{% endif %}
+                            {% if u.google_id %}<i class="fa-brands fa-google text-primary ms-1" title="Cuenta Google"></i>{% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell">
+                            <div class="small fw-semibold"><span class="text-muted">@</span>{{ u.username or '—' }}</div>
+                            <div class="small text-muted">{{ u.correo or '' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge {% if u.rol == 'admin' or u.rol == 'super_su' %}bg-dark{% elif u.rol == 'tecnico' %}bg-primary{% elif u.rol == 'Pendiente' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} text-uppercase">
+                                {{ u.rol }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if u.estado == 'Activo' %}bg-success{% else %}bg-secondary{% endif %} rounded-pill">
+                                {{ u.estado or 'Activo' }}
+                            </span>
+                        </td>
+                        <td class="d-none d-lg-table-cell"><span class="small text-muted">{{ u.rel_ubicacion.nombre if u.rel_ubicacion else '—' }}</span></td>
+                        <td class="d-none d-lg-table-cell">
+                            {% if u.rol == 'tecnico' and u.rel_ubicacion %}
+                            <span class="badge {% if u.tipo_asignacion == 'a_cargo' %}bg-success bg-opacity-10 text-success{% else %}bg-info bg-opacity-10 text-info{% endif %} rounded-pill">
+                                {{ 'A cargo' if u.tipo_asignacion in ('a_cargo', None) else 'Acompañante' }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm shadow-sm">
+                                {% if not is_sa %}
+                                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#estadoModal{{ u.id }}" title="Activar / Desactivar">
+                                    <i class="fa-solid fa-toggle-{% if u.estado == 'Activo' %}on{% else %}off{% endif %}"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmarBorrarUser{{ u.id }}" title="Dar de baja">
+                                    <i class="fa-solid fa-user-xmark"></i>
+                                </button>
+                                {% else %}
+                                <span class="badge bg-warning text-dark" style="font-size:0.65rem;padding:0.4em 0.6em;">
+                                    <i class="fa-solid fa-shield-halved me-1"></i>INMUNE
+                                </span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="tab-pane fade" id="tab-pendientes" role="tabpanel">
+    {% if pendientes %}
+    <div class="alert alert-warning border-0 rounded-3 d-flex align-items-center gap-2 mb-3" role="alert">
+        <i class="fa-solid fa-user-clock fa-lg"></i>
+        <div>
+            <strong>{{ pendientes|length }} usuario(s) en trámite de activación.</strong>
+            Asígnales un rol operativo y se habilitarán automáticamente.
+        </div>
+    </div>
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background:var(--bg-card);">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-warning text-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th class="d-none d-md-table-cell">Correo</th>
+                        <th class="d-none d-md-table-cell">Origen</th>
+                        <th>Registrado</th>
+                        <th>Asignar Rol</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pendientes %}
+                    <tr>
+                        <td class="fw-bold">
+                            {{ p.nombre }}
+                            {% if p.google_id %}<i class="fa-brands fa-google text-primary ms-1" title="Vino por Google"></i>{% endif %}
+                        </td>
+                        <td class="d-none d-md-table-cell"><span class="small">{{ p.correo or p.username }}</span></td>
+                        <td class="d-none d-md-table-cell">
+                            {% if p.google_id %}<span class="badge bg-light text-dark border">Google</span>{% else %}<span class="badge bg-light text-dark border">Correo</span>{% endif %}
+                        </td>
+                        <td class="small text-muted">{{ p.created_at.strftime('%d/%m %H:%M') if p.created_at else '—' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('activar_usuario', target_id=p.id, admin_id=usuario.id) }}" class="d-flex gap-2 align-items-center">
+                                <select name="rol" class="form-select form-select-sm" style="max-width:160px;" required>
+                                    <option value="">Rol…</option>
+                                    <option value="operador">Operador</option>
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                                <button type="submit" class="btn btn-success btn-sm fw-bold">
+                                    <i class="fa-solid fa-check me-1"></i>Activar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center" style="background:var(--bg-card);">
+        <i class="fa-solid fa-user-check fa-3x text-success mb-3" style="opacity:0.6;"></i>
+        <h5 class="fw-bold mb-1" style="color:var(--text-heading);">Sin usuarios pendientes</h5>
+        <p class="text-muted small mb-0">Todos los registros están siendo atendidos. Las nuevas inscripciones aparecerán aquí automáticamente.</p>
+    </div>
+    {% endif %}
+</div>
+
+</div>
+</div>
+
+{% for u in usuarios %}
+{% set is_sa = (u.correo or '')|lower == super_admin_correo %}
+{% if not is_sa %}
+<div class="modal fade" id="estadoModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('cambiar_estado_usuario', target_id=u.id, admin_id=usuario.id) }}">
+                <div class="modal-body text-center p-4">
+                    <i class="fa-solid fa-toggle-{% if u.estado == 'Activo' %}on text-success{% else %}off text-secondary{% endif %} fa-3x mb-2"></i>
+                    <h5 class="fw-bold">{{ u.nombre }}</h5>
+                    <p class="text-muted small mb-3">
+                        Estado actual: <strong>{{ u.estado or 'Activo' }}</strong>
+                        {% if u.rol != 'Pendiente' %} · Rol: <strong class="text-uppercase">{{ u.rol }}</strong>{% endif %}
+                    </p>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small mb-1">Estado</label>
+                            <select name="estado" class="form-select" required>
+                                <option value="Activo" {% if u.estado == 'Activo' %}selected{% endif %}>Activo</option>
+                                <option value="Inactivo" {% if u.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small mb-1">Rol</label>
+                            <select name="rol" class="form-select text-uppercase" onchange="toggleVehiculo(this, 'vehiculoField{{ u.id }}')">
+                                <option value="">Sin cambio</option>
+                                <option value="admin" {% if u.rol == 'admin' %}selected{% endif %}>Administrador</option>
+                                <option value="operador" {% if u.rol == 'operador' %}selected{% endif %}>Operador</option>
+                                <option value="tecnico" {% if u.rol == 'tecnico' %}selected{% endif %}>Técnico</option>
+                                {% if u.rol == 'Pendiente' %}<option value="Pendiente" selected>Pendiente</option>{% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3 {% if u.rol != 'tecnico' %}d-none{% endif %}" id="vehiculoField{{ u.id }}">
+                        <label class="form-label fw-semibold small mb-1"><i class="fa-solid fa-truck me-1"></i>Vehículo asignado</label>
+                        <select name="vehiculo_id" class="form-select">
+                            <option value="">Sin vehículo</option>
+                            {% for v in vehiculos %}
+                            <option value="{{ v.id }}" {% if u.ubicacion_id and v.ubicacion_id == u.ubicacion_id %}selected{% endif %}>
+                                {{ v.placa }} — {{ v.modelo or 'Sin modelo' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="d-flex gap-3 mt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="tipo_asignacion_a_cargo" id="tipoA cargo{{ u.id }}" value="1" {% if u.tipo_asignacion == 'a_cargo' %}checked{% endif %} onchange="desmarcarOtro(this, 'tipoAcompanante{{ u.id }}')">
+                                <label class="form-check-label small" for="tipoA cargo{{ u.id }}">A cargo</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="tipo_asignacion_acompanante" id="tipoAcompanante{{ u.id }}" value="1" {% if u.tipo_asignacion == 'acompanante' %}checked{% endif %} onchange="desmarcarOtro(this, 'tipoA cargo{{ u.id }}')">
+                                <label class="form-check-label small" for="tipoAcompanante{{ u.id }}">Acompañante</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="confirmarBorrarUser{{ u.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-danger">
+            <div class="modal-body text-center p-4">
+                <i class="bi bi-exclamation-octagon text-danger fs-1"></i>
+                <h5 class="fw-bold mt-3">¿Eliminar acceso?</h5>
+                <p class="text-muted small">El usuario <strong>{{ u.username }}</strong> perderá el acceso al sistema.</p>
+
+                {% if u.id == usuario.id %}
+                <div class="alert alert-warning py-1 small">No puedes auto-eliminarte.</div>
+                <button class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Cerrar</button>
+                {% elif is_sa %}
+                <div class="alert alert-warning py-1 small"><i class="fa-solid fa-shield-halved me-1"></i>El Súper Administrador es INMUNE.</div>
+                <button class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Cerrar</button>
+                {% else %}
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('borrar_usuario', target_id=u.id, admin_id=usuario.id) }}" class="btn btn-danger">Confirmar</a>
+                    <button class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+
+<style>
+@media (max-width: 767px) {
+    .table td:first-child { font-size: 0.85rem; }
+}
+#usersTab .nav-link {
+    color: var(--text-muted);
+    border-radius: 10px;
+    padding: 10px 14px;
+    transition: all 0.25s ease;
+}
+#usersTab .nav-link.active {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(15,23,42,0.25);
+}
+html.dark-mode #usersTab .nav-link.active {
+    background: linear-gradient(135deg, #1e293b, #334155);
+}
+#usersTab .nav-link:not(.active):hover { background: var(--border-subtle); }
+html.dark-mode #usersTab .nav-link:not(.active):hover { background: rgba(255,255,255,0.06); }
+</style>
+<script>
+function filtrarUsuarios() {
+    let filtro = document.getElementById("buscadorUsuarios").value.toLowerCase();
+    let filas = document.getElementsByClassName("fila-usuario");
+
+    for (let i = 0; i < filas.length; i++) {
+        let texto = filas[i].textContent.toLowerCase();
+        filas[i].style.display = texto.includes(filtro) ? "" : "none";
+    }
+}
+
+function desmarcarOtro(el, otroId) {
+    const otro = document.getElementById(otroId);
+    if (otro && el.checked) otro.checked = false;
+}
+
+function toggleVehiculo(select, fieldId) {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    if (select.value === 'tecnico') {
+        field.classList.remove('d-none');
+    } else {
+        field.classList.add('d-none');
+    }
+}
+
+setTimeout(() => {
+    const input = document.getElementById("buscadorUsuarios");
+    if(input) input.value = "";
+    // Inicializar visibilidad de campos vehículo según rol actual
+    document.querySelectorAll('[id^="vehiculoField"]').forEach(el => {
+        const modal = el.closest('.modal');
+        if (!modal) return;
+        const rolSelect = modal.querySelector('select[name="rol"]');
+        if (rolSelect && rolSelect.value !== 'tecnico') {
+            el.classList.add('d-none');
+        }
+    });
+});
+</script>

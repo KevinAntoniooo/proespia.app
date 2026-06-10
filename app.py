@@ -3909,21 +3909,12 @@ def api_spa_contenido(seccion):
     elif seccion == 'clientes':
         if not u.puede_acceder():
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        busqueda = request.args.get('q', '')
-        page = request.args.get('page', 1, type=int)
-        query = Cliente.query.order_by(Cliente.nombre)
-        if busqueda:
-            query = query.filter(Cliente.nombre.ilike(f'%{busqueda}%'))
-        pagination = query.paginate(page=page, per_page=15, error_out=False)
         data = {
-            'clientes': [{'id': c.id, 'nombre': c.nombre, 'direccion': c.direccion or '', 'telefono': c.telefono or '', 'contacto': c.contacto or '', 'equipos_count': c.equipos.count()} for c in pagination.items],
-            'total': pagination.total,
-            'pages': pagination.pages,
-            'page': page,
-            'busqueda': busqueda,
+            'clientes': Cliente.query.all(),
+            'usuario': u,
         }
         html = render_template('partials/spa_clientes.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': pagination.total})
+        return jsonify({'ok': True, 'html': html})
 
     elif seccion == 'fallas':
         if u.rol not in ['super_su', 'admin', 'tecnico']:
@@ -3961,36 +3952,27 @@ def api_spa_contenido(seccion):
     elif seccion == 'equipos':
         if not u.puede_acceder():
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        busqueda = request.args.get('q', '')
-        page = request.args.get('page', 1, type=int)
-        query = Equipo.query.order_by(Equipo.serie)
-        if busqueda:
-            query = query.filter(Equipo.serie.ilike(f'%{busqueda}%'))
-        pagination = query.paginate(page=page, per_page=15, error_out=False)
         data = {
-            'equipos': [{'id': e.id, 'serie': e.serie, 'tipo': e.tipo or '', 'marca': e.marca or '', 'modelo': e.modelo or '', 'cliente_nombre': e.rel_cliente.nombre if e.rel_cliente else '—'} for e in pagination.items],
-            'total': pagination.total,
-            'pages': pagination.pages,
-            'page': page,
-            'busqueda': busqueda,
+            'equipos': Equipo.query.all(),
             'usuario': u,
+            'clientes': [{'id': c.id, 'nombre': c.nombre} for c in Cliente.query.all()],
         }
         html = render_template('partials/spa_equipos.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': pagination.total})
+        return jsonify({'ok': True, 'html': html})
 
     elif seccion == 'bitacora':
         if u.rol not in ['super_su', 'admin', 'operador']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
         page = request.args.get('page', 1, type=int)
-        pagination = Bitacora.query.order_by(Bitacora.fecha.desc()).paginate(page=page, per_page=15, error_out=False)
+        paginado = Bitacora.query.order_by(Bitacora.fecha.desc(), Bitacora.id.desc()).paginate(page=page, per_page=20, error_out=False)
         data = {
-            'bitacoras': [{'id': b.id, 'cliente_nombre': b.rel_cliente.nombre if b.rel_cliente else '—', 'tipo_visita': b.tipo_visita or '—', 'fecha': b.fecha.strftime('%d/%m/%Y'), 'descripcion': b.descripcion or '', 'prioridad': b.prioridad} for b in pagination.items],
-            'total': pagination.total,
-            'pages': pagination.pages,
-            'page': page,
+            'registros': paginado.items,
+            'paginacion': paginado,
+            'usuario': u,
+            'clientes': Cliente.query.all(),
         }
         html = render_template('partials/spa_bitacora.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': pagination.total})
+        return jsonify({'ok': True, 'html': html})
 
     elif seccion == 'agenda':
         if u.rol not in ['super_su', 'admin', 'tecnico']:
@@ -4043,13 +4025,21 @@ def api_spa_contenido(seccion):
     elif seccion == 'personal':
         if u.rol not in ['super_su', 'admin']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        usuarios = Usuario.query.order_by(Usuario.nombre).all()
+        usuarios = Usuario.query.order_by(Usuario.rol.asc(), Usuario.nombre.asc()).all()
+        pendientes = Usuario.query.filter_by(rol='Pendiente').order_by(Usuario.created_at.desc()).all()
+        if not es_super_admin():
+            usuarios = [x for x in usuarios if not x.es_super_admin()]
+            pendientes = [x for x in pendientes if not x.es_super_admin()]
         data = {
-            'usuarios': [{'id': us.id, 'nombre': us.nombre, 'correo': us.correo or '', 'rol': us.rol, 'estado': us.estado} for us in usuarios],
-            'total': len(usuarios),
+            'usuarios': usuarios,
+            'pendientes': pendientes,
+            'usuario': u,
+            'ubicaciones': Ubicacion.query.order_by(Ubicacion.nombre.asc()).all(),
+            'vehiculos': Vehiculo.query.order_by(Vehiculo.placa).all(),
+            'super_admin_correo': SUPER_ADMIN_CORREO,
         }
         html = render_template('partials/spa_personal.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': len(usuarios)})
+        return jsonify({'ok': True, 'html': html})
 
     else:
         return jsonify({'ok': False, 'error': 'Sección no encontrada'}), 404
