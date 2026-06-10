@@ -4027,7 +4027,7 @@ def api_spa_contenido(seccion):
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
         usuarios = Usuario.query.order_by(Usuario.rol.asc(), Usuario.nombre.asc()).all()
         pendientes = Usuario.query.filter_by(rol='Pendiente').order_by(Usuario.created_at.desc()).all()
-        if not es_super_admin():
+        if not u.es_super_admin():
             usuarios = [x for x in usuarios if not x.es_super_admin()]
             pendientes = [x for x in pendientes if not x.es_super_admin()]
         data = {
