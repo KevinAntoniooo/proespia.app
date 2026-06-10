@@ -535,7 +535,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // SPA state factory - must be global for Alpine x-data
+        window.USUARIO_ID = {{ current_user.id }};
         window.SPA = {
+            abrirModal: function(tipo, id) {
+                window.location.href = '/' + tipo + 's/nuevo/' + window.USUARIO_ID;
+            },
             state: function() {
                 return {
                     pantallaActual: 'inicio',
@@ -584,12 +588,6 @@
             div.innerHTML = '<div>' + (e.message || e.error || 'Error') + '</div>' + div.innerHTML;
         });
         window.USUARIO_ID = {{ current_user.id }};
-        function abrirModalSPA(tipo, id) {
-            if (tipo === 'cliente') window.location.href = '/clientes/nuevo/' + USUARIO_ID;
-            else if (tipo === 'equipo') window.location.href = '/equipos/nuevo/' + USUARIO_ID;
-            else if (tipo === 'bitacora') window.location.href = '/bitacora/nueva/' + USUARIO_ID;
-            else alert('Funcionalidad en restauración');
-        }
         function recargarSeccionSPA(seccion) {
             var el = document.getElementById('spa-contenido-dinamico');
             if (!el) return;

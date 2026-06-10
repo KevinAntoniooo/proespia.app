@@ -620,7 +620,7 @@ document.getElementById('sidebarMobile')?.addEventListener('click', function(e) 
     var base = window.SPA || {};
     window.SPA = base;
     base.abrirModal = function(tipo, id) {
-        alert('Modal ' + tipo + ' ID: ' + id + ' - Implementación pendiente');
+        window.location.href = '/' + tipo + 's/nuevo/' + window.USUARIO_ID;
     };
     base.verVisita = function(id) {
         fetch('/api/spa/visita/detalle', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id:id}) })
