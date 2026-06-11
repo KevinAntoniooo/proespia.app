@@ -612,7 +612,7 @@ function guardarProducto(e) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalNuevoProducto')).hide(); recargarSeccionSPA('bodega'); }
         else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
@@ -631,7 +631,7 @@ function guardarHerramienta(e) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalNuevaHerramienta')).hide(); recargarSeccionSPA('bodega'); }
         else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
@@ -655,7 +655,7 @@ function editarProducto(e, id) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalEditarProducto' + id)).hide(); recargarSeccionSPA('bodega'); }
         else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
@@ -670,7 +670,7 @@ document.getElementById('btnConfirmarEliminarProducto')?.addEventListener('click
     if (!productoAEliminar) return;
     fetch('/api/bodega/eliminar_producto/' + productoAEliminar, { method: 'DELETE' })
     .then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarProducto')).hide(); recargarSeccionSPA('bodega'); }
         else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
 });
@@ -696,7 +696,7 @@ function ejecutarTraspaso(e) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalTraspaso')).hide(); location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalTraspaso')).hide(); recargarSeccionSPA('bodega'); }
         else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
@@ -715,7 +715,7 @@ function ejecutarConsumo(e) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumo')).hide(); location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumo')).hide(); recargarSeccionSPA('bodega'); }
         else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;
@@ -750,7 +750,7 @@ function ejecutarConsumoRapido(e) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumoRapido')).hide(); location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalConsumoRapido')).hide(); recargarSeccionSPA('bodega'); }
         else { mostrarAdvertencia('Error', resp.msg); }
     }).catch(function() { mostrarAdvertencia('Error de conexión', 'No se pudo conectar al servidor.'); });
     return false;

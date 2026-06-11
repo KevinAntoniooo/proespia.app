@@ -275,6 +275,10 @@
                     class="nav-link-pro" :class="pantallaActual === 'bodega' ? 'active-style' : ''">
                     <i class="fa-solid fa-warehouse"></i> <span>Bodega Técnica</span>
                 </a>
+                <a href="#" data-seccion="vehiculos" @click="cargarSeccion('vehiculos')"
+                    class="nav-link-pro" :class="pantallaActual === 'vehiculos' ? 'active-style' : ''">
+                    <i class="fa-solid fa-truck"></i> <span>Vehículos</span>
+                </a>
                 {% endif %}
             </nav>
 
@@ -304,6 +308,7 @@
                         'boveda': 'Bóveda Apps',
                         'personal': 'Gestión de Personal',
                         'bodega': 'Bodega Técnica',
+                        'vehiculos': 'Vehículos',
                     }[pantallaActual] || 'Panel de Gestión'">Panel de Gestión</h5>
                     <small style="color: var(--text-muted);">PRO ESPÍA - Central de Monitoreo</small>
                 </div>
@@ -455,6 +460,9 @@
                 <a href="#" data-seccion="bodega" @click="cargarSeccion('bodega')"
                     class="nav-link-pro" :class="pantallaActual === 'bodega' ? 'active-style' : ''"><i class="fa-solid fa-warehouse"></i>
                     <span>Bodega Técnica</span></a>
+                <a href="#" data-seccion="vehiculos" @click="cargarSeccion('vehiculos')"
+                    class="nav-link-pro" :class="pantallaActual === 'vehiculos' ? 'active-style' : ''"><i class="fa-solid fa-truck"></i>
+                    <span>Vehículos</span></a>
                 {% endif %}
             </nav>
 

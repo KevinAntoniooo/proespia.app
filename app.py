@@ -4070,6 +4070,18 @@ def api_spa_contenido(seccion):
         html = render_template('partials/spa_personal.html', **data)
         return jsonify({'ok': True, 'html': html})
 
+    elif seccion == 'vehiculos':
+        if u.rol not in ['super_su', 'admin']:
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        data = {
+            'vehiculos': Vehiculo.query.order_by(Vehiculo.created_at.desc()).all(),
+            'ubicaciones': Ubicacion.query.order_by(Ubicacion.nombre).all(),
+            'tecnicos': Usuario.query.filter_by(rol='tecnico').all(),
+            'usuario': u,
+        }
+        html = render_template('partials/spa_vehiculos.html', **data)
+        return jsonify({'ok': True, 'html': html})
+
     else:
         return jsonify({'ok': False, 'error': 'Sección no encontrada'}), 404
 
