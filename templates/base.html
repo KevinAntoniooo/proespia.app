@@ -261,7 +261,7 @@
                 </a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico', 'operador'] %}
                 <a href="#" data-seccion="boveda" @click="cargarSeccion('boveda')"
                     class="nav-link-pro" :class="pantallaActual === 'boveda' ? 'active-style' : ''">
                     <i class="fa-solid fa-table-cells-large"></i> <span>Bóveda Apps</span>
@@ -464,7 +464,7 @@
                     {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}</a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico', 'operador'] %}
                 <a href="#" data-seccion="boveda" @click="cargarSeccion('boveda')"
                     class="nav-link-pro" :class="pantallaActual === 'boveda' ? 'active-style' : ''"><i class="fa-solid fa-table-cells-large"></i>
                     <span>Bóveda Apps</span></a>

@@ -4118,9 +4118,9 @@ def api_spa_contenido(seccion):
         return jsonify({'ok': True, 'html': html})
 
     elif seccion == 'boveda':
-        if u.rol not in ['super_su', 'admin', 'tecnico']:
+        if u.rol not in ['super_su', 'admin', 'tecnico', 'operador']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        aplicaciones = Boveda.query.filter_by(usuario_id=u.id).all()
+        aplicaciones = Boveda.query.order_by(Boveda.nombre_app).all()
         for app in aplicaciones:
             app.password_app = app.decrypt_password()
         data = {
