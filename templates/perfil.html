@@ -262,6 +262,59 @@
                     </div>
                 </div>
 
+                {% if usuario.es_super_admin() %}
+                <div class="col-12 mt-3">
+                    <div class="card border-0 shadow-lg rounded-3"
+                        style="background:linear-gradient(135deg, rgba(239,68,68,0.08), rgba(220,38,38,0.04));">
+                        <div class="card-body p-3 p-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="rounded-3 p-2 me-3 flex-shrink-0"
+                                    style="background:rgba(239,68,68,0.15);">
+                                    <i class="fa-solid fa-database" style="color:#ef4444;font-size:1.1rem;"></i>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <h5 class="fw-bold mb-0 fs-6 fs-md-5" style="color:var(--text-heading);">Herramientas de Administración</h5>
+                                    <small style="color:var(--text-muted);">Súper Admin — acciones destructivas</small>
+                                </div>
+                            </div>
+                            <p class="small mb-3" style="color:var(--text-muted);">
+                                <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i>
+                                Limpia toda la base de datos y deja solo tu cuenta de Súper Admin.
+                                Se perderán clientes, equipos, bitácoras, visitas, bóveda, productos y vehículos.
+                                Las categorías de bodega y Bodega Central se recrearán automáticamente.
+                            </p>
+                            <div class="d-flex flex-column flex-md-row justify-content-md-end">
+                                <button type="button" class="btn btn-danger w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#modalWipeDB">
+                                    <i class="fa-solid fa-radiation me-2"></i>Limpiar Base de Datos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="modalWipeDB" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content border-0 shadow-lg rounded-4 border-danger">
+                            <div class="modal-body text-center p-4">
+                                <i class="fa-solid fa-skull text-danger fs-1 mb-3"></i>
+                                <h5 class="fw-bold mb-2">¿Limpiar toda la BD?</h5>
+                                <p class="text-muted small mb-3">Se borrarán TODOS los datos del sistema. Solo tu cuenta de Súper Admin se conservará. Esta acción no se puede deshacer.</p>
+                                <div class="mb-3">
+                                    <input type="text" id="inputWipeConfirm" class="form-control text-center" placeholder="Escribe LIMPIAR para confirmar" autocomplete="off">
+                                </div>
+                                <div id="errorWipeDB" class="alert alert-danger d-none py-2 small mb-3"></div>
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <button type="button" class="btn btn-light shadow-sm fw-bold px-3 rounded-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="button" class="btn btn-danger shadow-sm fw-bold px-3 rounded-3" style="font-size:0.85rem;" id="btnWipeDB" disabled>
+                                        <i class="fa-solid fa-radiation me-1"></i>Limpiar todo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
             </div>
         </div>
     </div>
@@ -270,6 +323,40 @@
 
 {% block scripts %}
 <script>
+    {% if usuario.es_super_admin() %}
+    document.getElementById('inputWipeConfirm')?.addEventListener('input', function() {
+        document.getElementById('btnWipeDB').disabled = this.value !== 'LIMPIAR';
+    });
+
+    document.getElementById('btnWipeDB')?.addEventListener('click', function() {
+        var btn = this;
+        var err = document.getElementById('errorWipeDB');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Limpiando...';
+        err.classList.add('d-none');
+
+        fetch('/admin/wipe_db', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.ok) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('modalWipeDB'));
+                if (modal) modal.hide();
+                window.location.href = '/app';
+            } else {
+                err.textContent = data.msg || 'Error al limpiar';
+                err.classList.remove('d-none');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-radiation me-1"></i>Limpiar todo';
+            }
+        })
+        .catch(function() {
+            err.textContent = 'Error de conexión';
+            err.classList.remove('d-none');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-radiation me-1"></i>Limpiar todo';
+        });
+    });
+    {% endif %}
     document.querySelectorAll('.toggle-pass').forEach(btn => {
         btn.addEventListener('click', function () {
             const target = document.getElementById(this.dataset.target);

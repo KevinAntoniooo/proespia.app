@@ -917,16 +917,9 @@ def logout():
 @app.route('/admin/wipe_db', methods=['POST'])
 @login_required
 def admin_wipe_db():
-    """Endpoint de un solo uso para limpiar la BD en producción.
-    Requiere: (a) sesión activa del Súper Admin, (b) header X-Wipe-Token con valor
-    del env var WIPE_TOKEN. Sin el token, devuelve 403."""
+    """Limpia la BD en producción. Solo el Súper Admin logueado puede ejecutarlo."""
     if not current_user.es_super_admin() or not current_user.puede_acceder():
         return jsonify({'ok': False, 'msg': 'Solo el Súper Admin puede ejecutar esta acción.'}), 403
-
-    expected = os.environ.get('WIPE_TOKEN', '')
-    provided = request.headers.get('X-Wipe-Token', '')
-    if not expected or provided != expected:
-        return jsonify({'ok': False, 'msg': 'Token de confirmación inválido. Configura WIPE_TOKEN en el servidor.'}), 403
 
     try:
         from models import (
