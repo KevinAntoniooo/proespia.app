@@ -437,7 +437,14 @@ function abrirChecklistModal(vehiculoId) {
     fetch('/api/spa/checklist/' + vehiculoId + '?_=' + Date.now())
         .then(function(r) { return r.text(); })
         .then(function(html) {
-            document.getElementById('checklistModalCuerpo').innerHTML = html;
+            var container = document.getElementById('checklistModalCuerpo');
+            container.innerHTML = html;
+            var scripts = container.querySelectorAll('script');
+            scripts.forEach(function(os) {
+                var c = os.textContent.trim();
+                if (!c) return;
+                try { var ns = document.createElement('script'); ns.textContent = c; container.appendChild(ns); } catch(e) { console.warn('Checklist script error:', e); }
+            });
         })
         .catch(function() {
             document.getElementById('checklistModalCuerpo').innerHTML = '<div class="text-center py-4 text-danger"><i class="fa-solid fa-triangle-exclamation fs-2 mb-2"></i><p>Error al cargar el checklist.</p></div>';
