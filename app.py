@@ -930,7 +930,7 @@ def admin_wipe_db():
         )
         tablas = [
             Notificacion, PushSubscription, SolicitudCombustible, ChecklistSemanal,
-            Herramienta, MovimientoStock, ProductoStock, Vehiculo, Ubicacion,
+            Herramienta, MovimientoStock, ProductoStock, Vehiculo,
             CategoriaItem, VisitaProgramada, Boveda, Bitacora, Equipo, Cliente,
             Tarea, RegistroIP
         ]
@@ -939,8 +939,13 @@ def admin_wipe_db():
             n = m.query.delete(synchronize_session='fetch')
             resumen[m.__tablename__] = n
 
+        # Usuario debe ir antes que Ubicacion (FK usuario.ubicacion_id)
         db.session.flush()
-
+        # Limpiar ubicacion_id del super admin antes de borrar ubicaciones
+        sa = Usuario.query.filter(func.lower(Usuario.correo) == SUPER_ADMIN_CORREO).first()
+        if sa:
+            sa.ubicacion_id = None
+            db.session.flush()
         usuarios_borrados = Usuario.query.filter(
             or_(
                 Usuario.correo.is_(None),
@@ -949,7 +954,10 @@ def admin_wipe_db():
         ).delete(synchronize_session='fetch')
         resumen['usuario (no super)'] = usuarios_borrados
 
-        sa = Usuario.query.filter(func.lower(Usuario.correo) == SUPER_ADMIN_CORREO).first()
+        db.session.flush()
+        n_ubi = Ubicacion.query.delete(synchronize_session='fetch')
+        resumen['ubicacion_bodega'] = n_ubi
+
         if not sa:
             sa = Usuario(
                 nombre='Kevin (Súper Admin)',
