@@ -1,0 +1,115 @@
+<div class="container-fluid px-0">
+    {% if ya_completado_hoy and usuario.rol != 'admin' and usuario.rol != 'super_su' %}
+    <div class="alert alert-success border-0 shadow-sm rounded-3 d-flex align-items-center gap-2 mb-3">
+        <i class="fa-solid fa-circle-check fs-4"></i>
+        <div>
+            <strong class="d-block small">Checklist completado hoy</strong>
+            <small>Ya realizaste el checklist hoy.</small>
+        </div>
+    </div>
+    {% else %}
+    <form id="formChecklistModal">
+        <div class="card border-0 shadow-sm rounded-3 mb-3">
+            <div class="card-body p-3">
+                <h6 class="fw-bold text-dark mb-3" style="font-size:0.85rem;"><i class="fa-solid fa-tools me-2"></i>Herramientas</h6>
+                {% if herramientas %}
+                {% for h in herramientas %}
+                <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                    <div>
+                        <span class="fw-semibold text-dark" style="font-size:0.8rem;">{{ h.nombre }}</span>
+                    </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" name="herramientas_ok" value="{{ h.nombre }}" id="check{{ h.id }}" style="width:1rem;height:1rem;cursor:pointer;">
+                        <label class="form-check-label small text-success fw-bold" for="check{{ h.id }}" id="label{{ h.id }}" style="font-size:0.55rem;">OK</label>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-3 text-muted">
+                    <i class="fa-solid fa-toolbox fs-3 mb-2 d-block"></i>
+                    <small>No hay herramientas registradas para este vehículo.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card border-0 shadow-sm rounded-3 mb-3">
+            <div class="card-body p-3">
+                <label class="form-label small fw-bold text-dark"><i class="fa-regular fa-note-sticky me-1"></i>Observaciones</label>
+                <textarea name="observaciones" class="form-control shadow-sm" rows="2" placeholder="Ingresa alguna novedad si es necesario..." style="font-size:0.8rem;"></textarea>
+            </div>
+        </div>
+        <button type="button" class="btn btn-warning w-100 shadow-sm py-2 fw-bold" style="font-size:0.85rem;" id="btnPrevisualizarModal" {% if not herramientas %}disabled{% endif %}>
+            <i class="fa-solid fa-eye me-1"></i>Previsualizar y Guardar
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="modalVistaPreviaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-receipt me-2"></i>Resumen del Checklist</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="cuerpoVistaPreviaModal">
+            </div>
+            <div class="modal-footer border-0 d-flex gap-2">
+                <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Corregir</button>
+                <button type="button" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" id="btnConfirmarChecklistModal"><i class="fa-solid fa-check me-1"></i>Confirmar y Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+#cuerpoVistaPreviaModal .faltante-text { font-size: 0.6rem; }
+</style>
+<script>
+(function() {
+    var vehiculoId = {{ vehiculo.id }};
+
+    document.getElementById('btnPrevisualizarModal')?.addEventListener('click', function() {
+        var checks = document.querySelectorAll('#formChecklistModal input[name="herramientas_ok"]');
+        var html = '<div class="mb-2"><small class="text-muted text-uppercase fw-bold" style="font-size:0.55rem;">Herramientas verificadas</small></div>';
+        var okCount = 0;
+        checks.forEach(function(ch) {
+            var label = document.getElementById('label' + ch.id.replace('check', ''));
+            if (ch.checked) {
+                okCount++;
+                html += '<div class="d-flex align-items-center gap-2 mb-1"><i class="fa-solid fa-circle-check text-success" style="font-size:0.7rem;"></i><small class="text-dark">' + ch.value + '</small></div>';
+            } else {
+                html += '<div class="d-flex align-items-center gap-2 mb-1"><i class="fa-solid fa-circle-xmark text-danger" style="font-size:0.7rem;"></i><small class="text-dark">' + ch.value + ' <span class="text-danger fw-bold faltante-text">(FALTANTE)</span></small></div>';
+            }
+        });
+        var total = checks.length;
+        var obs = document.querySelector('#formChecklistModal textarea[name="observaciones"]').value.trim();
+        html += '<hr class="opacity-25 my-2">';
+        html += '<div class="d-flex justify-content-between"><small class="text-muted">Completado:</small><small class="fw-bold">' + okCount + '/' + total + '</small></div>';
+        if (obs) {
+            html += '<hr class="opacity-25 my-2"><small class="text-muted d-block mb-1">Observaciones:</small><small class="text-dark">' + obs + '</small>';
+        }
+        document.getElementById('cuerpoVistaPreviaModal').innerHTML = html;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalVistaPreviaModal')).show();
+    });
+
+    document.getElementById('btnConfirmarChecklistModal')?.addEventListener('click', function() {
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalVistaPreviaModal'));
+        if (modal) modal.hide();
+        var form = document.getElementById('formChecklistModal');
+        var data = new FormData(form);
+        var checklistModal = bootstrap.Modal.getInstance(document.getElementById('modalChecklistVehiculo'));
+        fetch('/api/checklist/guardar_desde_spa/' + vehiculoId, { method: 'POST', body: data })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (resp.ok) {
+                var cuerpo = document.getElementById('checklistModalCuerpo');
+                cuerpo.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-circle-check text-success fs-1 mb-3"></i><h5 class="fw-bold mb-1">Checklist Guardado</h5><p class="text-muted small mb-3">' + resp.msg + '</p><div class="d-grid gap-2"><a href="/checklist/reporte_pdf/' + resp.checklist_id + '" class="btn btn-success shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" target="_blank"><i class="fa-solid fa-file-pdf me-1"></i>Descargar Comprobante PDF</a><button class="btn btn-light shadow-sm btn-sm fw-bold" style="font-size:0.85rem;" onclick="bootstrap.Modal.getInstance(document.getElementById(\'modalChecklistVehiculo\')).hide()">Cerrar</button></div></div>';
+            } else {
+                alert('Error: ' + resp.msg);
+            }
+        })
+        .catch(function() { alert('Error de conexión'); });
+    });
+})();
+</script>

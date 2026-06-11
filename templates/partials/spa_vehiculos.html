@@ -51,7 +51,7 @@
                                 <button class="btn btn-outline-secondary" onclick="verHistorial({{ v.id }})" title="Historial de Checks">
                                     <i class="fa-solid fa-clock-rotate-left"></i>
                                 </button>
-                                <a href="/checklist/vehiculo/{{ v.id }}" class="btn btn-outline-success" title="Hacer Checklist" target="_blank">
+                                <a href="#" class="btn btn-outline-success" title="Hacer Checklist" onclick="abrirChecklistModal({{ v.id }});return false;">
                                     <i class="fa-solid fa-clipboard-check"></i>
                                 </a>
                                 <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarVehiculo{{ v.id }}" title="Editar">
@@ -306,8 +306,8 @@ function verDetalleVehiculo(row) {
     document.getElementById('detalleVehiculoBody').innerHTML = bodyHtml;
     var footerHtml = '<div class="btn-group btn-group-sm shadow-sm w-100">';
     footerHtml += '<button class="btn btn-outline-secondary" onclick="cerrarModalDetalle();verHistorial(' + id + ')" title="Ver historial" aria-label="Ver historial"><i class="fa-solid fa-clock-rotate-left"></i></button>';
-    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" onclick="cerrarModalDetalle()" title="Ver checklist" aria-label="Ver checklist" target="_blank"><i class="fa-solid fa-clipboard-check"></i></a>';
-    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" title="Ver checklist" aria-label="Ver checklist" target="_blank"><i class="fa-solid fa-clipboard-check"></i></a>';
+    footerHtml += '<a href="#" class="btn btn-outline-success" onclick="cerrarModalDetalle();abrirChecklistModal(' + id + ');return false;" title="Ver checklist" aria-label="Ver checklist"><i class="fa-solid fa-clipboard-check"></i></a>';
+    footerHtml += '<a href="#" class="btn btn-outline-success" onclick="abrirChecklistModal(' + id + ');return false;" title="Ver checklist" aria-label="Ver checklist"><i class="fa-solid fa-clipboard-check"></i></a>';
     footerHtml += '<button class="btn btn-outline-warning" onclick="cerrarModalDetalle();abrirModalEditar(' + id + ')" title="Editar vehículo" aria-label="Editar vehículo"><i class="fa-solid fa-pen"></i></button>';
     footerHtml += '<button class="btn btn-outline-danger" onclick="cerrarModalDetalle();eliminarVehiculo(' + id + ')" title="Eliminar vehículo" aria-label="Eliminar vehículo"><i class="fa-solid fa-trash-can"></i></button>';
     footerHtml += '</div>';
@@ -430,7 +430,36 @@ document.addEventListener('hidden.bs.modal', function(e) {
     }
 });
 
+function abrirChecklistModal(vehiculoId) {
+    var modal = new bootstrap.Modal(document.getElementById('modalChecklistVehiculo'));
+    document.getElementById('checklistModalCuerpo').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-warning" role="status"></div><p class="text-muted small mt-2">Cargando checklist...</p></div>';
+    modal.show();
+    fetch('/api/spa/checklist/' + vehiculoId + '?_=' + Date.now())
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            document.getElementById('checklistModalCuerpo').innerHTML = html;
+        })
+        .catch(function() {
+            document.getElementById('checklistModalCuerpo').innerHTML = '<div class="text-center py-4 text-danger"><i class="fa-solid fa-triangle-exclamation fs-2 mb-2"></i><p>Error al cargar el checklist.</p></div>';
+        });
+}
+
 </script>
+
+<!-- Modal Checklist Vehículo -->
+<div class="modal fade" id="modalChecklistVehiculo" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-clipboard-check me-2"></i>Checklist de Vehículo</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-3" id="checklistModalCuerpo">
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 @media (max-width: 767px) {
     .table td:first-child { font-size: 0.9rem; }

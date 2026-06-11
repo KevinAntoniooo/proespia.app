@@ -3376,6 +3376,53 @@ def checklist_reporte_pdf(checklist_id):
         download_name=f'checklist_{checklist_id}.pdf'
     )
 
+@app.route('/api/spa/checklist/<int:vehiculo_id>')
+@login_required
+def spa_checklist_modal(vehiculo_id):
+    v = Vehiculo.query.get_or_404(vehiculo_id)
+    herramientas = ProductoStock.query.join(CategoriaItem).filter(
+        CategoriaItem.nombre == 'Herramientas',
+        ProductoStock.ubicacion_id == v.ubicacion_id
+    ).order_by(ProductoStock.nombre).all()
+    hoy_chile = date.today()
+    ya_completado_hoy = ChecklistSemanal.query.filter(
+        ChecklistSemanal.vehiculo_id == v.id,
+        db.func.date(ChecklistSemanal.fecha_registro) == hoy_chile.isoformat()
+    ).first() is not None
+    return render_template('partials/spa_checklist_modal_content.html',
+        usuario=current_user, vehiculo=v, herramientas=herramientas,
+        ya_completado_hoy=ya_completado_hoy)
+
+@app.route('/api/checklist/guardar_desde_spa/<int:vehiculo_id>', methods=['POST'])
+@login_required
+def checklist_guardar_desde_spa(vehiculo_id):
+    try:
+        v = Vehiculo.query.get_or_404(vehiculo_id)
+        herramientas_ok = request.form.getlist('herramientas_ok')
+        obs = request.form.get('observaciones', '').strip()
+        total = ProductoStock.query.join(CategoriaItem).filter(
+            CategoriaItem.nombre == 'Herramientas',
+            ProductoStock.ubicacion_id == v.ubicacion_id
+        ).count()
+        ok_count = len(herramientas_ok)
+        estado = (ok_count == total)
+        tecnico_asignado = Usuario.query.filter_by(ubicacion_id=v.ubicacion_id, rol='tecnico', tipo_asignacion='a_cargo').first()
+        if not tecnico_asignado:
+            tecnico_asignado = Usuario.query.filter_by(ubicacion_id=v.ubicacion_id, rol='tecnico').first()
+        ck = ChecklistSemanal(
+            usuario_id=tecnico_asignado.id if tecnico_asignado else current_user.id,
+            vehiculo_id=v.id,
+            estado_completo=estado,
+            observaciones=obs,
+            herramientas_ok=','.join(herramientas_ok)
+        )
+        db.session.add(ck)
+        db.session.commit()
+        return jsonify({'ok': True, 'msg': 'Checklist guardado correctamente.', 'checklist_id': ck.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': str(e)}), 400
+
 @app.route('/api/checklist/historial/<int:vehiculo_id>')
 @login_required
 def checklist_historial(vehiculo_id):
