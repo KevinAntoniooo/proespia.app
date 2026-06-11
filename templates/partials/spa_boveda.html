@@ -177,7 +177,7 @@
                 <div class="text-warning mb-3">
                     <i class="bi bi-key-fill" style="font-size: 2.5rem;"></i>
                 </div>
-                <p class="fw-bold text-dark mb-3">Ingrese su contraseña de usuario para visualizar esta credencial</p>
+                <p id="modalClaveDescripcion" class="fw-bold text-dark mb-3">Ingrese su contraseña de usuario para visualizar esta credencial</p>
                 <input type="password" id="inputClaveAdmin" class="form-control form-control-lg text-center mb-3" 
                        placeholder="Contraseña" autocomplete="off">
                 <div id="errorClaveAdmin" class="alert alert-danger d-none py-2 small mb-3">
@@ -193,6 +193,7 @@
 
 <script>
 var credencialActiva = null;
+var bovedaEliminarActivo = null;
 
 window.filtrarBoveda = function() {
     let filtro = document.getElementById("buscadorBoveda").value.toLowerCase();
@@ -289,28 +290,40 @@ window.confirmarClave = function() {
         return response.json();
     })
     .then(function(data) {
-        var inputPass = document.getElementById('pass-card-' + credencialActiva);
-        var eyeBtn = document.getElementById('eye-btn-' + credencialActiva);
-        if (inputPass) {
-            inputPass.value = data.password;
-            inputPass.type = 'text';
-        }
-        if (eyeBtn) {
-            eyeBtn.setAttribute('data-revealed', 'true');
-            var icon = eyeBtn.querySelector('i');
-            if (icon) { icon.className = 'bi bi-eye-slash'; }
-        }
-        if (bovedaRevealTimers[credencialActiva]) {
-            clearTimeout(bovedaRevealTimers[credencialActiva]);
-        }
-        bovedaRevealTimers[credencialActiva] = setTimeout(function() {
-            ocultarPasswordCredencial(credencialActiva);
-        }, 15000);
-
         var modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalVerificarClave'));
         if (modalInstance) modalInstance.hide();
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirmar';
+
+        if (bovedaEliminarActivo) {
+            var id = bovedaEliminarActivo;
+            bovedaEliminarActivo = null;
+            document.getElementById('modalClaveDescripcion').textContent = 'Ingrese su contraseña de usuario para visualizar esta credencial';
+            fetch('/boveda/eliminar/' + id + '/{{ usuario.id }}')
+            .then(function(r) {
+                if (r.ok) {
+                    recargarSeccionSPA('boveda');
+                } else { alert('Error al eliminar'); }
+            }).catch(function() { alert('Error de conexion'); });
+        } else {
+            var inputPass = document.getElementById('pass-card-' + credencialActiva);
+            var eyeBtn = document.getElementById('eye-btn-' + credencialActiva);
+            if (inputPass) {
+                inputPass.value = data.password;
+                inputPass.type = 'text';
+            }
+            if (eyeBtn) {
+                eyeBtn.setAttribute('data-revealed', 'true');
+                var icon = eyeBtn.querySelector('i');
+                if (icon) { icon.className = 'bi bi-eye-slash'; }
+            }
+            if (bovedaRevealTimers[credencialActiva]) {
+                clearTimeout(bovedaRevealTimers[credencialActiva]);
+            }
+            bovedaRevealTimers[credencialActiva] = setTimeout(function() {
+                ocultarPasswordCredencial(credencialActiva);
+            }, 15000);
+        }
     })
     .catch(function(err) {
         errorDiv.textContent = err.message || 'Error al verificar la contraseña';
@@ -362,13 +375,22 @@ window.bovedaEditar = function(e, id) {
 }
 
 window.bovedaEliminar = function(id) {
-    fetch('/boveda/eliminar/' + id + '/{{ usuario.id }}')
-    .then(function(r) {
-        if (r.ok) {
-            var m = bootstrap.Modal.getInstance(document.getElementById('deleteModal' + id));
-            if (m) m.hide();
-            recargarSeccionSPA('boveda');
-        } else { alert('Error al eliminar'); }
-    }).catch(function() { alert('Error de conexion'); });
+    var mDelete = bootstrap.Modal.getInstance(document.getElementById('deleteModal' + id));
+    if (mDelete) mDelete.hide();
+    bovedaEliminarActivo = id;
+    credencialActiva = id;
+    var inpClave = document.getElementById('inputClaveAdmin'); if (inpClave) inpClave.value = '';
+    var errClave = document.getElementById('errorClaveAdmin'); if (errClave) errClave.classList.add('d-none');
+    document.getElementById('modalClaveDescripcion').textContent = 'Ingrese su contraseña para eliminar esta credencial. Esta acción no se puede deshacer.';
+    var modal = new bootstrap.Modal(document.getElementById('modalVerificarClave'));
+    modal.show();
+    setTimeout(function() { document.getElementById('inputClaveAdmin').focus(); }, 300);
 }
+
+document.getElementById('modalVerificarClave')?.addEventListener('hidden.bs.modal', function() {
+    if (bovedaEliminarActivo) {
+        bovedaEliminarActivo = null;
+        document.getElementById('modalClaveDescripcion').textContent = 'Ingrese su contraseña de usuario para visualizar esta credencial';
+    }
+});
 </script>

@@ -699,9 +699,13 @@
             btnAccion.classList.add('d-none');
             if (v.informe_tecnico) {
                 btnPDF.href = '/reporte_visita_pdf/' + v.id + '/' + {{ usuario.id }};
+                btnPDF.innerHTML = '<i class="fa-solid fa-file-pdf"></i><span>Ver Informe PDF</span>';
+                btnPDF.style.background = '#fef2f2';
+                btnPDF.style.color = '#dc2626';
+                btnPDF.target = '_blank';
                 btnPDF.classList.remove('d-none');
             }
-        } else if (tipo === 'cotización' || tipo === 'otra') {
+        } else {
             btnAccion.classList.remove('d-none');
             btnAccion.innerHTML = '<i class="fa-solid fa-check-circle"></i><span id="btnAccionTexto">Marcar como Asistido (Cierre Rápido)</span>';
             btnAccion.style.background = '#22c55e';
@@ -720,14 +724,22 @@
                     })
                     .catch(function() { mostrarToast('error', 'Error de conexión'); });
             };
-        } else {
-            btnAccion.classList.remove('d-none');
-            btnAccion.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span id="btnAccionTexto">Registrar Reporte Técnico (Requiere Fotos)</span>';
-            btnAccion.style.background = '#ef4444';
-            btnAccion.style.color = '#fff';
-            btnAccion.onclick = function() {
-                window.location.href = '/completar_visita/' + v.id + '/' + {{ usuario.id }};
-            };
+
+            var needsReport = tipo === 'instalación' || tipo === 'reparación' || tipo === 'emergencia' || tipo.indexOf('mantención') === 0;
+            if (needsReport) {
+                btnPDF.href = '#';
+                btnPDF.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span>Registrar Reporte Técnico</span>';
+                btnPDF.style.background = '#fef2f2';
+                btnPDF.style.color = '#dc2626';
+                btnPDF.target = '';
+                btnPDF.classList.remove('d-none');
+                btnPDF.onclick = function(e) {
+                    e.preventDefault();
+                    window.location.href = '/completar_visita/' + v.id + '/' + {{ usuario.id }};
+                };
+            } else {
+                btnPDF.classList.add('d-none');
+            }
         }
 
         modal.classList.add('active');

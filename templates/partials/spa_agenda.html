@@ -162,7 +162,7 @@
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:#475569;">Tipo de Servicio</label>
-                            <select name="tipo_trabajo" id="select_tipo_trabajo" class="form-select shadow-sm rounded-3" onchange="toggleEquipos()">
+                            <select name="tipo_trabajo" id="select_tipo_trabajo" class="form-select shadow-sm rounded-3">
                                 <option value="Cotización">Visita de Cotización / Terreno</option>
                                 <option value="Instalación">Instalación CCTV / Alarma</option>
                                 <option value="Mantención Preventiva">Mantención Preventiva</option>
@@ -694,9 +694,13 @@
             btnAccion.classList.add('d-none');
             if (v.informe_tecnico) {
                 btnPDF.href = '/reporte_visita_pdf/' + v.id + '/' + {{ usuario.id }};
+                btnPDF.innerHTML = '<i class="fa-solid fa-file-pdf"></i><span>Ver Informe PDF</span>';
+                btnPDF.style.background = '#fef2f2';
+                btnPDF.style.color = '#dc2626';
+                btnPDF.target = '_blank';
                 btnPDF.classList.remove('d-none');
             }
-        } else if (tipo === 'cotización' || tipo === 'otra') {
+        } else {
             btnAccion.classList.remove('d-none');
             btnAccion.innerHTML = '<i class="fa-solid fa-check-circle"></i><span id="btnAccionTexto">Marcar como Asistido (Cierre Rápido)</span>';
             btnAccion.style.background = '#22c55e';
@@ -715,14 +719,22 @@
                     })
                     .catch(function() { mostrarToast('error', 'Error de conexión'); });
             };
-        } else {
-            btnAccion.classList.remove('d-none');
-            btnAccion.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span id="btnAccionTexto">Registrar Reporte Técnico (Requiere Fotos)</span>';
-            btnAccion.style.background = '#ef4444';
-            btnAccion.style.color = '#fff';
-            btnAccion.onclick = function() {
-                window.location.href = '/completar_visita/' + v.id + '/' + {{ usuario.id }};
-            };
+
+            var needsReport = tipo === 'instalación' || tipo === 'reparación' || tipo === 'emergencia' || tipo.indexOf('mantención') === 0;
+            if (needsReport) {
+                btnPDF.href = '#';
+                btnPDF.innerHTML = '<i class="fa-solid fa-screwdriver-wrench"></i><span>Registrar Reporte Técnico</span>';
+                btnPDF.style.background = '#fef2f2';
+                btnPDF.style.color = '#dc2626';
+                btnPDF.target = '';
+                btnPDF.classList.remove('d-none');
+                btnPDF.onclick = function(e) {
+                    e.preventDefault();
+                    window.location.href = '/completar_visita/' + v.id + '/' + {{ usuario.id }};
+                };
+            } else {
+                btnPDF.classList.add('d-none');
+            }
         }
 
         modal.classList.add('active');
@@ -890,10 +902,12 @@
     }, 100);
 
     function toggleEquipos() {
-        var tipo = document.getElementById('select_tipo_trabajo').value;
+        var tipo = document.getElementById('select_tipo_trabajo');
+        if (!tipo) return;
         var seccion = document.getElementById('seccion_equipos');
-        if (seccion) seccion.style.display = (tipo === 'Instalación') ? 'block' : 'none';
+        if (seccion) seccion.style.display = (tipo.value === 'Instalación') ? 'block' : 'none';
     }
+    document.getElementById('select_tipo_trabajo')?.addEventListener('change', toggleEquipos);
 
     function abrirModalManual() {
         var fechaBase = document.getElementById('fechaSelector').value || new Date().toISOString().split('T')[0];
