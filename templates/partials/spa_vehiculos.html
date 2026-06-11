@@ -197,7 +197,7 @@ function guardarVehiculo(e) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({placa: f.placa.value, modelo: f.modelo.value, dia_checklist: parseInt(f.dia_checklist.value)})
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalNuevoVehiculo')).hide(); recargarSeccionSPA('vehiculos'); }
         else { alert('Error: ' + resp.msg); }
     }).catch(function() { alert('Error de conexión'); });
     return false;
@@ -211,7 +211,7 @@ function editarVehiculo(e, id) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({placa: f.placa.value, modelo: f.modelo.value, dia_checklist: parseInt(f.dia_checklist.value)})
     }).then(function(r) { return r.json(); }).then(function(resp) {
-        if (resp.ok) { location.reload(); }
+        if (resp.ok) { bootstrap.Modal.getInstance(document.getElementById('modalEditarVehiculo' + id)).hide(); recargarSeccionSPA('vehiculos'); }
         else { alert('Error: ' + resp.msg); }
     }).catch(function() { alert('Error de conexión'); });
     return false;
@@ -350,7 +350,7 @@ function ejecutarEliminarVehiculo(id) {
             if (data.ok) {
                 var modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
                 if (modal) modal.hide();
-                location.reload();
+                recargarSeccionSPA('vehiculos');
             } else {
                 var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
                 if (modalConfirm) modalConfirm.hide();
