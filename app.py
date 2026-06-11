@@ -4029,25 +4029,96 @@ def api_spa_contenido(seccion):
     elif seccion == 'fallas':
         if u.rol not in ['super_su', 'admin', 'tecnico']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
-        from sqlalchemy import case
-        page = request.args.get('page', 1, type=int)
-        query = Bitacora.query.filter(Bitacora.tipo_visita.ilike('%Falla%'))
-        paginado = query.order_by(
-            case((Bitacora.fecha_resolucion == None, 0), else_=1),
-            Bitacora.prioridad.asc(),
-            Bitacora.fecha.desc()
-        ).paginate(page=page, per_page=15, error_out=False)
-        data = {
-            'tareas': paginado.items,
-            'paginacion': paginado,
-            'usuario': u,
-            'hoy_iso': date.today().isoformat(),
-        }
-        html = render_template('partials/spa_fallas.html', **data)
-        return jsonify({'ok': True, 'html': html, 'total': paginado.total})
+
+        if u.rol == 'tecnico':
+            q_agendadas = VisitaProgramada.query.filter(
+                VisitaProgramada.falla_id.is_(None),
+                VisitaProgramada.usuario_id == u.id,
+                VisitaProgramada.estado == 'Pendiente'
+            )
+            q_fallas_pend = VisitaProgramada.query.filter(
+                VisitaProgramada.falla_id.isnot(None),
+                VisitaProgramada.estado == 'Pendiente'
+            )
+            q_realizadas = VisitaProgramada.query.filter(
+                VisitaProgramada.estado == 'Realizada',
+                or_(
+                    VisitaProgramada.usuario_id == u.id,
+                    VisitaProgramada.falla_id.isnot(None)
+                )
+            )
+            visitas_agendadas = q_agendadas.order_by(
+                VisitaProgramada.prioridad.asc(),
+                VisitaProgramada.fecha_programada.desc()
+            ).all()
+            fallas_pendientes = q_fallas_pend.order_by(
+                VisitaProgramada.prioridad.asc(),
+                VisitaProgramada.fecha_programada.asc()
+            ).all()
+            visitas_realizadas = q_realizadas.order_by(
+                VisitaProgramada.fecha_programada.desc()
+            ).all()
+            data = {
+                'visitas_agendadas': visitas_agendadas,
+                'fallas_pendientes': fallas_pendientes,
+                'visitas_realizadas': visitas_realizadas,
+                'total_pendientes': len(visitas_agendadas) + len(fallas_pendientes),
+                'usuario': u,
+                'clientes': Cliente.query.order_by(Cliente.nombre).all(),
+            }
+            html = render_template('partials/spa_gestor_visitas.html', **data)
+            return jsonify({'ok': True, 'html': html})
+        else:
+            from sqlalchemy import case
+            page = request.args.get('page', 1, type=int)
+            query = Bitacora.query.filter(Bitacora.tipo_visita.ilike('%Falla%'))
+            paginado = query.order_by(
+                case((Bitacora.fecha_resolucion == None, 0), else_=1),
+                Bitacora.prioridad.asc(),
+                Bitacora.fecha.desc()
+            ).paginate(page=page, per_page=15, error_out=False)
+            data = {
+                'tareas': paginado.items,
+                'paginacion': paginado,
+                'usuario': u,
+                'hoy_iso': date.today().isoformat(),
+            }
+            html = render_template('partials/spa_fallas.html', **data)
+            return jsonify({'ok': True, 'html': html, 'total': paginado.total})
+
+    elif seccion == 'checklist':
+        if u.rol != 'tecnico':
+            return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
+        vehiculo = Vehiculo.query.filter(Vehiculo.ubicacion_id == u.ubicacion_id).first()
+        hoy = datetime.now().weekday()
+        if not vehiculo:
+            data = {'sin_vehiculo': True, 'dia_habilitado': False, 'ya_completado_hoy': False, 'dia_nombre': '—', 'herramientas': [], 'usuario': u}
+        else:
+            dia_config = vehiculo.dia_checklist
+            dia_habilitado = (hoy == dia_config)
+            hoy_chile = date.today()
+            ya_completado_hoy = ChecklistSemanal.query.filter(
+                ChecklistSemanal.vehiculo_id == vehiculo.id,
+                db.func.date(ChecklistSemanal.fecha_registro) == hoy_chile.isoformat()
+            ).first() is not None
+            herramientas = ProductoStock.query.join(CategoriaItem).filter(
+                CategoriaItem.nombre == 'Herramientas',
+                ProductoStock.ubicacion_id == vehiculo.ubicacion_id
+            ).order_by(ProductoStock.nombre).all()
+            data = {
+                'sin_vehiculo': False,
+                'vehiculo': vehiculo,
+                'herramientas': herramientas,
+                'dia_habilitado': dia_habilitado,
+                'dia_nombre': DIAS_SEMANA[dia_config],
+                'ya_completado_hoy': ya_completado_hoy,
+                'usuario': u,
+            }
+        html = render_template('partials/spa_checklist_tecnico.html', **data)
+        return jsonify({'ok': True, 'html': html})
 
     elif seccion == 'boveda':
-        if u.rol not in ['super_su', 'admin']:
+        if u.rol not in ['super_su', 'admin', 'tecnico']:
             return jsonify({'ok': False, 'error': 'Acceso denegado'}), 403
         aplicaciones = Boveda.query.filter_by(usuario_id=u.id).all()
         for app in aplicaciones:

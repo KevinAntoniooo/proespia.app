@@ -245,7 +245,7 @@
                 </a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin'] %}
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
                 <a href="#" data-seccion="fallas" @click="cargarSeccion('fallas')"
                     class="nav-link-pro" :class="pantallaActual === 'fallas' ? 'active-style' : ''">
                     <i class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
@@ -261,18 +261,21 @@
                 </a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin'] %}
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
                 <a href="#" data-seccion="boveda" @click="cargarSeccion('boveda')"
                     class="nav-link-pro" :class="pantallaActual === 'boveda' ? 'active-style' : ''">
                     <i class="fa-solid fa-table-cells-large"></i> <span>Bóveda Apps</span>
                 </a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin'] %}
                 <a href="#" data-seccion="personal" @click="cargarSeccion('personal')"
                     class="nav-link-pro" :class="pantallaActual === 'personal' ? 'active-style' : ''">
                     <i class="fa-solid fa-user-gear"></i> <span>Personal</span>
                 </a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+                {% if usuario.rol in ['super_su', 'admin'] %}
                 <a href="#" data-seccion="bodega" @click="cargarSeccion('bodega')"
                     class="nav-link-pro" :class="pantallaActual === 'bodega' ? 'active-style' : ''">
                     <i class="fa-solid fa-warehouse"></i> <span>Bodega Técnica</span>
@@ -280,6 +283,13 @@
                 <a href="#" data-seccion="vehiculos" @click="cargarSeccion('vehiculos')"
                     class="nav-link-pro" :class="pantallaActual === 'vehiculos' ? 'active-style' : ''">
                     <i class="fa-solid fa-truck"></i> <span>Vehículos</span>
+                </a>
+                {% endif %}
+
+                {% if usuario.rol == 'tecnico' %}
+                <a href="#" data-seccion="checklist" @click="cargarSeccion('checklist')"
+                    class="nav-link-pro" :class="pantallaActual === 'checklist' ? 'active-style' : ''">
+                    <i class="fa-solid fa-clipboard-list"></i> <span>Checklist</span>
                 </a>
                 {% endif %}
             </nav>
@@ -311,6 +321,7 @@
                         'personal': 'Gestión de Personal',
                         'bodega': 'Bodega Técnica',
                         'vehiculos': 'Vehículos',
+                        'checklist': 'Checklist Diario',
                     }[pantallaActual] || 'Panel de Gestión'">Panel de Gestión</h5>
                     <small style="color: var(--text-muted);">PRO ESPÍA - Central de Monitoreo</small>
                 </div>
@@ -438,7 +449,7 @@
                     <span>Bitácora Digital</span></a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin'] %}
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
                 <a href="#" data-seccion="fallas" @click="cargarSeccion('fallas')"
                     class="nav-link-pro" :class="pantallaActual === 'fallas' ? 'active-style' : ''"><i
                         class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
@@ -453,21 +464,31 @@
                     {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}</a>
                 {% endif %}
 
-                {% if usuario.rol in ['super_su', 'admin'] %}
+                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
                 <a href="#" data-seccion="boveda" @click="cargarSeccion('boveda')"
                     class="nav-link-pro" :class="pantallaActual === 'boveda' ? 'active-style' : ''"><i class="fa-solid fa-table-cells-large"></i>
                     <span>Bóveda Apps</span></a>
+                {% endif %}
+
+                {% if usuario.rol in ['super_su', 'admin'] %}
                 <a href="#" data-seccion="personal" @click="cargarSeccion('personal')"
                     class="nav-link-pro" :class="pantallaActual === 'personal' ? 'active-style' : ''"><i class="fa-solid fa-user-gear"></i>
                     <span>Personal</span></a>
                 {% endif %}
-                {% if usuario.rol in ['super_su', 'admin', 'tecnico'] %}
+
+                {% if usuario.rol in ['super_su', 'admin'] %}
                 <a href="#" data-seccion="bodega" @click="cargarSeccion('bodega')"
                     class="nav-link-pro" :class="pantallaActual === 'bodega' ? 'active-style' : ''"><i class="fa-solid fa-warehouse"></i>
                     <span>Bodega Técnica</span></a>
                 <a href="#" data-seccion="vehiculos" @click="cargarSeccion('vehiculos')"
                     class="nav-link-pro" :class="pantallaActual === 'vehiculos' ? 'active-style' : ''"><i class="fa-solid fa-truck"></i>
                     <span>Vehículos</span></a>
+                {% endif %}
+
+                {% if usuario.rol == 'tecnico' %}
+                <a href="#" data-seccion="checklist" @click="cargarSeccion('checklist')"
+                    class="nav-link-pro" :class="pantallaActual === 'checklist' ? 'active-style' : ''"><i class="fa-solid fa-clipboard-list"></i>
+                    <span>Checklist</span></a>
                 {% endif %}
             </nav>
 

@@ -1,0 +1,357 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0" style="color:var(--text-heading);"><i class="fa-solid fa-calendar-check me-2"></i>Gestor de Visitas</h2>
+        <div class="text-end">
+            <span class="badge bg-warning text-dark px-3 shadow-sm rounded-2">Pendientes: {{ total_pendientes }}</span>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4" style="background:var(--bg-card);">
+        <div class="card-body p-2 p-md-3">
+            <form id="gestor-filtros" class="row g-2 g-md-3 align-items-end" onsubmit="return aplicarFiltrosGV(event)">
+                <div class="col-12 col-md-3">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Cliente</label>
+                    <div class="position-relative">
+                        <input type="text" id="filtroClienteGV" class="form-control form-control-sm rounded-3" placeholder="Buscar por nombre..." autocomplete="off">
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
+                    <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="small fw-bold text-muted text-uppercase mb-1">Hasta:</label>
+                    <input type="date" name="fecha_fin" class="form-control form-control-sm rounded-3">
+                </div>
+                <div class="col-12 col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm">
+                        <i class="fa-solid fa-filter me-1"></i>Filtrar
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm rounded-3 border w-100 shadow-sm" onclick="limpiarFiltrosGV()">
+                        <i class="fa-solid fa-eraser me-1"></i>Limpiar
+                    </button>
+                </div>
+                <div class="col-12 col-md-2 d-flex justify-content-end">
+                    <button type="button" class="btn btn-success btn-sm rounded-3 w-100 shadow-sm" onclick="abrirModalAgendarGV()">
+                        <i class="fa-solid fa-plus me-1"></i>Agendar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs border-0 gap-2 mb-3" id="gvTabs">
+        <li class="nav-item">
+            <button class="nav-link active fw-bold small rounded-3 border-0 shadow-sm px-3" id="tab-agendadas" style="background:#6366f1;color:#fff;" onclick="cambiarTabGV('agendadas')">
+                <i class="fa-solid fa-calendar me-1"></i>Agendadas <span class="badge bg-light text-dark ms-1">{{ visitas_agendadas|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold small rounded-3 border-0 shadow-sm px-3" id="tab-fallas" style="background:#f59e0b;color:#fff;" onclick="cambiarTabGV('fallas')">
+                <i class="fa-solid fa-triangle-exclamation me-1"></i>Fallas Pendientes <span class="badge bg-light text-dark ms-1">{{ fallas_pendientes|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link fw-bold small rounded-3 border-0 shadow-sm px-3" id="tab-realizadas" style="background:#10b981;color:#fff;" onclick="cambiarTabGV('realizadas')">
+                <i class="fa-solid fa-check-double me-1"></i>Realizadas <span class="badge bg-light text-dark ms-1">{{ visitas_realizadas|length }}</span>
+            </button>
+        </li>
+    </ul>
+
+    <div id="tabla-container-gv">
+        {% macro tabla_visitas(lista, mensaje_vacio, es_falla=False) %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="ps-4">Estado</th>
+                        <th>Cliente</th>
+                        <th>Tipo</th>
+                        <th>Programada</th>
+                        <th class="d-none d-md-table-cell">Descripción</th>
+                        <th class="text-center pe-4 d-none d-sm-table-cell">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in lista %}
+                    <tr class="{% if v.prioridad == 1 %}table-danger-subtle{% elif v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisitaGV(this)"
+                        data-id="{{ v.id }}"
+                        data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
+                        data-tipo="{{ v.tipo_trabajo }}"
+                        data-fecha="{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}"
+                        data-estado="{{ v.estado }}"
+                        data-descripcion="{{ v.descripcion|e if v.descripcion else '' }}"
+                        data-ubicacion="{{ v.ubicacion or '' }}"
+                        data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}"
+                        data-tecnico="{{ v.rel_usuario.nombre if v.rel_usuario else 'Sin asignar' }}">
+                        <td class="ps-4">
+                            {% if v.prioridad == 1 %}
+                            <span class="badge bg-danger shadow-sm">CRÍTICA</span>
+                            {% elif v.estado == 'Realizada' %}
+                            <span class="badge bg-success shadow-sm">REALIZADA</span>
+                            {% elif v.estado == 'Vencida' %}
+                            <span class="badge bg-secondary shadow-sm">VENCIDA</span>
+                            {% elif es_falla %}
+                            <span class="badge bg-warning text-dark shadow-sm">FALLA</span>
+                            {% else %}
+                            <span class="badge bg-primary shadow-sm">PROGRAMADA</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold" style="color:var(--text-heading);font-size:0.85rem;">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</div>
+                            <small class="text-muted text-uppercase" style="font-size:0.65rem;">{{ v.tipo_trabajo }}</small>
+                        </td>
+                        <td><span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style="font-size:0.65rem;">{{ v.tipo_trabajo[:20] }}</span></td>
+                        <td class="small" style="color:var(--text-muted);">
+                            <i class="fa-regular fa-calendar me-1"></i>{{ v.fecha_programada.strftime('%d/%m/%Y') }}<br>
+                            <i class="fa-regular fa-clock me-1"></i>{{ v.fecha_programada.strftime('%H:%M') }}
+                        </td>
+                        <td class="d-none d-md-table-cell small" style="color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            {{ v.descripcion[:50] }}{% if v.descripcion and v.descripcion|length > 50 %}...{% endif %}
+                        </td>
+                        <td class="text-center pe-4 d-none d-sm-table-cell">
+                            {% if v.estado != 'Realizada' and v.informe_tecnico %}
+                            <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}" target="_blank" class="btn btn-outline-success btn-sm rounded-3 px-3">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </a>
+                            {% elif v.estado != 'Realizada' %}
+                            <button class="btn btn-success btn-sm rounded-3 px-3" onclick="event.stopPropagation();finalizarVisitaGV({{ v.id }})">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                            {% else %}
+                            <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}" target="_blank" class="btn btn-outline-success btn-sm rounded-3 px-3">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">{{ mensaje_vacio }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endmacro %}
+
+        <div id="tabla-agendadas">
+            {{ tabla_visitas(visitas_agendadas, 'Sin visitas agendadas.') }}
+        </div>
+        <div id="tabla-fallas" style="display:none;">
+            {{ tabla_visitas(fallas_pendientes, 'Sin fallas pendientes.', es_falla=True) }}
+        </div>
+        <div id="tabla-realizadas" style="display:none;">
+            {{ tabla_visitas(visitas_realizadas, 'Sin visitas realizadas.') }}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="detalleVisitaGV" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-circle-info me-2"></i>Detalle de Visita</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div style="width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#eef2ff;">
+                        <i class="fa-solid fa-building" style="color:#6366f1;font-size:1rem;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <p style="font-size:0.6rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.15rem;">Cliente</p>
+                        <h6 class="fw-bold mb-0" id="gvDetalleCliente" style="color:var(--text-heading);">---</h6>
+                    </div>
+                    <span id="gvDetalleEstado" class="badge" style="font-size:0.6rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:999px;"></span>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <div class="p-2 rounded-3" style="background:rgba(99,102,241,0.06);">
+                            <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.15rem;">Tipo</p>
+                            <p id="gvDetalleTipo" class="fw-bold mb-0" style="color:var(--text-heading);font-size:0.85rem;">---</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded-3" style="background:rgba(99,102,241,0.06);">
+                            <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.15rem;">Técnico</p>
+                            <p id="gvDetalleTecnico" class="fw-bold mb-0" style="color:var(--text-heading);font-size:0.85rem;">---</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-2 rounded-3 mb-2" style="background:rgba(99,102,241,0.06);">
+                    <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem;">Descripción</p>
+                    <p id="gvDetalleDesc" class="mb-0" style="color:var(--text-muted);font-size:0.8rem;">---</p>
+                </div>
+                <div id="gvDetalleUbicacion" class="mb-2" style="display:none;">
+                    <a id="gvDetalleUbicacionLink" href="#" target="_blank" class="btn d-flex align-items-center gap-2 w-100 rounded-3" style="font-size:0.8rem;font-weight:600;color:#6366f1;background:#eef2ff;border:none;padding:0.5rem 0.75rem;">
+                        <i class="fa-solid fa-location-dot"></i><span>Abrir Ruta</span>
+                    </a>
+                </div>
+                <div id="gvDetalleInforme" class="p-2 rounded-3" style="display:none;background:rgba(16,185,129,0.06);">
+                    <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem;">Informe Técnico</p>
+                    <p id="gvDetalleInformeText" class="mb-0" style="color:var(--text-muted);font-size:0.8rem;">---</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex gap-2">
+                <button type="button" class="btn btn-light fw-bold shadow-sm" style="font-size:0.8rem;" data-bs-dismiss="modal">Cerrar</button>
+                <a id="gvDetalleBtnPDF" href="#" target="_blank" class="btn btn-success fw-bold shadow-sm d-none" style="font-size:0.8rem;">
+                    <i class="fa-solid fa-file-pdf me-1"></i>Ver PDF
+                </a>
+                <button id="gvDetalleBtnFinalizar" class="btn btn-success fw-bold shadow-sm d-none" style="font-size:0.8rem;" onclick="finalizarVisitaDesdeDetalleGV()">
+                    <i class="fa-solid fa-check me-1"></i>Marcar Realizada
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgendarGV" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4" style="background:var(--bg-card);">
+            <form onsubmit="return agendarVisitaGV(event)">
+                <div class="modal-header border-0" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                    <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-calendar-plus me-2"></i>Agendar Actividad</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Tipo de Servicio</label>
+                            <select name="tipo_trabajo" class="form-select shadow-sm rounded-3" required>
+                                <option value="Cotización">Visita de Cotización / Terreno</option>
+                                <option value="Instalación">Instalación CCTV / Alarma</option>
+                                <option value="Mantención Preventiva">Mantención Preventiva</option>
+                                <option value="Reparación">Reparación Técnica / Soporte</option>
+                                <option value="Emergencia">Emergencia (Prioridad Alta)</option>
+                                <option value="Otra">Otro...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Fecha</label>
+                            <input type="date" name="fecha_programada_base" id="gvFecha" class="form-control shadow-sm rounded-3" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Hora</label>
+                            <input type="time" name="hora_visita" class="form-control shadow-sm rounded-3" value="09:00" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Cliente</label>
+                            <select name="cliente_id" class="form-select rounded-3" required>
+                                <option value="">Seleccione sede</option>
+                                {% for c in clientes %}
+                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Descripción</label>
+                            <textarea name="descripcion" class="form-control shadow-sm rounded-3" rows="2" placeholder="Detalles..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 gap-2">
+                    <button type="button" class="btn btn-light fw-bold shadow-sm" style="font-size:0.8rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm" style="font-size:0.8rem;">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    #gvTabs .nav-link { transition: all 0.2s; }
+    #gvTabs .nav-link:hover { opacity: 0.85; transform: translateY(-1px); }
+</style>
+
+<script>
+    var gvCurrentVisitaId = null;
+
+    function cambiarTabGV(tab) {
+        document.querySelectorAll('#tabla-container-gv > div').forEach(function(el) { el.style.display = 'none'; });
+        document.querySelectorAll('#gvTabs .nav-link').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('tabla-' + tab).style.display = '';
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    function verDetalleVisitaGV(el) {
+        var d = el.dataset;
+        gvCurrentVisitaId = d.id;
+        document.getElementById('gvDetalleCliente').textContent = d.cliente;
+        document.getElementById('gvDetalleTipo').textContent = d.tipo;
+        document.getElementById('gvDetalleTecnico').textContent = d.tecnico;
+        document.getElementById('gvDetalleDesc').textContent = d.descripcion || 'Sin notas.';
+        var badge = document.getElementById('gvDetalleEstado');
+        badge.textContent = d.estado;
+        badge.className = 'badge bg-' + (d.estado === 'Realizada' ? 'success' : d.estado === 'Vencida' ? 'secondary' : d.prioridad === '1' ? 'danger' : 'warning text-dark');
+        var ubContainer = document.getElementById('gvDetalleUbicacion');
+        if (d.ubicacion) { ubContainer.style.display = ''; document.getElementById('gvDetalleUbicacionLink').href = d.ubicacion; }
+        else { ubContainer.style.display = 'none'; }
+        var infoContainer = document.getElementById('gvDetalleInforme');
+        var infoText = document.getElementById('gvDetalleInformeText');
+        if (d.informe) { infoContainer.style.display = ''; infoText.textContent = d.informe; }
+        else { infoContainer.style.display = 'none'; }
+        var btnPDF = document.getElementById('gvDetalleBtnPDF');
+        var btnFinalizar = document.getElementById('gvDetalleBtnFinalizar');
+        if (d.estado === 'Realizada') {
+            btnPDF.classList.remove('d-none');
+            btnPDF.href = '/reporte_visita_pdf/' + d.id + '/' + {{ usuario.id }};
+            btnFinalizar.classList.add('d-none');
+        } else if (d.estado === 'Vencida') {
+            btnPDF.classList.add('d-none');
+            btnFinalizar.classList.add('d-none');
+        } else {
+            btnPDF.classList.add('d-none');
+            btnFinalizar.classList.remove('d-none');
+        }
+        new bootstrap.Modal(document.getElementById('detalleVisitaGV')).show();
+    }
+
+    function finalizarVisitaDesdeDetalleGV() {
+        if (!gvCurrentVisitaId) return;
+        finalizarVisitaGV(gvCurrentVisitaId);
+        bootstrap.Modal.getInstance(document.getElementById('detalleVisitaGV')).hide();
+    }
+
+    function finalizarVisitaGV(id) {
+        fetch('/agenda/finalizar_cotizacion/' + id, { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) { recargarSeccionSPA('fallas'); }
+                else { alert(data.msg); }
+            }).catch(function() { alert('Error de conexión'); });
+    }
+
+    function agendarVisitaGV(e) {
+        e.preventDefault();
+        var data = new URLSearchParams(new FormData(e.target));
+        fetch('/admin/agendar_visita', { method: 'POST', body: data })
+            .then(function(r) { return r.json(); })
+            .then(function(resp) {
+                if (resp.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('modalAgendarGV')).hide();
+                    recargarSeccionSPA('fallas');
+                } else { alert(resp.error || 'Error al agendar'); }
+            }).catch(function() { alert('Error de conexión'); });
+        return false;
+    }
+
+    function abrirModalAgendarGV() {
+        document.getElementById('gvFecha').value = new Date().toISOString().split('T')[0];
+        new bootstrap.Modal(document.getElementById('modalAgendarGV')).show();
+    }
+
+    function aplicarFiltrosGV(e) {
+        e.preventDefault();
+        recargarSeccionSPA('fallas');
+        return false;
+    }
+
+    function limpiarFiltrosGV() {
+        document.querySelectorAll('#gestor-filtros input[name]').forEach(function(el) { el.value = ''; });
+        recargarSeccionSPA('fallas');
+    }
+</script>
