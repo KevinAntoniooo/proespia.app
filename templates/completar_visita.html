@@ -36,9 +36,21 @@
 
                         <div class="mb-4">
                             <label class="form-label fw-bold text-dark"><i class="fa-solid fa-camera me-2"></i>Evidencia del Trabajo</label>
-                            <input type="file" name="foto" class="form-control rounded-3 shadow-sm" accept="image/*,application/pdf">
-                            <div class="form-text small mt-2">Sube una foto del trabajo realizado (opcional).</div>
+                            <input type="file" name="fotos" class="form-control rounded-3 shadow-sm" accept="image/*,application/pdf" multiple>
+                            <div class="form-text small mt-2">Sube hasta 3 archivos (fotos o PDFs).</div>
+                            <div id="fileCountWarning" class="form-text text-danger small mt-1 d-none">Máximo 3 archivos.</div>
                         </div>
+                        <script>
+                        document.querySelector('input[name="fotos"]')?.addEventListener('change', function() {
+                            var warn = document.getElementById('fileCountWarning');
+                            if (this.files.length > 3) {
+                                warn.classList.remove('d-none');
+                                this.value = '';
+                            } else {
+                                warn.classList.add('d-none');
+                            }
+                        });
+                        </script>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg rounded-3 fw-bold shadow-sm">

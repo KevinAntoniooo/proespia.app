@@ -1203,16 +1203,22 @@ def completar_visita_form(visita_id, user_id):
     
     if request.method == 'POST':
         informe = request.form.get('informe')
-        foto = request.files.get('foto')
+        fotos = request.files.getlist('fotos')
         
         visita.informe_tecnico = informe
         visita.fecha_completada = datetime.now()
         visita.estado = 'Realizada'
         
-        if foto and allowed_file(foto.filename):
-            filename = f"visita_{visita_id}_{foto.filename}"
-            foto.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            visita.foto_visita = filename
+        saved = []
+        if fotos:
+            for i, f in enumerate(fotos[:3]):
+                if f and f.filename and allowed_file(f.filename):
+                    ext = f.filename.rsplit('.', 1)[-1] if '.' in f.filename else 'jpg'
+                    filename = f"visita_{visita_id}_{i+1}.{ext}"
+                    f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    saved.append(filename)
+        if saved:
+            visita.foto_visita = ','.join(saved)
         
         try:
             db.session.commit()
@@ -1294,11 +1300,13 @@ def reporte_visita_pdf(visita_id, user_id):
         
         if visita.foto_visita:
             pdf.ln(10)
-            ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], visita.foto_visita)
-            if os.path.exists(ruta_foto):
-                pdf.set_font('helvetica', 'B', 12)
-                pdf.cell(0, 10, ' 3. EVIDENCIA FOTOGRAFICA', new_x="LMARGIN", new_y="NEXT")
-                pdf.image(ruta_foto, x=15, w=100)
+            pdf.set_font('helvetica', 'B', 12)
+            pdf.cell(0, 10, ' 3. EVIDENCIA FOTOGRAFICA', new_x="LMARGIN", new_y="NEXT")
+            for nombre_foto in visita.foto_visita.split(','):
+                ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], nombre_foto.strip())
+                if os.path.exists(ruta_foto):
+                    pdf.image(ruta_foto, x=15, w=100)
+                    pdf.ln(2)
         
         pdf.set_y(-50)
         pdf.set_font('helvetica', 'I', 8)
@@ -2338,16 +2346,22 @@ def completar_tarea(log_id, user_id):
     
     if request.method == 'POST':
         informe = request.form.get('informe') 
-        foto = request.files.get('foto')
+        fotos = request.files.getlist('fotos')
         
         tarea.informe_tecnico = informe
         tarea.fecha_resolucion = datetime.now()
         tarea.tipo_visita = "Falla RESUELTA" # Cambia estado para seguimiento
         
-        if foto and allowed_file(foto.filename):
-            filename = f"resuelto_{log_id}_{foto.filename}"
-            foto.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            tarea.foto_falla = filename
+        saved = []
+        if fotos:
+            for i, f in enumerate(fotos[:3]):
+                if f and f.filename and allowed_file(f.filename):
+                    ext = f.filename.rsplit('.', 1)[-1] if '.' in f.filename else 'jpg'
+                    filename = f"resuelto_{log_id}_{i+1}.{ext}"
+                    f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    saved.append(filename)
+        if saved:
+            tarea.foto_falla = ','.join(saved)
             
         db.session.commit()
         
@@ -2436,14 +2450,16 @@ def reporte_falla_pdf(log_id, user_id):
     solucion_texto = log.informe_tecnico if log.informe_tecnico else "No se registro detalle tecnico."
     pdf.multi_cell(0, 7, limpiar_pdf(solucion_texto))
     
-    # --- IMAGEN DE EVIDENCIA ---
+    # --- IMAGEN(ES) DE EVIDENCIA ---
     if log.foto_falla:
         pdf.ln(10)
-        ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], log.foto_falla)
-        if os.path.exists(ruta_foto):
-            pdf.set_font('helvetica', 'B', 12)
-            pdf.cell(0, 10, ' 3. EVIDENCIA FOTOGRAFICA', new_x="LMARGIN", new_y="NEXT")
-            pdf.image(ruta_foto, x=15, w=100) 
+        pdf.set_font('helvetica', 'B', 12)
+        pdf.cell(0, 10, ' 3. EVIDENCIA FOTOGRAFICA', new_x="LMARGIN", new_y="NEXT")
+        for nombre_foto in log.foto_falla.split(','):
+            ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], nombre_foto.strip())
+            if os.path.exists(ruta_foto):
+                pdf.image(ruta_foto, x=15, w=100)
+                pdf.ln(2)
         
     # --- PIE DE PAGINA / FIRMAS ---
     pdf.set_y(-50)

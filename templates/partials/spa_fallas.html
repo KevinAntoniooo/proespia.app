@@ -311,7 +311,8 @@ function verDetalleInforme(logId) {
             const sinFotoDiv = document.getElementById('modal-sin-foto');
             
             if (data.foto) {
-                imgElement.src = '/static/uploads/' + data.foto;
+                var primerFoto = data.foto.split(',')[0].trim();
+                imgElement.src = '/static/uploads/' + primerFoto;
                 imgElement.style.display = "block";
                 sinFotoDiv.style.display = "none";
             } else {
