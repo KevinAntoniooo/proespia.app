@@ -26,6 +26,9 @@
                     <div class="input-group">
                         <span class="input-group-text border-end-0" aria-hidden="true" style="background:#f8fafc;"><i class="fa-solid fa-lock text-muted"></i></span>
                         <input type="password" id="login-password" name="password" class="form-control border-start-0 ps-0" placeholder="••••••••" required autocomplete="current-password" style="border-left:none;background:#f8fafc;">
+                        <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePasswordLogin" tabindex="-1" style="background:#f8fafc;border-color:#dee2e6;" title="Mostrar contraseña" aria-label="Mostrar contraseña">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="mb-3 d-flex align-items-center">
@@ -134,6 +137,22 @@
 
 <script>
 (function(){
+    var toggleBtn = document.getElementById('togglePasswordLogin');
+    var passInput = document.getElementById('login-password');
+    if (toggleBtn && passInput) {
+        toggleBtn.addEventListener('click', function() {
+            var isPass = passInput.type === 'password';
+            passInput.type = isPass ? 'text' : 'password';
+            var icon = toggleBtn.querySelector('i');
+            if (icon) {
+                icon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+            }
+            toggleBtn.setAttribute('title', isPass ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            toggleBtn.setAttribute('aria-label', isPass ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            passInput.focus();
+        });
+    }
+    
     var btnPWA = document.getElementById('btnInstalarPWA');
     var overlay = document.getElementById('tutorialOverlay');
     var card = document.getElementById('tutorialCard');
