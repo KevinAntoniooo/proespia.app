@@ -107,7 +107,7 @@
                             {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
                             <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
                                 class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
-                                onclick="event.stopPropagation();" target="_blank">
+                                onclick="event.stopPropagation();">
                                 <i class="fa-solid fa-wrench me-1"></i>Gestionar
                             </a>
                             {% else %}
@@ -221,7 +221,7 @@
                         <i class="fa-solid fa-file-pdf me-1"></i> PDF
                     </a>
                     <div id="gv-modal-actions" class="d-flex gap-2">
-                        <a id="gv-modal-btn-gestionar" href="#" class="btn btn-success fw-bold shadow-sm px-3 d-none" style="font-size:0.8rem;" target="_blank">
+                        <a id="gv-modal-btn-gestionar" href="#" class="btn btn-success fw-bold shadow-sm px-3 d-none" style="font-size:0.8rem;">
                             <i class="fa-solid fa-wrench me-1"></i> Gestionar
                         </a>
                         <button id="gv-modal-btn-listo" type="button" class="btn btn-success fw-bold shadow-sm px-3 d-none" style="font-size:0.8rem;" onclick="confirmarFinalizarDesdeModalGV()">
