@@ -55,7 +55,7 @@
                     <div class="input-group mb-2">
                         <input type="password" class="form-control form-control-sm border-danger" 
                                value="****************" id="pass-card-{{ app.id }}" readonly>
-                        <button class="btn btn-outline-danger btn-sm" type="button" onclick="solicitarClave({{ app.id }}, event)">
+                        <button class="btn btn-outline-danger btn-sm" type="button" id="eye-btn-{{ app.id }}" onclick="togglePasswordReveal({{ app.id }}, event)">
                             <i class="bi bi-eye"></i>
                         </button>
                     </div>
@@ -216,6 +216,36 @@ window.togglePassLocal = function(inputId, event) {
     }
 }
 
+window.bovedaRevealTimers = {};
+
+window.togglePasswordReveal = function(credenId, event) {
+    event.preventDefault();
+    var btn = document.getElementById('eye-btn-' + credenId);
+    if (btn && btn.getAttribute('data-revealed') === 'true') {
+        ocultarPasswordCredencial(credenId);
+        return;
+    }
+    solicitarClave(credenId, event);
+}
+
+function ocultarPasswordCredencial(credenId) {
+    if (bovedaRevealTimers[credenId]) {
+        clearTimeout(bovedaRevealTimers[credenId]);
+        delete bovedaRevealTimers[credenId];
+    }
+    var inputPass = document.getElementById('pass-card-' + credenId);
+    var btn = document.getElementById('eye-btn-' + credenId);
+    if (inputPass) {
+        inputPass.value = '****************';
+        inputPass.type = 'password';
+    }
+    if (btn) {
+        btn.setAttribute('data-revealed', 'false');
+        var icon = btn.querySelector('i');
+        if (icon) { icon.className = 'bi bi-eye'; }
+    }
+}
+
 window.solicitarClave = function(credenId, event) {
     event.preventDefault();
     credencialActiva = credenId;
@@ -234,6 +264,7 @@ window.confirmarClave = function() {
     if (!password) {
         errorDiv.textContent = 'Debe ingresar su contraseña';
         errorDiv.classList.remove('d-none');
+        document.getElementById('inputClaveAdmin').focus();
         return;
     }
 
@@ -259,10 +290,23 @@ window.confirmarClave = function() {
     })
     .then(function(data) {
         var inputPass = document.getElementById('pass-card-' + credencialActiva);
+        var eyeBtn = document.getElementById('eye-btn-' + credencialActiva);
         if (inputPass) {
             inputPass.value = data.password;
             inputPass.type = 'text';
         }
+        if (eyeBtn) {
+            eyeBtn.setAttribute('data-revealed', 'true');
+            var icon = eyeBtn.querySelector('i');
+            if (icon) { icon.className = 'bi bi-eye-slash'; }
+        }
+        if (bovedaRevealTimers[credencialActiva]) {
+            clearTimeout(bovedaRevealTimers[credencialActiva]);
+        }
+        bovedaRevealTimers[credencialActiva] = setTimeout(function() {
+            ocultarPasswordCredencial(credencialActiva);
+        }, 15000);
+
         var modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalVerificarClave'));
         if (modalInstance) modalInstance.hide();
         btn.disabled = false;
