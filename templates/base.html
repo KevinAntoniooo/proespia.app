@@ -567,6 +567,10 @@
                         fetch('/api/spa/contenido/' + seccion + '?_=' + Date.now())
                             .then(function(r) { return r.json(); })
                             .then(function(resp) {
+                                if (resp.ok && resp.redirect) {
+                                    window.location.href = resp.redirect;
+                                    return;
+                                }
                                 if (resp.ok && resp.html) {
                                     container.innerHTML = resp.html;
                                     var scripts = container.querySelectorAll('script');
