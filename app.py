@@ -2562,7 +2562,7 @@ def agendar_visita():
 @app.route('/api/eventos_agenda')
 def api_eventos_agenda():
     try:
-        visitas = VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None)).all()
+        visitas = VisitaProgramada.query.all()
         eventos = []
         
         for v in visitas:
@@ -2619,7 +2619,7 @@ def api_eventos_agenda():
 def api_eventos_por_fecha():
     try:
         fecha_str = request.args.get('fecha', '')
-        visitas = VisitaProgramada.query.filter(VisitaProgramada.falla_id.is_(None)).all()
+        visitas = VisitaProgramada.query.all()
         if fecha_str:
             visitas = [v for v in visitas if v.fecha_programada.strftime('%Y-%m-%d') == fecha_str]
         resultados = []
