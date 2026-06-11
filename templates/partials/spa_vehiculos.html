@@ -378,19 +378,23 @@ document.getElementById('btnConfirmarEliminarVehiculo').addEventListener('click'
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i>Eliminar';
             var modalConfirm = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminarVehiculo'));
+            var totalHerramientas = data.herramientas + (data.herramientas_stock || 0);
             if (data.tecnicos > 0) {
                 if (modalConfirm) modalConfirm.hide();
                 var msg = 'Este vehículo tiene ' + data.tecnicos + ' técnico(s) asignado(s)';
-                if (data.herramientas > 0 || data.productos > 0) {
-                    msg += ', ' + data.herramientas + ' herramienta(s) y ' + data.productos + ' producto(s) en stock';
+                if (totalHerramientas > 0 || data.productos > 0) {
+                    var piezas = [];
+                    if (totalHerramientas > 0) piezas.push(totalHerramientas + ' herramienta(s)');
+                    if (data.productos > 0) piezas.push(data.productos + ' producto(s)');
+                    msg += ', ' + piezas.join(' y ') + ' en stock';
                 }
                 msg += '. Reasigna el técnico a otro vehículo antes de eliminar.';
                 mostrarAdvertencia('No se puede eliminar', msg);
-            } else if (data.herramientas > 0 || data.productos > 0) {
+            } else if (totalHerramientas > 0 || data.productos > 0) {
                 if (modalConfirm) modalConfirm.hide();
                 pendienteEliminar = id;
                 var partes = [];
-                if (data.herramientas > 0) partes.push(data.herramientas + ' herramienta(s)');
+                if (totalHerramientas > 0) partes.push(totalHerramientas + ' herramienta(s)');
                 if (data.productos > 0) partes.push(data.productos + ' producto(s) en stock');
                 mostrarAdvertencia('Contenido del vehículo',
                     'Este vehículo tiene ' + partes.join(' y ') + '. Se trasladarán a Bodega Central al eliminar.');

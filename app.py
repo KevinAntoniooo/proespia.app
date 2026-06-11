@@ -3041,9 +3041,16 @@ def editar_vehiculo(id):
 def vehiculo_check_eliminar(id):
     v = Vehiculo.query.get_or_404(id)
     tecnicos = Usuario.query.filter_by(ubicacion_id=v.ubicacion_id).count()
-    herramientas = Herramienta.query.filter_by(vehiculo_id=v.id).count()
-    productos = ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).count() if v.ubicacion_id else 0
-    return jsonify({'tecnicos': tecnicos, 'herramientas': herramientas, 'productos': productos})
+    herramientas_propias = Herramienta.query.filter_by(vehiculo_id=v.id).count()
+    prod_ubicacion = ProductoStock.query.filter_by(ubicacion_id=v.ubicacion_id).all() if v.ubicacion_id else []
+    herramientas_stock = sum(1 for p in prod_ubicacion if p.rel_categoria and p.rel_categoria.nombre == 'Herramientas')
+    productos_regulares = len(prod_ubicacion) - herramientas_stock
+    return jsonify({
+        'tecnicos': tecnicos,
+        'herramientas': herramientas_propias,
+        'productos': productos_regulares,
+        'herramientas_stock': herramientas_stock
+    })
 
 @app.route('/api/vehiculos/eliminar/<int:id>', methods=['DELETE'])
 @login_required
