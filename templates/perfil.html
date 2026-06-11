@@ -321,43 +321,44 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
 <script>
     {% if usuario.es_super_admin() %}
-    document.getElementById('inputWipeConfirm')?.addEventListener('input', function() {
-        document.getElementById('btnWipeDB').disabled = this.value !== 'LIMPIAR';
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('inputWipeConfirm')?.addEventListener('input', function() {
+            document.getElementById('btnWipeDB').disabled = this.value !== 'LIMPIAR';
+        });
 
-    document.getElementById('btnWipeDB')?.addEventListener('click', function() {
-        var btn = this;
-        var err = document.getElementById('errorWipeDB');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Limpiando...';
-        err.classList.add('d-none');
+        document.getElementById('btnWipeDB')?.addEventListener('click', function() {
+            var btn = this;
+            var err = document.getElementById('errorWipeDB');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Limpiando...';
+            err.classList.add('d-none');
 
-        fetch('/admin/wipe_db', { method: 'POST' })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.ok) {
-                var modal = bootstrap.Modal.getInstance(document.getElementById('modalWipeDB'));
-                if (modal) modal.hide();
-                window.location.href = '/app';
-            } else {
-                err.textContent = data.msg || 'Error al limpiar';
+            fetch('/admin/wipe_db', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('modalWipeDB'));
+                    if (modal) modal.hide();
+                    window.location.href = '/app';
+                } else {
+                    err.textContent = data.msg || 'Error al limpiar';
+                    err.classList.remove('d-none');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-radiation me-1"></i>Limpiar todo';
+                }
+            })
+            .catch(function() {
+                err.textContent = 'Error de conexión';
                 err.classList.remove('d-none');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-radiation me-1"></i>Limpiar todo';
-            }
-        })
-        .catch(function() {
-            err.textContent = 'Error de conexión';
-            err.classList.remove('d-none');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-radiation me-1"></i>Limpiar todo';
+            });
         });
     });
     {% endif %}
-    document.querySelectorAll('.toggle-pass').forEach(btn => {
+    document.querySelectorAll('.toggle-pass').forEach(function(btn) {
         btn.addEventListener('click', function () {
             const target = document.getElementById(this.dataset.target);
             const icon = this.querySelector('i');
@@ -411,4 +412,3 @@
         });
     }
 </script>
-{% endblock %}

@@ -146,13 +146,13 @@
         <div class="card-header bg-dark border-0 p-0">
             <ul class="nav nav-tabs card-header-tabs nav-justified" id="gvTabs" role="tablist">
                 <li class="nav-item">
-                    <button class="nav-link active fw-bold small" id="agendadas-tab" data-bs-toggle="tab" data-bs-target="#tab_agendadas" role="tab">
-                        <i class="fa-solid fa-calendar-check text-primary"></i><span class="d-none d-sm-inline ms-1">Visitas Agendadas</span> <span class="badge bg-primary ms-1">{{ visitas_agendadas|length }}</span>
+                    <button class="nav-link active fw-bold small" id="fallas-pend-tab" data-bs-toggle="tab" data-bs-target="#tab_fallas_pend" role="tab">
+                        <i class="fa-solid fa-triangle-exclamation text-warning"></i><span class="d-none d-sm-inline ms-1">Fallas Reportadas</span> <span class="badge bg-warning text-dark ms-1">{{ fallas_pendientes|length }}</span>
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link fw-bold small" id="fallas-pend-tab" data-bs-toggle="tab" data-bs-target="#tab_fallas_pend" role="tab">
-                        <i class="fa-solid fa-triangle-exclamation text-warning"></i><span class="d-none d-sm-inline ms-1">Fallas Reportadas</span> <span class="badge bg-warning text-dark ms-1">{{ fallas_pendientes|length }}</span>
+                    <button class="nav-link fw-bold small" id="agendadas-tab" data-bs-toggle="tab" data-bs-target="#tab_agendadas" role="tab">
+                        <i class="fa-solid fa-calendar-check text-primary"></i><span class="d-none d-sm-inline ms-1">Visitas Agendadas</span> <span class="badge bg-primary ms-1">{{ visitas_agendadas|length }}</span>
                     </button>
                 </li>
                 <li class="nav-item">
@@ -163,11 +163,11 @@
             </ul>
         </div>
         <div class="card-body p-0 tab-content">
-            <div class="tab-pane fade show active" id="tab_agendadas" role="tabpanel">
-                {{ tabla_visitas(visitas_agendadas, 'No hay visitas agendadas.') }}
-            </div>
-            <div class="tab-pane fade" id="tab_fallas_pend" role="tabpanel">
+            <div class="tab-pane fade show active" id="tab_fallas_pend" role="tabpanel">
                 {{ tabla_visitas(fallas_pendientes, 'No hay fallas pendientes.', es_falla=True) }}
+            </div>
+            <div class="tab-pane fade" id="tab_agendadas" role="tabpanel">
+                {{ tabla_visitas(visitas_agendadas, 'No hay visitas agendadas.') }}
             </div>
             <div class="tab-pane fade" id="tab_realizadas" role="tabpanel">
                 {{ tabla_visitas(visitas_realizadas, 'No hay visitas realizadas.') }}

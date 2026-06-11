@@ -67,6 +67,15 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var al = document.querySelector('[x-data]');
+    if (al && window.Alpine) {
+        var comp = Alpine.$data(al);
+        if (comp) comp.pantallaActual = 'fallas';
+    }
+});
+</script>
 <style>
     .bg-danger-soft { background-color: #fee2e2; }
     .card-header.bg-danger {
