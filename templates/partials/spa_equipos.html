@@ -194,7 +194,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ url_for('nuevo_equipo', user_id=usuario.id) }}" method="POST" id="formNuevoEquipo">
+            <form onsubmit="return guardarEquipo(event)" id="formNuevoEquipo">
                 <div class="modal-body p-4">
                     <div class="mb-3 position-relative">
                         <label class="form-label fw-bold">Sede / Cliente</label>
@@ -229,11 +229,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Usuario Acceso</label>
-                            <input type="text" name="usuario_equipo" class="form-control" placeholder="admin">
+                            <input type="text" name="usuario_equipo" class="form-control" placeholder="admin" autocomplete="off">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Contraseña Acceso</label>
-                            <input type="text" name="pass_equipo" class="form-control" placeholder="*******">
+                            <input type="text" name="pass_equipo" class="form-control" placeholder="*******" autocomplete="off">
                         </div>
                     </div>
                 </div>
@@ -263,7 +263,45 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalAlertaEquipo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow" style="border-radius:16px;">
+      <div class="modal-header border-0 pt-3 pb-0">
+        <h6 class="modal-title fw-bold" id="modalAlertaEquipoTitulo"></h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body pb-3 pt-2" id="modalAlertaEquipoMensaje"></div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+window.guardarEquipo = function(e) {
+    e.preventDefault();
+    var f = e.target;
+    var data = new URLSearchParams(new FormData(f));
+    fetch('/api/equipos/crear', { method: 'POST', body: data })
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+        if (resp.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('nuevoEquipoModal')).hide();
+            recargarSeccionSPA('equipos');
+        } else {
+            document.getElementById('modalAlertaEquipoTitulo').textContent = 'Error';
+            document.getElementById('modalAlertaEquipoMensaje').textContent = resp.msg || 'Error al registrar equipo';
+            new bootstrap.Modal(document.getElementById('modalAlertaEquipo')).show();
+        }
+    }).catch(function() {
+        document.getElementById('modalAlertaEquipoTitulo').textContent = 'Error de conexión';
+        document.getElementById('modalAlertaEquipoMensaje').textContent = 'No se pudo conectar al servidor.';
+        new bootstrap.Modal(document.getElementById('modalAlertaEquipo')).show();
+    });
+    return false;
+};
+
 var clientesData = {{ clientes|tojson }};
 clientesData.sort(function(a, b) {
     return a.nombre.localeCompare(b.nombre, 'es');

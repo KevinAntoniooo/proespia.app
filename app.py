@@ -1760,6 +1760,28 @@ def editar_equipo(equipo_id, user_id):
     flash('Equipo actualizado', 'success')
     return redirect(url_for('ver_equipos', user_id=user_id))
 
+@app.route('/api/equipos/crear', methods=['POST'])
+@login_required
+def api_crear_equipo():
+    try:
+        nuevo = Equipo(
+            cliente_id=request.form.get('cliente_id'),
+            tipo=request.form.get('tipo'),
+            serie=request.form.get('serie').strip().upper(),
+            ip=request.form.get('ip'),
+            usuario_equipo=request.form.get('usuario_equipo'),
+            pass_equipo=request.form.get('pass_equipo')
+        )
+        db.session.add(nuevo)
+        db.session.commit()
+        return jsonify({'ok': True, 'msg': 'Equipo registrado'})
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': 'El número de serie ya existe. Registre un nuevo equipo.'}), 409
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'ok': False, 'msg': str(e)}), 400
+
 # ==========================================
 # 6. GESTIÓN DE BITÁCORA (NOVEDADES, FALLAS, TAREAS)
 # ==========================================
