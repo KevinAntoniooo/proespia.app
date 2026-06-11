@@ -393,7 +393,7 @@ def inject_globals():
 # ==========================================
 # 2. FUNCIONES DE APOYO (HELPERS)
 # ==========================================
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 
 def allowed_file(filename):
     if not filename or '.' not in filename:
