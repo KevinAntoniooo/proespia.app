@@ -439,7 +439,7 @@ window.buscarDireccion = function(suffix) {
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (btn) btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
-            if (!data || data.length === 0) { alert('No se encontr\u00f3 la direcci\u00f3n. Intenta con m\u00e1s detalles.'); return; }
+            if (!data || data.length === 0) { mostrarAlerta('Direcci\u00f3n no encontrada', 'No se encontr\u00f3 la direcci\u00f3n. Intenta con m\u00e1s detalles.'); return; }
             var lat = parseFloat(data[0].lat);
             var lng = parseFloat(data[0].lon);
             document.getElementById('lat' + suffix).value = lat.toFixed(6);
@@ -454,7 +454,7 @@ window.buscarDireccion = function(suffix) {
         })
         .catch(function() {
             if (btn) btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
-            alert('Error al buscar la direcci\u00f3n. Verifica tu conexi\u00f3n.');
+            mostrarAlerta('Error de conexi\u00f3n', 'Error al buscar la direcci\u00f3n. Verifica tu conexi\u00f3n.');
         });
 }
 
@@ -603,3 +603,26 @@ setTimeout(function() {
     });
 });
 </script>
+
+<div class="modal fade" id="modalAlerta" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow" style="border-radius:16px;">
+      <div class="modal-header border-0 pt-3 pb-0">
+        <h6 class="modal-title fw-bold" id="modalAlertaTitulo"></h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body pb-3 pt-2" id="modalAlertaMensaje"></div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.mostrarAlerta = function(titulo, mensaje) {
+    document.getElementById('modalAlertaTitulo').textContent = titulo;
+    document.getElementById('modalAlertaMensaje').textContent = mensaje;
+    var m = new bootstrap.Modal(document.getElementById('modalAlerta'));
+    m.show();
+};

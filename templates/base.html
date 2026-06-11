@@ -552,7 +552,6 @@
                     cargarSeccion: function(seccion) {
                         var container = document.getElementById('spa-contenido-dinamico');
                         if (!container) { window.location.href = '/app#' + seccion; return; }
-                        if (this.pantallaActual === seccion) return;
                         this.pantallaAnterior = this.pantallaActual;
                         this.cargando = true;
                         this.pantallaActual = seccion;
@@ -607,6 +606,11 @@
         function recargarSeccionSPA(seccion) {
             var el = document.getElementById('spa-contenido-dinamico');
             if (!el) return;
+            var al = document.querySelector('[x-data]');
+            if (al && window.Alpine) {
+                var comp = Alpine.$data(al);
+                if (comp) comp.pantallaActual = seccion;
+            }
             fetch('/api/spa/contenido/' + seccion + '?_=' + Date.now())
                 .then(function(r) { return r.json(); })
                 .then(function(resp) {
