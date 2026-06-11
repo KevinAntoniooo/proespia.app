@@ -353,7 +353,7 @@
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-function filtrarClientes() {
+window.filtrarClientes = function() {
     let filtro = document.getElementById("buscadorClientes").value.toLowerCase();
     let filas = document.getElementsByClassName("fila-cliente");
     for (let i = 0; i < filas.length; i++) {
@@ -365,7 +365,7 @@ function filtrarClientes() {
 var mapInstances = {};
 var mapMarkers = {};
 
-function initClienteMap(suffix, lat, lng, readonly) {
+window.initClienteMap = function(suffix, lat, lng, readonly) {
     var mapId = 'map' + suffix;
     var container = document.getElementById(mapId);
     if (!container) return;
@@ -408,7 +408,7 @@ function initClienteMap(suffix, lat, lng, readonly) {
     mapMarkers[suffix] = marker;
 }
 
-function obtenerUbicacion(suffix) {
+window.obtenerUbicacion = function(suffix) {
     if (!navigator.geolocation) {
         alert('Geolocalización no soportada por este navegador.');
         return;
@@ -428,7 +428,7 @@ function obtenerUbicacion(suffix) {
     });
 }
 
-function buscarDireccion(suffix) {
+window.buscarDireccion = function(suffix) {
     var input = document.getElementById('dir' + suffix);
     if (!input) return;
     var dir = input.value.trim();
@@ -481,7 +481,7 @@ setTimeout(function() {
 // ===== Contactos de Emergencia =====
 var contactosEmergencia = {};
 
-function agregarContactoEmergencia(suffix) {
+window.agregarContactoEmergencia = function(suffix) {
     var nombre = document.getElementById('emergenciaNombre' + suffix).value.trim();
     var telefono = document.getElementById('emergenciaTelefono' + suffix).value.trim();
     if (!nombre || !telefono) return;
@@ -492,7 +492,7 @@ function agregarContactoEmergencia(suffix) {
     renderizarContactos(suffix);
 }
 
-function renderizarContactos(suffix) {
+window.renderizarContactos = function(suffix) {
     var lista = document.getElementById('listaEmergencia' + suffix);
     var hidden = document.getElementById('contactoEmergencia' + suffix);
     var contactos = contactosEmergencia[suffix] || [];
@@ -508,7 +508,7 @@ function renderizarContactos(suffix) {
     hidden.value = JSON.stringify(contactos);
 }
 
-function eliminarContactoEmergencia(index, suffix) {
+window.eliminarContactoEmergencia = function(index, suffix) {
     contactosEmergencia[suffix].splice(index, 1);
     renderizarContactos(suffix);
 }
@@ -532,7 +532,7 @@ setTimeout(function() {
 });
 
 // ===== HISTORIAL CLIENTE =====
-function cargarHistorial(clienteId) {
+window.cargarHistorial = function(clienteId) {
     var container = document.getElementById('historialContent' + clienteId);
     if (!container) return;
     container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Cargando historial...</p></div>';
@@ -575,7 +575,7 @@ function cargarHistorial(clienteId) {
         });
 }
 
-function descargarHistorialPDF(clienteId) {
+window.descargarHistorialPDF = function(clienteId) {
     var secciones = [];
     document.querySelectorAll('#modalEliminarCliente' + clienteId + ' .seccion-pdf:checked').forEach(function(cb) {
         secciones.push(cb.value);

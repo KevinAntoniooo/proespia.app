@@ -571,7 +571,7 @@ function initAutoProducto(inputId, hiddenId, listId, stockId, stockNumId) {
 initAutoProducto('buscarProductoTraspaso', 'producto_id_traspaso', 'listaProductosTraspaso', 'stockTraspaso', 'stockTraspasoNum');
 initAutoProducto('buscarProductoConsumo', 'producto_id_consumo', 'listaProductosConsumo', 'stockConsumo', 'stockConsumoNum');
 
-function filtrarBodega() {
+window.filtrarBodega = function() {
     var texto = document.getElementById('buscadorBodega').value.toLowerCase();
     var ubFiltro = document.getElementById('filtroUbicacion').value;
     var catFiltro = document.getElementById('filtroCategoria').value;
@@ -587,7 +587,7 @@ function filtrarBodega() {
     });
 }
 
-function limpiarFiltros() {
+window.limpiarFiltros = function() {
     document.getElementById('buscadorBodega').value = '';
     document.getElementById('filtroUbicacion').value = '';
     document.getElementById('filtroCategoria').value = '';

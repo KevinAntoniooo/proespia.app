@@ -566,7 +566,7 @@
                                     scripts.forEach(function(os) {
                                         var c = os.textContent.trim();
                                         if (!c) return;
-                                        try { (new Function(c))(); } catch(e) { console.warn('SPA script error:', e); }
+                                        try { var ns = document.createElement('script'); ns.textContent = c; container.appendChild(ns); } catch(e) { console.warn('SPA script error:', e); }
                                     });
                                 } else if (!resp.ok) {
                                     var old = document.getElementById('spa-error-console');
@@ -615,7 +615,7 @@
                         el.querySelectorAll('script').forEach(function(os) {
                             var c = os.textContent.trim();
                             if (!c) return;
-                            try { (new Function(c))(); } catch(e) { console.warn('SPA script error:', e); }
+                            try { var ns = document.createElement('script'); ns.textContent = c; el.appendChild(ns); } catch(e) { console.warn('SPA script error:', e); }
                         });
                     }
                 });

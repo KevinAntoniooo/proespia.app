@@ -324,7 +324,7 @@
 
 <script>
     // Lógica de Prioridad Dinámica
-    function verificarGravedad() {
+    window.verificarGravedad = function() {
         const tipo = document.getElementById('tipo_suceso').value;
         const divPrioridad = document.getElementById('div_prioridad');
         const criticos = ['Incidente Crítico', 'Activación de Alarma', 'Ronda de Vigilancia', 'Apertura/Cierre Sede'];
@@ -352,7 +352,7 @@
     });
 
     // Bitácora detail modal (mobile)
-    function verDetalleBitacora(id, fecha, sede, tipo, operador, descripcion) {
+    window.verDetalleBitacora = function(id, fecha, sede, tipo, operador, descripcion) {
         document.getElementById('detalle-fecha').textContent = fecha;
         document.getElementById('detalle-sede').textContent = sede;
         document.getElementById('detalle-tipo').innerHTML = tipo;
@@ -363,7 +363,7 @@
     }
 
     // Consulta AJAX para el buscador modal
-    function consultarSucesos() {
+    window.consultarSucesos = function() {
         const inicio = document.getElementById('busq_inicio').value;
         const fin = document.getElementById('busq_fin').value;
         const sede = document.getElementById('busq_sede_id').value;
@@ -397,10 +397,10 @@
     }
 
     // Sede dropdown para el buscador
-    function mostrarSedesBusq() {
+    window.mostrarSedesBusq = function() {
         var el = document.getElementById('sede-dropdown-busq'); if (el) el.classList.remove('d-none');
     }
-    function filtrarSedesBusq() {
+    window.filtrarSedesBusq = function() {
         var el = document.getElementById('busq_sede_input'); if (!el) return;
         const input = el.value.toLowerCase();
         const items = document.querySelectorAll('#sede-dropdown-busq .list-group-item');
