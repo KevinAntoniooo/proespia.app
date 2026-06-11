@@ -51,7 +51,7 @@
                                 <button class="btn btn-outline-secondary" onclick="verHistorial({{ v.id }})" title="Historial de Checks">
                                     <i class="fa-solid fa-clock-rotate-left"></i>
                                 </button>
-                                <a href="/checklist/vehiculo/{{ v.id }}" class="btn btn-outline-success" title="Hacer Checklist">
+                                <a href="/checklist/vehiculo/{{ v.id }}" class="btn btn-outline-success" title="Hacer Checklist" target="_blank">
                                     <i class="fa-solid fa-clipboard-check"></i>
                                 </a>
                                 <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarVehiculo{{ v.id }}" title="Editar">
@@ -181,7 +181,7 @@ function verHistorial(vehiculoId) {
             html += '<small class="text-muted">' + c.tecnico + '</small>';
             html += '</div>';
             html += '<span class="badge bg-' + c.estado_badge + ' rounded-pill me-2" style="font-size:0.65rem;">' + c.estado + '</span>';
-            html += '<a href="/checklist/reporte_pdf/' + c.id + '" class="btn btn-outline-secondary btn-sm shadow-sm" style="font-size:0.75rem;" title="Descargar PDF" aria-label="Descargar PDF"><i class="fa-solid fa-file-pdf"></i></a>';
+            html += '<a href="/checklist/reporte_pdf/' + c.id + '" class="btn btn-outline-secondary btn-sm shadow-sm" style="font-size:0.75rem;" title="Descargar PDF" aria-label="Descargar PDF" target="_blank"><i class="fa-solid fa-file-pdf"></i></a>';
             html += '</div></div></div>';
         });
         modalBody.innerHTML = html;
@@ -306,8 +306,8 @@ function verDetalleVehiculo(row) {
     document.getElementById('detalleVehiculoBody').innerHTML = bodyHtml;
     var footerHtml = '<div class="btn-group btn-group-sm shadow-sm w-100">';
     footerHtml += '<button class="btn btn-outline-secondary" onclick="cerrarModalDetalle();verHistorial(' + id + ')" title="Ver historial" aria-label="Ver historial"><i class="fa-solid fa-clock-rotate-left"></i></button>';
-    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" onclick="cerrarModalDetalle()" title="Ver checklist" aria-label="Ver checklist"><i class="fa-solid fa-clipboard-check"></i></a>';
-    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" title="Ver checklist" aria-label="Ver checklist"><i class="fa-solid fa-clipboard-check"></i></a>';
+    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" onclick="cerrarModalDetalle()" title="Ver checklist" aria-label="Ver checklist" target="_blank"><i class="fa-solid fa-clipboard-check"></i></a>';
+    footerHtml += '<a href="/checklist/vehiculo/' + id + '" class="btn btn-outline-success" title="Ver checklist" aria-label="Ver checklist" target="_blank"><i class="fa-solid fa-clipboard-check"></i></a>';
     footerHtml += '<button class="btn btn-outline-warning" onclick="cerrarModalDetalle();abrirModalEditar(' + id + ')" title="Editar vehículo" aria-label="Editar vehículo"><i class="fa-solid fa-pen"></i></button>';
     footerHtml += '<button class="btn btn-outline-danger" onclick="cerrarModalDetalle();eliminarVehiculo(' + id + ')" title="Eliminar vehículo" aria-label="Eliminar vehículo"><i class="fa-solid fa-trash-can"></i></button>';
     footerHtml += '</div>';
