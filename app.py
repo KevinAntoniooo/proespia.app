@@ -936,19 +936,17 @@ def admin_wipe_db():
         ]
         resumen = {}
         for m in tablas:
-            try:
-                n = m.query.delete()
-                resumen[m.__tablename__] = n
-            except Exception as e:
-                db.session.rollback()
-                resumen[m.__tablename__] = f'err: {e}'
+            n = m.query.delete(synchronize_session='fetch')
+            resumen[m.__tablename__] = n
+
+        db.session.flush()
 
         usuarios_borrados = Usuario.query.filter(
             or_(
                 Usuario.correo.is_(None),
                 func.lower(Usuario.correo) != SUPER_ADMIN_CORREO
             )
-        ).delete(synchronize_session=False)
+        ).delete(synchronize_session='fetch')
         resumen['usuario (no super)'] = usuarios_borrados
 
         sa = Usuario.query.filter(func.lower(Usuario.correo) == SUPER_ADMIN_CORREO).first()
