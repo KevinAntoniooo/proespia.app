@@ -1,357 +1,523 @@
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0" style="color:var(--text-heading);"><i class="fa-solid fa-calendar-check me-2"></i>Gestor de Visitas</h2>
+        <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-calendar-check me-2"></i>Gestor de Visitas</h2>
         <div class="text-end">
             <span class="badge bg-warning text-dark px-3 shadow-sm rounded-2">Pendientes: {{ total_pendientes }}</span>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 mb-4" style="background:var(--bg-card);">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-2 p-md-3">
-            <form id="gestor-filtros" class="row g-2 g-md-3 align-items-end" onsubmit="return aplicarFiltrosGV(event)">
+            <div class="row g-2 g-md-3 align-items-end">
                 <div class="col-12 col-md-3">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Cliente</label>
                     <div class="position-relative">
-                        <input type="text" id="filtroClienteGV" class="form-control form-control-sm rounded-3" placeholder="Buscar por nombre..." autocomplete="off">
+                        <input type="text" id="filtroClienteGV" class="form-control form-control-sm rounded-3" placeholder="Buscar por nombre..." onfocus="mostrarClientesGV()" oninput="filtrarClientesGV()" autocomplete="off">
+                        <div id="cliente-dropdown-gv" class="list-group position-absolute w-100 shadow-sm d-none border" style="z-index: 1050; max-height: 200px; overflow-y: auto; border-radius: 8px; top: 100%;">
+                            {% for c in clientes %}
+                            <button type="button" class="list-group-item list-group-item-action" data-nombre="{{ c.nombre }}" onclick="seleccionarClienteGV(this)">{{ c.nombre }}</button>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Desde:</label>
-                    <input type="date" name="fecha_inicio" class="form-control form-control-sm rounded-3">
+                    <input type="date" id="gvFechaInicio" class="form-control form-control-sm rounded-3">
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="small fw-bold text-muted text-uppercase mb-1">Hasta:</label>
-                    <input type="date" name="fecha_fin" class="form-control form-control-sm rounded-3">
+                    <input type="date" id="gvFechaFin" class="form-control form-control-sm rounded-3">
                 </div>
                 <div class="col-12 col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm">
+                    <button type="button" class="btn btn-primary btn-sm rounded-3 w-100 shadow-sm" onclick="aplicarFiltrosGV()">
                         <i class="fa-solid fa-filter me-1"></i>Filtrar
                     </button>
                     <button type="button" class="btn btn-light btn-sm rounded-3 border w-100 shadow-sm" onclick="limpiarFiltrosGV()">
                         <i class="fa-solid fa-eraser me-1"></i>Limpiar
                     </button>
                 </div>
-                <div class="col-12 col-md-2 d-flex justify-content-end">
-                    <button type="button" class="btn btn-success btn-sm rounded-3 w-100 shadow-sm" onclick="abrirModalAgendarGV()">
-                        <i class="fa-solid fa-plus me-1"></i>Agendar
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 
-    <ul class="nav nav-tabs border-0 gap-2 mb-3" id="gvTabs">
-        <li class="nav-item">
-            <button class="nav-link active fw-bold small rounded-3 border-0 shadow-sm px-3" id="tab-agendadas" style="background:#6366f1;color:#fff;" onclick="cambiarTabGV('agendadas')">
-                <i class="fa-solid fa-calendar me-1"></i>Agendadas <span class="badge bg-light text-dark ms-1">{{ visitas_agendadas|length }}</span>
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold small rounded-3 border-0 shadow-sm px-3" id="tab-fallas" style="background:#f59e0b;color:#fff;" onclick="cambiarTabGV('fallas')">
-                <i class="fa-solid fa-triangle-exclamation me-1"></i>Fallas Pendientes <span class="badge bg-light text-dark ms-1">{{ fallas_pendientes|length }}</span>
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link fw-bold small rounded-3 border-0 shadow-sm px-3" id="tab-realizadas" style="background:#10b981;color:#fff;" onclick="cambiarTabGV('realizadas')">
-                <i class="fa-solid fa-check-double me-1"></i>Realizadas <span class="badge bg-light text-dark ms-1">{{ visitas_realizadas|length }}</span>
-            </button>
-        </li>
-    </ul>
-
-    <div id="tabla-container-gv">
-        {% macro tabla_visitas(lista, mensaje_vacio, es_falla=False) %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th class="ps-4">Estado</th>
-                        <th>Cliente</th>
-                        <th>Tipo</th>
-                        <th>Programada</th>
-                        <th class="d-none d-md-table-cell">Descripción</th>
-                        <th class="text-center pe-4 d-none d-sm-table-cell">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for v in lista %}
-                    <tr class="{% if v.prioridad == 1 %}table-danger-subtle{% elif v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisitaGV(this)"
-                        data-id="{{ v.id }}"
-                        data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
-                        data-tipo="{{ v.tipo_trabajo }}"
-                        data-fecha="{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}"
-                        data-estado="{{ v.estado }}"
-                        data-descripcion="{{ v.descripcion|e if v.descripcion else '' }}"
-                        data-ubicacion="{{ v.ubicacion or '' }}"
-                        data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}"
-                        data-tecnico="{{ v.rel_usuario.nombre if v.rel_usuario else 'Sin asignar' }}">
-                        <td class="ps-4">
-                            {% if v.prioridad == 1 %}
-                            <span class="badge bg-danger shadow-sm">CRÍTICA</span>
-                            {% elif v.estado == 'Realizada' %}
-                            <span class="badge bg-success shadow-sm">REALIZADA</span>
-                            {% elif v.estado == 'Vencida' %}
-                            <span class="badge bg-secondary shadow-sm">VENCIDA</span>
-                            {% elif es_falla %}
-                            <span class="badge bg-warning text-dark shadow-sm">FALLA</span>
-                            {% else %}
-                            <span class="badge bg-primary shadow-sm">PROGRAMADA</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="fw-bold" style="color:var(--text-heading);font-size:0.85rem;">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</div>
-                            <small class="text-muted text-uppercase" style="font-size:0.65rem;">{{ v.tipo_trabajo }}</small>
-                        </td>
-                        <td><span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style="font-size:0.65rem;">{{ v.tipo_trabajo[:20] }}</span></td>
-                        <td class="small" style="color:var(--text-muted);">
-                            <i class="fa-regular fa-calendar me-1"></i>{{ v.fecha_programada.strftime('%d/%m/%Y') }}<br>
-                            <i class="fa-regular fa-clock me-1"></i>{{ v.fecha_programada.strftime('%H:%M') }}
-                        </td>
-                        <td class="d-none d-md-table-cell small" style="color:var(--text-muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            {{ v.descripcion[:50] }}{% if v.descripcion and v.descripcion|length > 50 %}...{% endif %}
-                        </td>
-                        <td class="text-center pe-4 d-none d-sm-table-cell">
-                            {% if v.estado != 'Realizada' and v.informe_tecnico %}
-                            <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}" target="_blank" class="btn btn-outline-success btn-sm rounded-3 px-3">
-                                <i class="fa-solid fa-file-pdf"></i>
+    {% macro tabla_visitas(lista, mensaje_vacio, es_falla=False) %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th class="ps-4">Estado</th>
+                    <th>Cliente</th>
+                    <th>Tipo</th>
+                    <th>Programada</th>
+                    <th class="d-none d-md-table-cell">Descripción</th>
+                    <th class="text-center pe-4 d-none d-sm-table-cell">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in lista %}
+                <tr class="{% if v.prioridad == 1 %}table-danger-subtle{% elif v.estado == 'Pendiente' %}table-warning-subtle{% endif %}" style="cursor:pointer;" onclick="verDetalleVisitaGV(this)"
+                    data-id="{{ v.id }}"
+                    data-cliente="{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}"
+                    data-tipo="{{ v.tipo_trabajo }}"
+                    data-fecha="{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}"
+                    data-estado="{{ v.estado }}"
+                    data-descripcion="{{ v.descripcion|e if v.descripcion else '' }}"
+                    data-ubicacion="{{ v.ubicacion or '' }}"
+                    data-informe="{{ v.informe_tecnico|e if v.informe_tecnico else '' }}"
+                    data-prioridad="{{ v.prioridad or 3 }}"
+                    data-falla-id="{{ v.falla_id or '' }}">
+                    <td class="ps-2 ps-sm-4">
+                        {% if v.estado == 'Realizada' %}
+                        <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-success rounded-circle shadow-sm" style="width:30px;height:30px;">
+                            <i class="fa-solid fa-check text-white" style="font-size:0.8rem;"></i>
+                        </span>
+                        <span class="badge bg-success shadow-sm d-none d-sm-inline-block px-3">
+                            <i class="fa-solid fa-check-circle me-1"></i>Realizada
+                        </span>
+                        {% elif v.prioridad == 1 %}
+                        <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-danger rounded-circle shadow-sm" style="width:30px;height:30px;">
+                            <i class="fa-solid fa-bolt text-white" style="font-size:0.8rem;"></i>
+                        </span>
+                        <span class="badge bg-danger shadow-sm d-none d-sm-inline-block px-3">
+                            <i class="fa-solid fa-bolt me-1"></i>Crítica
+                        </span>
+                        {% elif v.estado == 'Pendiente' %}
+                        <span class="d-inline-flex d-sm-none align-items-center justify-content-center bg-warning rounded-circle shadow-sm" style="width:30px;height:30px;">
+                            <i class="fa-solid fa-clock text-dark" style="font-size:0.8rem;"></i>
+                        </span>
+                        <span class="badge bg-warning text-dark shadow-sm d-none d-sm-inline-block px-3">
+                            <i class="fa-solid fa-clock me-1"></i>Pendiente
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold small text-truncate">{{ v.rel_cliente.nombre if v.rel_cliente else 'Cliente Nuevo' }}</td>
+                    <td>
+                        {% if es_falla %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger py-1 px-2" style="font-size:0.7rem;">Falla</span>
+                        {% elif v.falla_id %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger py-1 px-2" style="font-size:0.7rem;">Falla</span>
+                        {% else %}
+                        <span class="badge bg-primary bg-opacity-10 text-primary py-1 px-2" style="font-size:0.7rem;"><span class="d-sm-none">{{ v.tipo_trabajo.split()[0] }}</span><span class="d-none d-sm-inline">{{ v.tipo_trabajo }}</span></span>
+                        {% endif %}
+                    </td>
+                    <td class="small">{{ v.fecha_programada.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td class="d-none d-md-table-cell small text-muted text-truncate" style="max-width:200px;">{{ v.descripcion or '—' }}</td>
+                    <td class="text-center pe-4 d-none d-sm-table-cell">
+                        {% if v.estado == 'Pendiente' %}
+                            {% if v.tipo_trabajo in ['Instalación', 'Reparación', 'Emergencia'] or 'Mantención' in v.tipo_trabajo %}
+                            <a href="/completar_visita/{{ v.id }}/{{ usuario.id }}"
+                                class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
+                                onclick="event.stopPropagation();" target="_blank">
+                                <i class="fa-solid fa-wrench me-1"></i>Gestionar
                             </a>
-                            {% elif v.estado != 'Realizada' %}
-                            <button class="btn btn-success btn-sm rounded-3 px-3" onclick="event.stopPropagation();finalizarVisitaGV({{ v.id }})">
-                                <i class="fa-solid fa-check"></i>
-                            </button>
                             {% else %}
-                            <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}" target="_blank" class="btn btn-outline-success btn-sm rounded-3 px-3">
-                                <i class="fa-solid fa-file-pdf"></i>
+                            <a href="javascript:void(0)"
+                                class="btn btn-sm btn-success shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
+                                onclick="event.stopPropagation();confirmarFinalizarGV({{ v.id }})">
+                                <i class="fa-solid fa-check me-1"></i>LISTO
                             </a>
                             {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">{{ mensaje_vacio }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endmacro %}
+                        {% else %}
+                        <div class="d-flex gap-1 justify-content-center">
+                            {% if v.informe_tecnico %}
+                            <a href="/reporte_visita_pdf/{{ v.id }}/{{ usuario.id }}"
+                                class="btn btn-sm btn-outline-danger shadow-sm fw-bold" style="font-size:0.75rem;min-width:95px;"
+                                onclick="event.stopPropagation();" target="_blank">
+                                <i class="fa-solid fa-file-pdf me-1"></i>PDF
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">Completada</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">{{ mensaje_vacio }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endmacro %}
 
-        <div id="tabla-agendadas">
-            {{ tabla_visitas(visitas_agendadas, 'Sin visitas agendadas.') }}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-dark border-0 p-0">
+            <ul class="nav nav-tabs card-header-tabs nav-justified" id="gvTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active fw-bold small" id="agendadas-tab" data-bs-toggle="tab" data-bs-target="#tab_agendadas" role="tab">
+                        <i class="fa-solid fa-calendar-check text-primary"></i><span class="d-none d-sm-inline ms-1">Visitas Agendadas</span> <span class="badge bg-primary ms-1">{{ visitas_agendadas|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold small" id="fallas-pend-tab" data-bs-toggle="tab" data-bs-target="#tab_fallas_pend" role="tab">
+                        <i class="fa-solid fa-triangle-exclamation text-warning"></i><span class="d-none d-sm-inline ms-1">Fallas Reportadas</span> <span class="badge bg-warning text-dark ms-1">{{ fallas_pendientes|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold small" id="realizadas-tab" data-bs-toggle="tab" data-bs-target="#tab_realizadas" role="tab">
+                        <i class="fa-solid fa-check-circle text-success"></i><span class="d-none d-sm-inline ms-1">Realizadas</span>
+                    </button>
+                </li>
+            </ul>
         </div>
-        <div id="tabla-fallas" style="display:none;">
-            {{ tabla_visitas(fallas_pendientes, 'Sin fallas pendientes.', es_falla=True) }}
-        </div>
-        <div id="tabla-realizadas" style="display:none;">
-            {{ tabla_visitas(visitas_realizadas, 'Sin visitas realizadas.') }}
+        <div class="card-body p-0 tab-content">
+            <div class="tab-pane fade show active" id="tab_agendadas" role="tabpanel">
+                {{ tabla_visitas(visitas_agendadas, 'No hay visitas agendadas.') }}
+            </div>
+            <div class="tab-pane fade" id="tab_fallas_pend" role="tabpanel">
+                {{ tabla_visitas(fallas_pendientes, 'No hay fallas pendientes.', es_falla=True) }}
+            </div>
+            <div class="tab-pane fade" id="tab_realizadas" role="tabpanel">
+                {{ tabla_visitas(visitas_realizadas, 'No hay visitas realizadas.') }}
+            </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="detalleVisitaGV" tabindex="-1" aria-hidden="true">
+<!-- Modal Detalle de Visita -->
+<div class="modal fade" id="modalDetalleVisitaGV" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header border-0" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
-                <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-circle-info me-2"></i>Detalle de Visita</h5>
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-calendar-check me-1 text-success"></i>Detalle Visita</h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body p-4">
-                <div class="d-flex align-items-start gap-3 mb-3">
-                    <div style="width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#eef2ff;">
-                        <i class="fa-solid fa-building" style="color:#6366f1;font-size:1rem;"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <p style="font-size:0.6rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.15rem;">Cliente</p>
-                        <h6 class="fw-bold mb-0" id="gvDetalleCliente" style="color:var(--text-heading);">---</h6>
-                    </div>
-                    <span id="gvDetalleEstado" class="badge" style="font-size:0.6rem;font-weight:600;padding:0.2rem 0.65rem;border-radius:999px;"></span>
+            <div class="modal-body p-3 p-md-4">
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Cliente</label>
+                    <p id="gv-visita-cliente" class="fw-bold text-dark mb-0" style="font-size:0.85rem;"></p>
                 </div>
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <div class="p-2 rounded-3" style="background:rgba(99,102,241,0.06);">
-                            <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.15rem;">Tipo</p>
-                            <p id="gvDetalleTipo" class="fw-bold mb-0" style="color:var(--text-heading);font-size:0.85rem;">---</p>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="p-2 rounded-3" style="background:rgba(99,102,241,0.06);">
-                            <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.15rem;">Técnico</p>
-                            <p id="gvDetalleTecnico" class="fw-bold mb-0" style="color:var(--text-heading);font-size:0.85rem;">---</p>
-                        </div>
-                    </div>
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Tipo / Estado</label>
+                    <p id="gv-visita-estado" class="fw-bold text-dark mb-0" style="font-size:0.85rem;"></p>
                 </div>
-                <div class="p-2 rounded-3 mb-2" style="background:rgba(99,102,241,0.06);">
-                    <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem;">Descripción</p>
-                    <p id="gvDetalleDesc" class="mb-0" style="color:var(--text-muted);font-size:0.8rem;">---</p>
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Fecha Programada</label>
+                    <p id="gv-visita-fecha" class="fw-bold text-dark mb-0" style="font-size:0.85rem;"></p>
                 </div>
-                <div id="gvDetalleUbicacion" class="mb-2" style="display:none;">
-                    <a id="gvDetalleUbicacionLink" href="#" target="_blank" class="btn d-flex align-items-center gap-2 w-100 rounded-3" style="font-size:0.8rem;font-weight:600;color:#6366f1;background:#eef2ff;border:none;padding:0.5rem 0.75rem;">
-                        <i class="fa-solid fa-location-dot"></i><span>Abrir Ruta</span>
-                    </a>
+                <hr class="opacity-10 my-2 my-md-3">
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Descripción</label>
+                    <p id="gv-visita-descripcion" class="text-dark mb-0" style="font-size:0.8rem;"></p>
                 </div>
-                <div id="gvDetalleInforme" class="p-2 rounded-3" style="display:none;background:rgba(16,185,129,0.06);">
-                    <p style="font-size:0.55rem;color:#94a3b8;text-transform:uppercase;font-weight:600;margin-bottom:0.25rem;">Informe Técnico</p>
-                    <p id="gvDetalleInformeText" class="mb-0" style="color:var(--text-muted);font-size:0.8rem;">---</p>
+                <hr class="opacity-10 my-2 my-md-3">
+                <div class="mb-2 mb-md-3">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Ubicación</label>
+                    <p id="gv-visita-ubicacion" class="text-dark mb-1" style="font-size:0.8rem;"></p>
+                    <div id="gv-mapa-visita" style="height:150px;border-radius:12px;border:2px solid #e2e8f0;display:none;"></div>
+                </div>
+                <hr class="opacity-10 my-2 my-md-3">
+                <div class="mb-2 mb-md-3" id="gv-visita-informe-container">
+                    <label class="small text-muted fw-bold text-uppercase" style="font-size:0.6rem;">Informe Técnico</label>
+                    <p id="gv-visita-informe" class="text-dark border-start border-3 border-success ps-3 py-1 bg-light" style="font-size:0.8rem;"></p>
                 </div>
             </div>
-            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex gap-2">
-                <button type="button" class="btn btn-light fw-bold shadow-sm" style="font-size:0.8rem;" data-bs-dismiss="modal">Cerrar</button>
-                <a id="gvDetalleBtnPDF" href="#" target="_blank" class="btn btn-success fw-bold shadow-sm d-none" style="font-size:0.8rem;">
-                    <i class="fa-solid fa-file-pdf me-1"></i>Ver PDF
-                </a>
-                <button id="gvDetalleBtnFinalizar" class="btn btn-success fw-bold shadow-sm d-none" style="font-size:0.8rem;" onclick="finalizarVisitaDesdeDetalleGV()">
-                    <i class="fa-solid fa-check me-1"></i>Marcar Realizada
-                </button>
+            <div class="modal-footer bg-light border-0 p-3">
+                <div class="d-flex flex-wrap gap-2 justify-content-end w-100">
+                    <button type="button" class="btn btn-light fw-bold shadow-sm px-3" style="font-size:0.8rem;" data-bs-dismiss="modal">Cerrar</button>
+                    <a id="gv-modal-btn-pdf" href="#" class="btn btn-outline-danger shadow-sm px-3 d-none" style="font-size:0.8rem;" target="_blank">
+                        <i class="fa-solid fa-file-pdf me-1"></i> PDF
+                    </a>
+                    <div id="gv-modal-actions" class="d-flex gap-2">
+                        <a id="gv-modal-btn-gestionar" href="#" class="btn btn-success fw-bold shadow-sm px-3 d-none" style="font-size:0.8rem;" target="_blank">
+                            <i class="fa-solid fa-wrench me-1"></i> Gestionar
+                        </a>
+                        <button id="gv-modal-btn-listo" type="button" class="btn btn-success fw-bold shadow-sm px-3 d-none" style="font-size:0.8rem;" onclick="confirmarFinalizarDesdeModalGV()">
+                            <i class="fa-solid fa-check me-1"></i> LISTO
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalAgendarGV" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-md modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4" style="background:var(--bg-card);">
-            <form onsubmit="return agendarVisitaGV(event)">
-                <div class="modal-header border-0" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
-                    <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-calendar-plus me-2"></i>Agendar Actividad</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Tipo de Servicio</label>
-                            <select name="tipo_trabajo" class="form-select shadow-sm rounded-3" required>
-                                <option value="Cotización">Visita de Cotización / Terreno</option>
-                                <option value="Instalación">Instalación CCTV / Alarma</option>
-                                <option value="Mantención Preventiva">Mantención Preventiva</option>
-                                <option value="Reparación">Reparación Técnica / Soporte</option>
-                                <option value="Emergencia">Emergencia (Prioridad Alta)</option>
-                                <option value="Otra">Otro...</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Fecha</label>
-                            <input type="date" name="fecha_programada_base" id="gvFecha" class="form-control shadow-sm rounded-3" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Hora</label>
-                            <input type="time" name="hora_visita" class="form-control shadow-sm rounded-3" value="09:00" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Cliente</label>
-                            <select name="cliente_id" class="form-select rounded-3" required>
-                                <option value="">Seleccione sede</option>
-                                {% for c in clientes %}
-                                <option value="{{ c.id }}">{{ c.nombre }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-uppercase" style="font-size:0.65rem;color:var(--text-muted);">Descripción</label>
-                            <textarea name="descripcion" class="form-control shadow-sm rounded-3" rows="2" placeholder="Detalles..."></textarea>
-                        </div>
+<!-- Modal confirmar finalizar visita simple -->
+<div class="modal fade" id="modalConfirmarFinalizarGV" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center p-3">
+            <div class="modal-body">
+                <i class="fa-solid fa-check-circle text-success fs-1 mb-2"></i>
+                <h6 class="fw-bold">¿Marcar como realizada?</h6>
+                <form id="formFinalizarGV" method="POST" onsubmit="return enviarFinalizarGV(event)">
+                    <textarea name="nota" class="form-control form-control-sm rounded-3 my-2" rows="2" placeholder="Nota sobre la visita (opcional)" style="font-size:0.75rem;"></textarea>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-light btn-sm px-4 rounded-3" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success btn-sm px-4 rounded-3 shadow-sm"><i class="fa-solid fa-check me-1"></i>Sí, listo</button>
                     </div>
-                </div>
-                <div class="modal-footer border-0 gap-2">
-                    <button type="button" class="btn btn-light fw-bold shadow-sm" style="font-size:0.8rem;" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary fw-bold shadow-sm" style="font-size:0.8rem;">
-                        <i class="fa-solid fa-floppy-disk me-1"></i>Guardar
-                    </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    #gvTabs .nav-link { transition: all 0.2s; }
-    #gvTabs .nav-link:hover { opacity: 0.85; transform: translateY(-1px); }
+.gv-tab-pane .table-warning-subtle { background-color: rgba(255, 193-7, 0.05); }
+.nav-tabs .nav-link { 
+    color: #94a3b8; 
+    border: none; 
+    padding: 0.75rem 1.1rem; 
+    transition: all 0.2s ease;
+    position: relative;
+}
+.nav-tabs .nav-link:hover { 
+    color: #e2e8f0; 
+    background: rgba(255,255,255,0.04); 
+}
+.nav-tabs .nav-link.active { 
+    border: none; 
+    color: #fff; 
+    background: rgba(255,255,255,0.08); 
+}
+.nav-tabs .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 1rem;
+    right: 1rem;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 3px 3px 0 0;
+}
+.nav-tabs .nav-link .badge { 
+    font-size: 0.65rem; 
+    vertical-align: middle; 
+    transition: all 0.2s ease;
+}
+.nav-tabs .nav-link.active .badge.bg-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6) !important; }
+.nav-tabs .nav-link.active .badge.bg-warning { background: linear-gradient(135deg, #f59e0b, #d97706) !important; border: none; }
+.nav-tabs .nav-link.active .badge.bg-success { background: linear-gradient(135deg, #10b981, #059669) !important; }
+.card-header { border-bottom: 1px solid rgba(255,255,255,0.06); }
+@media (max-width: 576px) {
+    .nav-tabs .nav-link { font-size: 0.7rem; padding: 0.55rem 0.6rem; }
+    .nav-tabs .nav-link.active::after { left: 0.6rem; right: 0.6rem; }
+    .nav-tabs .nav-link .badge { font-size: 0.6rem; }
+    .gv-tab-pane .table td:nth-child(2) { max-width: 80px; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gv-tab-pane .table td:nth-child(4),
+    .gv-tab-pane .table td:nth-child(5) { font-size: 0.65rem; }
+    .gv-tab-pane .table td:last-child .btn { font-size: 0.65rem !important; padding: 0.2rem 0.4rem !important; min-width: 70px !important; }
+    .modal-body label { font-size: 0.55rem !important; }
+    .modal-body p { font-size: 0.8rem !important; }
+    #gv-mapa-visita { height: 130px !important; }
+    #modalDetalleVisitaGV .modal-footer .btn { font-size: 0.85rem !important; padding: 0.35rem 0.8rem !important; min-width: 90px !important; }
+}
 </style>
 
 <script>
-    var gvCurrentVisitaId = null;
+var gvMapaVisita = null;
+var gvMarcadorVisita = null;
 
-    function cambiarTabGV(tab) {
-        document.querySelectorAll('#tabla-container-gv > div').forEach(function(el) { el.style.display = 'none'; });
-        document.querySelectorAll('#gvTabs .nav-link').forEach(function(el) { el.classList.remove('active'); });
-        document.getElementById('tabla-' + tab).style.display = '';
-        document.getElementById('tab-' + tab).classList.add('active');
-    }
-
-    function verDetalleVisitaGV(el) {
-        var d = el.dataset;
-        gvCurrentVisitaId = d.id;
-        document.getElementById('gvDetalleCliente').textContent = d.cliente;
-        document.getElementById('gvDetalleTipo').textContent = d.tipo;
-        document.getElementById('gvDetalleTecnico').textContent = d.tecnico;
-        document.getElementById('gvDetalleDesc').textContent = d.descripcion || 'Sin notas.';
-        var badge = document.getElementById('gvDetalleEstado');
-        badge.textContent = d.estado;
-        badge.className = 'badge bg-' + (d.estado === 'Realizada' ? 'success' : d.estado === 'Vencida' ? 'secondary' : d.prioridad === '1' ? 'danger' : 'warning text-dark');
-        var ubContainer = document.getElementById('gvDetalleUbicacion');
-        if (d.ubicacion) { ubContainer.style.display = ''; document.getElementById('gvDetalleUbicacionLink').href = d.ubicacion; }
-        else { ubContainer.style.display = 'none'; }
-        var infoContainer = document.getElementById('gvDetalleInforme');
-        var infoText = document.getElementById('gvDetalleInformeText');
-        if (d.informe) { infoContainer.style.display = ''; infoText.textContent = d.informe; }
-        else { infoContainer.style.display = 'none'; }
-        var btnPDF = document.getElementById('gvDetalleBtnPDF');
-        var btnFinalizar = document.getElementById('gvDetalleBtnFinalizar');
-        if (d.estado === 'Realizada') {
-            btnPDF.classList.remove('d-none');
-            btnPDF.href = '/reporte_visita_pdf/' + d.id + '/' + {{ usuario.id }};
-            btnFinalizar.classList.add('d-none');
-        } else if (d.estado === 'Vencida') {
-            btnPDF.classList.add('d-none');
-            btnFinalizar.classList.add('d-none');
+function verDetalleVisitaGV(row) {
+    var prioridad = parseInt(row.dataset.prioridad) || 3;
+    var estadoHTML = '';
+    if (row.dataset.estado === 'Pendiente') {
+        if (prioridad === 1) {
+            estadoHTML = '<span class="badge bg-danger"><i class="fa-solid fa-bolt me-1"></i>Crítica</span>';
         } else {
-            btnPDF.classList.add('d-none');
-            btnFinalizar.classList.remove('d-none');
+            estadoHTML = '<span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Pendiente</span>';
         }
-        new bootstrap.Modal(document.getElementById('detalleVisitaGV')).show();
+    } else {
+        estadoHTML = '<span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Realizada</span>';
     }
 
-    function finalizarVisitaDesdeDetalleGV() {
-        if (!gvCurrentVisitaId) return;
-        finalizarVisitaGV(gvCurrentVisitaId);
-        bootstrap.Modal.getInstance(document.getElementById('detalleVisitaGV')).hide();
+    if (row.dataset.fallaId) {
+        estadoHTML += ' <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-bug me-1"></i>Falla</span>';
     }
 
-    function finalizarVisitaGV(id) {
-        fetch('/agenda/finalizar_cotizacion/' + id, { method: 'POST' })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.ok) { recargarSeccionSPA('fallas'); }
-                else { alert(data.msg); }
-            }).catch(function() { alert('Error de conexión'); });
+    estadoHTML += ' — ' + row.dataset.tipo;
+
+    document.getElementById('gv-visita-cliente').innerText = row.dataset.cliente || '---';
+    document.getElementById('gv-visita-estado').innerHTML = estadoHTML;
+    document.getElementById('gv-visita-fecha').innerText = row.dataset.fecha || '---';
+    document.getElementById('gv-visita-descripcion').innerText = (row.dataset.descripcion || 'Sin descripción').replace(/^\[Falla desde Bitácora\]\s*/i, '');
+    var ubiEl = document.getElementById('gv-visita-ubicacion');
+    var mapaEl = document.getElementById('gv-mapa-visita');
+    var coords = extraerCoordenadasGV(row.dataset.ubicacion);
+    if (coords) {
+        ubiEl.style.display = 'none';
+        mapaEl.style.display = 'block';
+        if (gvMapaVisita) {
+            gvMapaVisita.setView([coords.lat, coords.lng], 16);
+            if (gvMarcadorVisita) gvMapaVisita.removeLayer(gvMarcadorVisita);
+            gvMarcadorVisita = L.marker([coords.lat, coords.lng]).addTo(gvMapaVisita);
+            setTimeout(function() { gvMapaVisita.invalidateSize(); }, 300);
+        } else {
+            gvMapaVisita = L.map('gv-mapa-visita').setView([coords.lat, coords.lng], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(gvMapaVisita);
+            gvMarcadorVisita = L.marker([coords.lat, coords.lng]).addTo(gvMapaVisita);
+            setTimeout(function() { gvMapaVisita.invalidateSize(); }, 300);
+        }
+    } else {
+        mapaEl.style.display = 'none';
+        ubiEl.style.display = '';
+        ubiEl.innerText = row.dataset.ubicacion || 'No registrada';
+    }
+    var infoContainer = document.getElementById('gv-visita-informe-container');
+    var infoText = document.getElementById('gv-visita-informe');
+    var esCotizacion = row.dataset.tipo === 'Cotización' || row.dataset.tipo === 'Otra';
+    if (esCotizacion) {
+        infoContainer.style.display = 'none';
+    } else {
+        infoContainer.style.display = '';
+        infoText.innerText = row.dataset.informe || 'Pendiente de informe';
     }
 
-    function agendarVisitaGV(e) {
-        e.preventDefault();
-        var data = new URLSearchParams(new FormData(e.target));
-        fetch('/admin/agendar_visita', { method: 'POST', body: data })
-            .then(function(r) { return r.json(); })
-            .then(function(resp) {
-                if (resp.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('modalAgendarGV')).hide();
-                    recargarSeccionSPA('fallas');
-                } else { alert(resp.error || 'Error al agendar'); }
-            }).catch(function() { alert('Error de conexión'); });
-        return false;
+    var btnPDF = document.getElementById('gv-modal-btn-pdf');
+    if (row.dataset.informe) {
+        btnPDF.href = '/reporte_visita_pdf/' + row.dataset.id + '/' + {{ usuario.id }};
+        btnPDF.classList.remove('d-none');
+    } else {
+        btnPDF.classList.add('d-none');
     }
 
-    function abrirModalAgendarGV() {
-        document.getElementById('gvFecha').value = new Date().toISOString().split('T')[0];
-        new bootstrap.Modal(document.getElementById('modalAgendarGV')).show();
+    var btnGestionar = document.getElementById('gv-modal-btn-gestionar');
+    var btnListo = document.getElementById('gv-modal-btn-listo');
+    if (row.dataset.estado === 'Pendiente') {
+        var esOT = ['Instalación', 'Reparación', 'Emergencia'].indexOf(row.dataset.tipo) !== -1 || row.dataset.tipo.indexOf('Mantención') !== -1;
+        if (esOT) {
+            btnGestionar.href = '/completar_visita/' + row.dataset.id + '/' + {{ usuario.id }};
+            btnGestionar.classList.remove('d-none');
+            btnListo.classList.add('d-none');
+        } else {
+            btnListo.setAttribute('data-visita-id', row.dataset.id);
+            btnListo.classList.remove('d-none');
+            btnGestionar.classList.add('d-none');
+        }
+    } else {
+        btnGestionar.classList.add('d-none');
+        btnListo.classList.add('d-none');
     }
 
-    function aplicarFiltrosGV(e) {
-        e.preventDefault();
-        recargarSeccionSPA('fallas');
-        return false;
-    }
+    new bootstrap.Modal(document.getElementById('modalDetalleVisitaGV')).show();
+}
 
-    function limpiarFiltrosGV() {
-        document.querySelectorAll('#gestor-filtros input[name]').forEach(function(el) { el.value = ''; });
-        recargarSeccionSPA('fallas');
+document.getElementById('modalDetalleVisitaGV').addEventListener('hidden.bs.modal', function () {
+    if (gvMapaVisita) { setTimeout(function() { gvMapaVisita.invalidateSize(); }, 100); }
+});
+
+function extraerCoordenadasGV(url) {
+    var idx = url.indexOf('?q=');
+    var offset = 3;
+    if (idx === -1) { idx = url.indexOf('?query='); offset = 6; }
+    if (idx === -1) return null;
+    var params = url.substring(idx + offset);
+    var coords = params.split(',');
+    if (coords.length >= 2) {
+        var lat = parseFloat(coords[0].trim());
+        var lng = parseFloat(coords[1].trim());
+        if (!isNaN(lat) && !isNaN(lng)) return { lat: lat, lng: lng };
     }
+    return null;
+}
+
+var gvCurrentVisitaId = null;
+
+function confirmarFinalizarGV(visitaId) {
+    gvCurrentVisitaId = visitaId;
+    document.getElementById('formFinalizarGV').action = '/finalizar_visita/' + visitaId;
+    new bootstrap.Modal(document.getElementById('modalConfirmarFinalizarGV')).show();
+}
+
+function confirmarFinalizarDesdeModalGV() {
+    var id = document.getElementById('gv-modal-btn-listo').getAttribute('data-visita-id');
+    if (id) confirmarFinalizarGV(id);
+}
+
+function enviarFinalizarGV(e) {
+    e.preventDefault();
+    var form = e.target;
+    var formData = new FormData(form);
+    fetch(form.action, { method: 'POST', body: formData })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            bootstrap.Modal.getInstance(document.getElementById('modalConfirmarFinalizarGV')).hide();
+            if (data.ok) { recargarSeccionSPA('fallas'); }
+            else { alert(data.msg || 'Error al finalizar'); }
+        }).catch(function() { alert('Error de conexión'); });
+    return false;
+}
+
+function mostrarClientesGV() {
+    document.getElementById('cliente-dropdown-gv').classList.remove('d-none');
+}
+
+function filtrarClientesGV() {
+    var input = document.getElementById('filtroClienteGV').value.toLowerCase();
+    var items = document.querySelectorAll('#cliente-dropdown-gv .list-group-item');
+    var visible = 0;
+    items.forEach(function(item) {
+        if (item.dataset.nombre.toLowerCase().includes(input)) {
+            item.style.display = 'block';
+            visible++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    document.getElementById('cliente-dropdown-gv').classList.toggle('d-none', visible === 0);
+    filtrarPorClienteGV();
+}
+
+function seleccionarClienteGV(btn) {
+    document.getElementById('filtroClienteGV').value = btn.dataset.nombre;
+    document.getElementById('cliente-dropdown-gv').classList.add('d-none');
+    filtrarPorClienteGV();
+}
+
+function filtrarPorClienteGV() {
+    var texto = document.getElementById('filtroClienteGV').value.toLowerCase().trim();
+    var tabs = document.querySelectorAll('.tab-pane');
+    tabs.forEach(function(tab) {
+        var rows = tab.querySelectorAll('table tbody tr');
+        rows.forEach(function(row) {
+            var cliente = (row.cells[1]?.textContent || '').toLowerCase();
+            row.style.display = (!texto || cliente.includes(texto)) ? '' : 'none';
+        });
+    });
+}
+
+function aplicarFiltrosGV() {
+    var texto = document.getElementById('filtroClienteGV').value.toLowerCase().trim();
+    var desde = document.getElementById('gvFechaInicio').value;
+    var hasta = document.getElementById('gvFechaFin').value;
+    var tabs = document.querySelectorAll('.tab-pane');
+    tabs.forEach(function(tab) {
+        var rows = tab.querySelectorAll('table tbody tr');
+        rows.forEach(function(row) {
+            var show = true;
+            if (texto) {
+                var cliente = (row.cells[1]?.textContent || '').toLowerCase();
+                if (!cliente.includes(texto)) show = false;
+            }
+            if (show && desde) {
+                var fecha = row.dataset.fecha || '';
+                if (fecha < desde) show = false;
+            }
+            if (show && hasta) {
+                var fecha = row.dataset.fecha || '';
+                if (fecha > hasta + ' 23:59') show = false;
+            }
+            row.style.display = show ? '' : 'none';
+        });
+    });
+}
+
+function limpiarFiltrosGV() {
+    document.getElementById('filtroClienteGV').value = '';
+    document.getElementById('gvFechaInicio').value = '';
+    document.getElementById('gvFechaFin').value = '';
+    var tabs = document.querySelectorAll('.tab-pane');
+    tabs.forEach(function(tab) {
+        var rows = tab.querySelectorAll('table tbody tr');
+        rows.forEach(function(row) { row.style.display = ''; });
+    });
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#filtroClienteGV') && !e.target.closest('#cliente-dropdown-gv')) {
+        var dd = document.getElementById('cliente-dropdown-gv');
+        if (dd) dd.classList.add('d-none');
+    }
+});
 </script>
