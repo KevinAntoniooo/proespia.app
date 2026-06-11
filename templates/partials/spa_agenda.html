@@ -148,7 +148,7 @@
 <div class="modal fade" id="modalAgendar" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-md modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 text-dark">
-            <form action="{{ url_for('agendar_visita') }}" method="POST">
+            <form onsubmit="return agendarVisita(event)">
                 <div class="modal-header border-0" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
                     <h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-calendar-plus me-2"></i>Agendar Actividad</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -810,6 +810,24 @@
         document.getElementById('edit_tipo').value = props.tipo || 'Mantención';
         document.getElementById('edit_descripcion').value = props.descripcion || '';
         new bootstrap.Modal(document.getElementById('modalEditarVisita')).show();
+    }
+
+    function agendarVisita(e) {
+        e.preventDefault();
+        var f = e.target;
+        var data = new URLSearchParams(new FormData(f));
+        fetch('/admin/agendar_visita', { method: 'POST', body: data })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+            if (resp.ok) {
+                var m = bootstrap.Modal.getInstance(document.getElementById('modalAgendar'));
+                if (m) m.hide();
+                recargarSeccionSPA('agenda');
+            } else {
+                alert(resp.error || 'Error al agendar la visita');
+            }
+        }).catch(function() { alert('Error de conexi\u00f3n'); });
+        return false;
     }
 
     function guardarEdicion() {

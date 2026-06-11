@@ -2473,7 +2473,8 @@ def ver_agenda(user_id):
 @app.route('/admin/agendar_visita', methods=['POST'])
 @login_required
 def agendar_visita():
-    # 1. Recogemos los campos del formulario
+    es_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
     fecha_base = request.form.get('fecha_programada_base') 
     hora = request.form.get('hora_visita')                
     
@@ -2483,21 +2484,22 @@ def agendar_visita():
     detalle = request.form.get('descripcion', '')
     ubicacion = request.form.get('ubicacion', '').strip()
 
-    # 2. Validaciones básicas
     if not fecha_base or not hora:
+        if es_ajax:
+            return {'ok': False, 'error': 'La fecha y hora son obligatorias'}
         flash('Error: La fecha y hora son obligatorias', 'danger')
         return redirect(request.referrer)
 
-    # Si es cliente nuevo, no asociar a ningún cliente aún
     if cliente_id == 'nuevo':
         cliente_id = None
     elif not cliente_id:
+        if es_ajax:
+            return {'ok': False, 'error': 'Debes seleccionar un cliente'}
         flash('Error: Debes seleccionar un cliente', 'danger')
         return redirect(request.referrer)
     else:
         cliente_id = int(cliente_id)
 
-    # 3. Construcción del objeto datetime
     fecha_str = f"{fecha_base} {hora}" 
 
     try:
@@ -2512,11 +2514,9 @@ def agendar_visita():
         )
         db.session.add(nueva_visita)
         db.session.commit()
-        flash('Visita agendada correctamente', 'success')
 
         db.session.flush()
 
-        # --- DISPARADOR: Nueva visita asignada a técnico ---
         tecnico = Usuario.query.get(int(tecnico_id))
         nom_cliente = 'Cliente Nuevo (Cotización)' if not cliente_id else Cliente.query.get(cliente_id).nombre
         if tecnico:
@@ -2528,16 +2528,17 @@ def agendar_visita():
             )
 
         db.session.commit()
+
+        if es_ajax:
+            return {'ok': True}
+        flash('Visita agendada correctamente', 'success')
         
     except Exception as e:
         db.session.rollback()
+        if es_ajax:
+            return {'ok': False, 'error': str(e)}
         flash(f'Error al agendar: {str(e)}', 'danger')
 
-    # ================================================================
-    # ARREGLO DEFINITIVO PARA EL BuildError:
-    # En lugar de intentar adivinar el ID del admin, simplemente 
-    # refrescamos la página donde estábamos (la agenda).
-    # ================================================================
     return redirect(request.referrer)
 
 @app.route('/api/eventos_agenda')
