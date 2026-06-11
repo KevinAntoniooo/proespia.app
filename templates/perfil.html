@@ -319,7 +319,6 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
 <script>
     {% if usuario.es_super_admin() %}
@@ -327,14 +326,12 @@
         document.getElementById('inputWipeConfirm')?.addEventListener('input', function() {
             document.getElementById('btnWipeDB').disabled = this.value !== 'LIMPIAR';
         });
-
         document.getElementById('btnWipeDB')?.addEventListener('click', function() {
             var btn = this;
             var err = document.getElementById('errorWipeDB');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Limpiando...';
             err.classList.add('d-none');
-
             fetch('/admin/wipe_db', { method: 'POST' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
@@ -412,3 +409,4 @@
         });
     }
 </script>
+{% endblock %}
