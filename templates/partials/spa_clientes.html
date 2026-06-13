@@ -514,7 +514,7 @@ window.renderizarContactos = function(suffix) {
     var table = document.createElement('div');
     table.className = 'w-100';
     table.style.cssText = 'border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;';
-    var html = '<table class="table table-borderless align-middle mb-0" style="font-size:0.78rem;"><thead><tr style="background:#f1f5f9;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;"><th class="ps-3 py-2" style="width:40%;font-weight:600;">Nombre</th><th class="py-2" style="width:35%;font-weight:600;">Teléfono</th><th class="text-center pe-3 py-2" style="width:25%;font-weight:600;">Acción</th></tr></thead><tbody>';
+    var html = '<table class="table table-borderless align-middle mb-0" style="font-size:0.78rem;"><tbody>';
     contactos.forEach(function(c, i) {
         html += '<tr style="border-bottom:1px solid #f1f5f9;"><td class="ps-3 py-2 fw-medium"><i class="fa-solid fa-user text-success me-2 fa-xs"></i>' + escHtml(c.nombre) + '</td><td class="py-2"><i class="fa-solid fa-phone text-primary me-2 fa-xs"></i>' + escHtml(c.telefono) + '</td><td class="text-center pe-3 py-2"><button type="button" class="btn btn-sm btn-outline-danger border-0 px-2" style="font-size:0.7rem;" onclick="eliminarContactoEmergencia(' + i + ',\'' + suffix + '\')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button></td></tr>';
     });
