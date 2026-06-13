@@ -1030,28 +1030,19 @@ def dashboard(user_id):
         visitas_hoy = VisitaProgramada.query.filter(
             VisitaProgramada.fecha_programada >= inicio_hoy,
             VisitaProgramada.fecha_programada <= fin_hoy,
-            VisitaProgramada.estado == 'Pendiente',
-            or_(
-                VisitaProgramada.usuario_id == user_id,
-                VisitaProgramada.falla_id.isnot(None)
-            )
+            VisitaProgramada.usuario_id == user_id,
+            VisitaProgramada.estado == 'Pendiente'
         ).order_by(VisitaProgramada.prioridad.asc(), VisitaProgramada.fecha_programada.asc()).all()
 
         # 2. Próximas Visitas (Mañana en adelante, excluye vencidas)
         VisitaProgramada.query.filter(
-            or_(
-                VisitaProgramada.usuario_id == user_id,
-                VisitaProgramada.falla_id.isnot(None)
-            ),
+            VisitaProgramada.usuario_id == user_id,
             VisitaProgramada.fecha_programada < inicio_hoy,
             VisitaProgramada.estado == 'Pendiente'
         ).update({VisitaProgramada.estado: 'Vencida'}, synchronize_session=False)
         hace_3_dias = datetime.combine(hoy_date - timedelta(days=3), time.min)
         VisitaProgramada.query.filter(
-            or_(
-                VisitaProgramada.usuario_id == user_id,
-                VisitaProgramada.falla_id.isnot(None)
-            ),
+            VisitaProgramada.usuario_id == user_id,
             VisitaProgramada.estado == 'Vencida',
             VisitaProgramada.fecha_programada < hace_3_dias
         ).delete(synchronize_session=False)
@@ -1059,17 +1050,15 @@ def dashboard(user_id):
 
         proximas = VisitaProgramada.query.filter(
             VisitaProgramada.fecha_programada > fin_hoy,
-            VisitaProgramada.estado.in_(['Pendiente']),
-            or_(
-                VisitaProgramada.usuario_id == user_id,
-                VisitaProgramada.falla_id.isnot(None)
-            )
+            VisitaProgramada.usuario_id == user_id,
+            VisitaProgramada.estado.in_(['Pendiente'])
         ).order_by(VisitaProgramada.prioridad.asc(), VisitaProgramada.fecha_programada.asc()).limit(5).all()
 
-        # 3. Fallas pendientes (todas, no solo las que creó el técnico)
+        # 3. Fallas pendientes asignadas al técnico
         tareas_tecnico = Bitacora.query.filter(
             Bitacora.tipo_visita.ilike('%Falla%'),
-            ~Bitacora.tipo_visita.ilike('%RESUELTA%')
+            ~Bitacora.tipo_visita.ilike('%RESUELTA%'),
+            Bitacora.usuario_id == user_id
         ).order_by(Bitacora.prioridad.asc(), Bitacora.fecha.desc()).all()
 
         vehiculo_tec = Vehiculo.query.filter(Vehiculo.ubicacion_id == usuario.ubicacion_id).first()
