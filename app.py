@@ -1443,11 +1443,11 @@ def nuevo_cliente(user_id):
         nombre = (request.form.get('nombre') or '').strip()
         if not nombre:
             flash('El nombre de la sede es obligatorio.', 'danger')
-            return redirect(url_for('nuevo_cliente', user_id=user_id))
+            return redirect(url_for('ver_clientes', user_id=user_id))
         existe = Cliente.query.filter(func.lower(Cliente.nombre) == nombre.lower()).first()
         if existe:
             flash(f'Ya existe una sede con el nombre "{nombre}".', 'danger')
-            return redirect(url_for('nuevo_cliente', user_id=user_id))
+            return redirect(url_for('ver_clientes', user_id=user_id))
         try:
             nuevo = Cliente(
                 nombre=nombre,
@@ -1462,14 +1462,11 @@ def nuevo_cliente(user_id):
             db.session.commit()
             flash(f'Sede "{nuevo.nombre}" registrada correctamente', 'success')
             return redirect(url_for('ver_clientes', user_id=user_id))
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             flash('Error al registrar la sede. Intente nuevamente.', 'danger')
-            return redirect(url_for('nuevo_cliente', user_id=user_id))
-        
-            registrar_log(current_user.id, "SISTEMA: Nuevo cliente creado", 
-                  f"Se registró el cliente {nuevo.nombre}")
-    return render_template('nuevo_cliente.html', usuario=usuario)
+            return redirect(url_for('ver_clientes', user_id=user_id))
+    return redirect(url_for('ver_clientes', user_id=user_id))
 
 # --- API HISTORIAL CLIENTE (JSON) ---
 @app.route('/api/cliente/<int:cliente_id>/historial')
