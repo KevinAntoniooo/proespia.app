@@ -35,7 +35,7 @@
         </div>
         <div class="d-flex gap-2">
             <a href="{{ url_for('reporte_bitacora_pdf', user_id=usuario.id, inicio=request.args.get('fecha_inicio'), fin=request.args.get('fecha_fin')) }}"
-                class="btn btn-danger btn-sm fw-bold">
+                class="btn btn-danger btn-sm fw-bold" target="_blank">
                 <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar PDF
             </a>
             <a href="/bitacora/{{ usuario.id }}" class="btn btn-outline-secondary btn-sm">Limpiar Filtro</a>
@@ -276,7 +276,7 @@
                 <div id="zona-previa" style="display: none;">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="fw-bold mb-0">Resultados encontrados:</h6>
-                        <a href="#" id="btn-descargar-pdf" class="btn btn-danger btn-sm">
+                        <a href="#" id="btn-descargar-pdf" class="btn btn-danger btn-sm" target="_blank">
                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> Generar PDF
                         </a>
                     </div>
