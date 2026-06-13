@@ -1507,12 +1507,12 @@ def historial_pdf(cliente_id, user_id):
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, 'PROESPIA LTDA - HISTORIAL DEL CLIENTE', 0, 1, 'C')
     pdf.set_font('Arial', '', 12)
-    pdf.cell(0, 8, enc(f'Cliente: {cliente.nombre}'), 0, 1, 'C')
+    pdf.cell(0, 8, enc(f'Cliente: {cliente.nombre}'), 0, 1, 'L')
     pdf.set_font('Arial', '', 9)
-    pdf.cell(0, 5, enc(f'Direccion: {cliente.direccion}'), 0, 1, 'C')
+    pdf.cell(0, 5, enc(f'Direccion: {cliente.direccion}'), 0, 1, 'L')
     pdf.set_font('Arial', 'I', 9)
-    pdf.cell(0, 5, f'Generado por: {enc(u_admin.nombre)}', 0, 1, 'C')
-    pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
+    pdf.cell(0, 5, f'Generado por: {enc(u_admin.nombre)}', 0, 1, 'L')
+    pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'L')
     pdf.ln(5)
 
     # --- CONTACTOS DE EMERGENCIA ---
@@ -1523,17 +1523,10 @@ def historial_pdf(cliente_id, user_id):
             contactos = json.loads(contactos_raw)
             if isinstance(contactos, list) and len(contactos) > 0:
                 pdf.set_font('Arial', 'B', 10)
-                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'L')
-                pdf.set_font('Arial', 'B', 8)
-                pdf.set_fill_color(40, 40, 40)
-                pdf.set_text_color(255, 255, 255)
-                pdf.cell(95, 7, 'NOMBRE', 1, 0, 'C', True)
-                pdf.cell(95, 7, 'TELEFONO', 1, 1, 'C', True)
-                pdf.set_text_color(0, 0, 0)
-                pdf.set_font('Arial', '', 8)
+                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'R')
+                pdf.set_font('Arial', '', 9)
                 for c in contactos:
-                    pdf.cell(95, 7, enc(c.get('nombre', '')), 1, 0, 'C')
-                    pdf.cell(95, 7, enc(c.get('telefono', '')), 1, 1, 'C')
+                    pdf.cell(0, 6, f"{enc(c.get('nombre', ''))}: {enc(c.get('telefono', ''))}", 0, 1, 'R')
                 pdf.ln(5)
         except Exception:
             pass
@@ -1710,12 +1703,12 @@ def generar_pdf(cliente_id, user_id):
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, t('PROESPIA LTDA - INVENTARIO TECNICO'), 0, 1, 'C')
     pdf.set_font('Arial', '', 12)
-    pdf.cell(0, 8, t(f'Cliente: {cliente.nombre}'), 0, 1, 'C')
+    pdf.cell(0, 8, t(f'Cliente: {cliente.nombre}'), 0, 1, 'L')
     pdf.set_font('Arial', '', 9)
-    pdf.cell(0, 5, t(f'Direccion: {cliente.direccion}'), 0, 1, 'C')
+    pdf.cell(0, 5, t(f'Direccion: {cliente.direccion}'), 0, 1, 'L')
     pdf.set_font('Arial', 'I', 9)
-    pdf.cell(0, 5, f'Generado por: {t(u_admin.nombre)}', 0, 1, 'C')
-    pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
+    pdf.cell(0, 5, f'Generado por: {t(u_admin.nombre)}', 0, 1, 'L')
+    pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'L')
     pdf.ln(5)
 
     # --- CONTACTOS DE EMERGENCIA ---
@@ -1726,17 +1719,10 @@ def generar_pdf(cliente_id, user_id):
             contactos = json.loads(contactos_raw)
             if isinstance(contactos, list) and len(contactos) > 0:
                 pdf.set_font('Arial', 'B', 10)
-                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'L')
-                pdf.set_font('Arial', 'B', 8)
-                pdf.set_fill_color(40, 40, 40)
-                pdf.set_text_color(255, 255, 255)
-                pdf.cell(95, 7, 'NOMBRE', 1, 0, 'C', True)
-                pdf.cell(95, 7, 'TELEFONO', 1, 1, 'C', True)
-                pdf.set_text_color(0, 0, 0)
-                pdf.set_font('Arial', '', 8)
+                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'R')
+                pdf.set_font('Arial', '', 9)
                 for c in contactos:
-                    pdf.cell(95, 7, t(c.get('nombre', '')), 1, 0, 'C')
-                    pdf.cell(95, 7, t(c.get('telefono', '')), 1, 1, 'C')
+                    pdf.cell(0, 6, f"{t(c.get('nombre', ''))}: {t(c.get('telefono', ''))}", 0, 1, 'R')
                 pdf.ln(5)
         except Exception:
             pass
