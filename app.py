@@ -1054,11 +1054,10 @@ def dashboard(user_id):
             VisitaProgramada.estado.in_(['Pendiente'])
         ).order_by(VisitaProgramada.prioridad.asc(), VisitaProgramada.fecha_programada.asc()).limit(5).all()
 
-        # 3. Fallas pendientes asignadas al técnico
+        # 3. Fallas pendientes (todos los técnicos ven todas las fallas)
         tareas_tecnico = Bitacora.query.filter(
             Bitacora.tipo_visita.ilike('%Falla%'),
-            ~Bitacora.tipo_visita.ilike('%RESUELTA%'),
-            Bitacora.usuario_id == user_id
+            ~Bitacora.tipo_visita.ilike('%RESUELTA%')
         ).order_by(Bitacora.prioridad.asc(), Bitacora.fecha.desc()).all()
 
         vehiculo_tec = Vehiculo.query.filter(Vehiculo.ubicacion_id == usuario.ubicacion_id).first()
@@ -1376,7 +1375,6 @@ def gestor_visitas(user_id):
         )
         q_fallas_pend = VisitaProgramada.query.filter(
             VisitaProgramada.falla_id.isnot(None),
-            VisitaProgramada.usuario_id == user_id,
             VisitaProgramada.estado == 'Pendiente'
         )
         q_realizadas = VisitaProgramada.query.filter(
@@ -4185,7 +4183,6 @@ def api_spa_contenido(seccion):
             )
             q_fallas_pend = VisitaProgramada.query.filter(
                 VisitaProgramada.falla_id.isnot(None),
-                VisitaProgramada.usuario_id == u.id,
                 VisitaProgramada.estado == 'Pendiente'
             )
             q_realizadas = VisitaProgramada.query.filter(
