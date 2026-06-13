@@ -3868,6 +3868,12 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
+    # Migrar numero_ot en bitacora
+    try:
+        db.session.execute(db.text('ALTER TABLE bitacora ADD COLUMN numero_ot INTEGER'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     # Migrar falla_id en visita_programada (unificación Fallas + Agenda)
     try:
         db.session.execute(db.text('ALTER TABLE visita_programada ADD COLUMN falla_id INTEGER'))
