@@ -394,17 +394,20 @@ function initClienteMap(suffix, lat, lng, readonly) {
             var pos = marker.getLatLng();
             document.getElementById('lat' + suffix).value = pos.lat.toFixed(6);
             document.getElementById('lng' + suffix).value = pos.lng.toFixed(6);
-            document.getElementById('coordInfo' + suffix).textContent = pos.lat.toFixed(6) + ', ' + pos.lng.toFixed(6);
+            var ci = document.getElementById('coordInfo' + suffix);
+            if (ci) ci.textContent = pos.lat.toFixed(6) + ', ' + pos.lng.toFixed(6);
         });
         map.on('click', function(e) {
             marker.setLatLng(e.latlng);
             document.getElementById('lat' + suffix).value = e.latlng.lat.toFixed(6);
             document.getElementById('lng' + suffix).value = e.latlng.lng.toFixed(6);
-            document.getElementById('coordInfo' + suffix).textContent = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
+            var ci = document.getElementById('coordInfo' + suffix);
+            if (ci) ci.textContent = e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6);
         });
     }
     if (lat !== undefined && lat !== null && !isNaN(lat)) {
-        document.getElementById('coordInfo' + suffix).textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+        var ci = document.getElementById('coordInfo' + suffix);
+        if (ci) ci.textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
         marker.bindPopup('<div class="text-center"><strong>'+lat.toFixed(6)+', '+lng.toFixed(6)+'</strong><br><a href="https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng+'" target="_blank" class="btn btn-sm btn-success mt-1"><i class="fa-solid fa-location-arrow me-1"></i>Ir</a></div>').openPopup();
     }
     mapInstances[suffix] = map;
