@@ -1513,7 +1513,30 @@ def historial_pdf(cliente_id, user_id):
     pdf.set_font('Arial', 'I', 9)
     pdf.cell(0, 5, f'Generado por: {enc(u_admin.nombre)}', 0, 1, 'C')
     pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
-    pdf.ln(8)
+    pdf.ln(5)
+
+    # --- CONTACTOS DE EMERGENCIA ---
+    contactos_raw = cliente.contacto_emergencia
+    if contactos_raw:
+        try:
+            import json
+            contactos = json.loads(contactos_raw)
+            if isinstance(contactos, list) and len(contactos) > 0:
+                pdf.set_font('Arial', 'B', 10)
+                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'L')
+                pdf.set_font('Arial', 'B', 8)
+                pdf.set_fill_color(40, 40, 40)
+                pdf.set_text_color(255, 255, 255)
+                pdf.cell(95, 7, 'NOMBRE', 1, 0, 'C', True)
+                pdf.cell(95, 7, 'TELEFONO', 1, 1, 'C', True)
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font('Arial', '', 8)
+                for c in contactos:
+                    pdf.cell(95, 7, enc(c.get('nombre', '')), 1, 0, 'C')
+                    pdf.cell(95, 7, enc(c.get('telefono', '')), 1, 1, 'C')
+                pdf.ln(5)
+        except Exception:
+            pass
 
     partes = [s.strip().lower() for s in secciones.split(',') if s.strip()]
 
@@ -1693,7 +1716,30 @@ def generar_pdf(cliente_id, user_id):
     pdf.set_font('Arial', 'I', 9)
     pdf.cell(0, 5, f'Generado por: {t(u_admin.nombre)}', 0, 1, 'C')
     pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'C')
-    pdf.ln(10)
+    pdf.ln(5)
+
+    # --- CONTACTOS DE EMERGENCIA ---
+    contactos_raw = cliente.contacto_emergencia
+    if contactos_raw:
+        try:
+            import json
+            contactos = json.loads(contactos_raw)
+            if isinstance(contactos, list) and len(contactos) > 0:
+                pdf.set_font('Arial', 'B', 10)
+                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'L')
+                pdf.set_font('Arial', 'B', 8)
+                pdf.set_fill_color(40, 40, 40)
+                pdf.set_text_color(255, 255, 255)
+                pdf.cell(95, 7, 'NOMBRE', 1, 0, 'C', True)
+                pdf.cell(95, 7, 'TELEFONO', 1, 1, 'C', True)
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font('Arial', '', 8)
+                for c in contactos:
+                    pdf.cell(95, 7, t(c.get('nombre', '')), 1, 0, 'C')
+                    pdf.cell(95, 7, t(c.get('telefono', '')), 1, 1, 'C')
+                pdf.ln(5)
+        except Exception:
+            pass
 
     # --- TABLA DE EQUIPOS (Ajustamos anchos para la nueva columna) ---
     pdf.set_font('Arial', 'B', 9)
