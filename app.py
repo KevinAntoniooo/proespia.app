@@ -978,8 +978,24 @@ def admin_wipe_db():
             db.session.add(CategoriaItem(nombre=nombre))
         db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
 
-        # Resetear auto-increment de todas las tablas
-        db.session.execute(text("DELETE FROM sqlite_sequence"))
+        # Resetear auto-increment segun motor de BD
+        if db.engine.dialect.name == 'sqlite':
+            db.session.execute(text("DELETE FROM sqlite_sequence"))
+        elif db.engine.dialect.name == 'postgresql':
+            for m in tablas:
+                try:
+                    seq = f"{m.__tablename__}_id_seq"
+                    db.session.execute(text(f"ALTER SEQUENCE {seq} RESTART WITH 1"))
+                except Exception:
+                    pass
+            try:
+                db.session.execute(text("ALTER SEQUENCE usuario_id_seq RESTART WITH 1"))
+            except Exception:
+                pass
+            try:
+                db.session.execute(text("ALTER SEQUENCE ubicacion_bodega_id_seq RESTART WITH 1"))
+            except Exception:
+                pass
         
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'BD limpiada. Login: kevix0813@yahoo.es / ProEspia2026', 'resumen': resumen})
