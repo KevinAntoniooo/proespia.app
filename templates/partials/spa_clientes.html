@@ -135,7 +135,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <form action="/clientes/reporte_pdf/{{ c.id }}/{{ usuario.id }}" method="GET" class="d-flex align-items-center w-100">
+                <form action="/clientes/reporte_pdf/{{ c.id }}/{{ usuario.id }}" method="GET" target="_blank" class="d-flex align-items-center w-100">
                     <div class="form-check form-switch me-auto">
                         <input class="form-check-input" type="checkbox" name="ver_pass" id="switchPass{{ c.id }}">
                         <label class="form-check-label small text-muted" for="switchPass{{ c.id }}">Incluir contraseñas</label>
