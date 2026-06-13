@@ -3197,6 +3197,9 @@ def eliminar_vehiculo(id):
 
         bodega_central = Ubicacion.query.filter_by(nombre='Bodega Central').first()
 
+        # Eliminar checklists asociados
+        ChecklistSemanal.query.filter_by(vehiculo_id=v.id).delete(synchronize_session='fetch')
+
         # Mover herramientas a bodega central (desasignar del vehículo)
         herramientas = Herramienta.query.filter_by(vehiculo_id=v.id).all()
         if herramientas:

@@ -157,7 +157,7 @@
                                 <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalEditarProducto{{ p.id }}" title="Editar" onclick="event.stopPropagation();">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
-                                <button class="btn btn-outline-danger" onclick="event.stopPropagation(); eliminarProducto({{ p.id }})" title="Eliminar">
+                                <button class="btn btn-outline-danger" onclick="event.stopPropagation(); eliminarProducto({{ p.id }}, '{{ p.rel_categoria.nombre if p.rel_categoria else 'Producto' }}')" title="Eliminar">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -200,7 +200,7 @@
         <div class="modal-content border-0 shadow-lg rounded-4 border-danger">
             <div class="modal-body text-center p-4">
                 <i class="fa-solid fa-triangle-exclamation text-danger fs-1 mb-3"></i>
-                <h5 class="fw-bold mb-2">¿Eliminar producto?</h5>
+                <h5 class="fw-bold mb-2" id="modalEliminarTitulo">¿Eliminar producto?</h5>
                 <p class="text-muted small mb-3">Esta acción no se puede deshacer.</p>
                 <div class="d-flex gap-2 justify-content-center">
                     <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
@@ -317,6 +317,44 @@
 </div>
 
 {% for p in productos %}
+{% if p.rel_categoria and p.rel_categoria.nombre == 'Herramientas' %}
+<div class="modal fade" id="modalEditarProducto{{ p.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-wrench me-2"></i>Editar Herramienta: {{ p.nombre }}</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="return editarProducto(event, {{ p.id }})">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Nombre de la Herramienta</label>
+                            <input type="text" name="nombre" class="form-control" value="{{ p.nombre }}" required>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <label class="form-label small fw-bold">Cantidad</label>
+                            <input type="number" name="cantidad" class="form-control" value="{{ p.cantidad_actual }}" min="0" required>
+                        </div>
+                        <div class="col-12 col-sm-8">
+                            <label class="form-label small fw-bold">Ubicación</label>
+                            <select name="ubicacion_id" class="form-select">
+                                {% for u in ubicaciones %}
+                                <option value="{{ u.id }}" {% if p.ubicacion_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light shadow-sm btn-sm fw-bold px-3" style="font-size:0.85rem;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning shadow-sm btn-sm fw-bold" style="font-size:0.85rem;"><i class="fa-solid fa-floppy-disk me-1"></i>Guardar herramienta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% else %}
 <div class="modal fade" id="modalEditarProducto{{ p.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -382,6 +420,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -642,12 +681,12 @@ function editarProducto(e, id) {
     var f = e.target;
     var data = {
         nombre: f.nombre.value,
-        marca: f.marca.value,
-        modelo: f.modelo.value,
+        marca: f.marca ? f.marca.value : '',
+        modelo: f.modelo ? f.modelo.value : '',
         cantidad: f.cantidad.value,
-        cantidad_minima: f.cantidad_minima.value,
-        estado: f.estado.value,
-        categoria_id: f.categoria_id.value,
+        cantidad_minima: f.cantidad_minima ? f.cantidad_minima.value : 0,
+        estado: f.estado ? f.estado.value : 'Usado',
+        categoria_id: f.categoria_id ? f.categoria_id.value : '',
         ubicacion_id: f.ubicacion_id.value
     };
     fetch('/api/bodega/editar_producto/' + id, {
@@ -662,8 +701,10 @@ function editarProducto(e, id) {
 }
 
 var productoAEliminar = null;
-function eliminarProducto(id) {
+function eliminarProducto(id, categoria) {
     productoAEliminar = id;
+    var titulo = (categoria === 'Herramientas') ? '¿Eliminar herramienta?' : '¿Eliminar producto?';
+    document.getElementById('modalEliminarTitulo').textContent = titulo;
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalConfirmarEliminarProducto')).show();
 }
 document.getElementById('btnConfirmarEliminarProducto')?.addEventListener('click', function() {
