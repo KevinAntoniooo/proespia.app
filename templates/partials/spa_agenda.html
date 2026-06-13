@@ -828,7 +828,7 @@
         e.preventDefault();
         var f = e.target;
         var data = new URLSearchParams(new FormData(f));
-        fetch('/admin/agendar_visita', { method: 'POST', body: data })
+        fetch('/admin/agendar_visita', { method: 'POST', body: data, headers: {'X-Requested-With': 'XMLHttpRequest'} })
         .then(function(r) { return r.json(); })
         .then(function(resp) {
             if (resp.ok) {
