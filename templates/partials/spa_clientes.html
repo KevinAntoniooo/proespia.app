@@ -178,16 +178,19 @@
                                 <input type="text" name="plan_cuadrante" class="form-control" value="{{ c.plan_cuadrante or '' }}" placeholder="Ej: Cuadrante 5">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Contactos de Emergencia</label>
-                                <div class="d-flex gap-2 mb-2">
-                                    <input type="text" id="emergenciaNombre{{ c.id }}" class="form-control" placeholder="Nombre" style="flex:2;">
-                                    <input type="text" id="emergenciaTelefono{{ c.id }}" class="form-control" placeholder="Teléfono" style="flex:1;">
-                                    <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('{{ c.id }}')" style="white-space:nowrap;">
-                                        <i class="fa-solid fa-plus"></i><span class="d-none d-md-inline ms-1">Agregar</span>
-                                    </button>
+                                <label class="form-label fw-bold"><i class="fa-solid fa-address-card me-1"></i>Contactos de Emergencia</label>
+                                <div class="bg-light rounded-3 p-3 border">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="text" id="emergenciaNombre{{ c.id }}" class="form-control form-control-sm" placeholder="Nombre del contacto" style="flex:2;">
+                                        <input type="text" id="emergenciaTelefono{{ c.id }}" class="form-control form-control-sm" placeholder="Teléfono" style="flex:1;">
+                                        <button type="button" class="btn btn-success btn-sm shadow-sm" onclick="agregarContactoEmergencia('{{ c.id }}')" style="white-space:nowrap;">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div id="listaEmergencia{{ c.id }}" class="d-flex flex-wrap gap-2" style="min-height:32px;"></div>
+                                    <input type="hidden" name="contacto_emergencia" id="contactoEmergencia{{ c.id }}" value="{{ c.contacto_emergencia or '' }}">
+                                    <small class="text-muted mt-1 d-block"><i class="fa-solid fa-circle-info me-1"></i>Agrega nombre y teléfono de cada contacto de emergencia</small>
                                 </div>
-                                <div id="listaEmergencia{{ c.id }}" class="d-flex flex-wrap gap-2 mb-1"></div>
-                                <input type="hidden" name="contacto_emergencia" id="contactoEmergencia{{ c.id }}" value="{{ c.contacto_emergencia or '' }}">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Estado</label>
@@ -307,16 +310,19 @@
                                 <input type="text" name="plan_cuadrante" class="form-control" placeholder="Ej: Cuadrante 5 - +569...">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Contactos de Emergencia</label>
-                                <div class="d-flex gap-2 mb-2">
-                                    <input type="text" id="emergenciaNombreNuevo" class="form-control" placeholder="Nombre" style="flex:2;">
-                                    <input type="text" id="emergenciaTelefonoNuevo" class="form-control" placeholder="Teléfono" style="flex:1;">
-                                    <button type="button" class="btn btn-success btn-sm" onclick="agregarContactoEmergencia('Nuevo')" style="white-space:nowrap;">
-                                        <i class="fa-solid fa-plus"></i><span class="d-none d-md-inline ms-1">Agregar</span>
-                                    </button>
+                                <label class="form-label fw-bold"><i class="fa-solid fa-address-card me-1"></i>Contactos de Emergencia</label>
+                                <div class="bg-light rounded-3 p-3 border">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="text" id="emergenciaNombreNuevo" class="form-control form-control-sm" placeholder="Nombre del contacto" style="flex:2;">
+                                        <input type="text" id="emergenciaTelefonoNuevo" class="form-control form-control-sm" placeholder="Teléfono" style="flex:1;">
+                                        <button type="button" class="btn btn-success btn-sm shadow-sm" onclick="agregarContactoEmergencia('Nuevo')" style="white-space:nowrap;">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div id="listaEmergenciaNuevo" class="d-flex flex-wrap gap-2 min-vh-10" style="min-height:32px;"></div>
+                                    <input type="hidden" name="contacto_emergencia" id="contactoEmergenciaNuevo" value="">
+                                    <small class="text-muted mt-1 d-block"><i class="fa-solid fa-circle-info me-1"></i>Agrega nombre y teléfono de cada contacto de emergencia</small>
                                 </div>
-                                <div id="listaEmergenciaNuevo" class="d-flex flex-wrap gap-2 mb-1"></div>
-                                <input type="hidden" name="contacto_emergencia" id="contactoEmergenciaNuevo" value="">
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Estado de Monitoreo</label>
@@ -502,10 +508,10 @@ window.renderizarContactos = function(suffix) {
     lista.innerHTML = '';
     contactos.forEach(function(c, i) {
         var badge = document.createElement('span');
-        badge.className = 'badge bg-light text-dark d-inline-flex align-items-center gap-1 px-2 py-1';
-        badge.style.cssText = 'border:1px solid #dee2e6;font-size:0.75rem;border-radius:12px;';
-        badge.innerHTML = '<i class="fa-solid fa-phone text-success fa-xs"></i> ' + c.nombre + ' - ' + c.telefono +
-            ' <button type="button" class="btn-close btn-close-sm ms-1" style="font-size:0.4rem;" onclick="eliminarContactoEmergencia(' + i + ',\'' + suffix + '\')"></button>';
+        badge.className = 'badge d-inline-flex align-items-center gap-1 px-2 py-1';
+        badge.style.cssText = 'background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;font-size:0.75rem;border-radius:12px;';
+        badge.innerHTML = '<i class="fa-solid fa-phone fa-xs"></i> ' + c.nombre + ' - ' + c.telefono +
+            ' <button type="button" class="btn-close btn-close-sm ms-1" style="font-size:0.35rem;filter:invert(.4);" onclick="eliminarContactoEmergencia(' + i + ',\'' + suffix + '\')" aria-label="Eliminar contacto"></button>';
         lista.appendChild(badge);
     });
     hidden.value = JSON.stringify(contactos);

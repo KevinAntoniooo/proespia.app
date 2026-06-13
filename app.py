@@ -1440,9 +1440,17 @@ def nuevo_cliente(user_id):
     usuario = Usuario.query.get_or_404(user_id)
     
     if request.method == 'POST':
+        nombre = (request.form.get('nombre') or '').strip()
+        if not nombre:
+            flash('El nombre de la sede es obligatorio.', 'danger')
+            return redirect(url_for('nuevo_cliente', user_id=user_id))
+        existe = Cliente.query.filter(func.lower(Cliente.nombre) == nombre.lower()).first()
+        if existe:
+            flash(f'Ya existe una sede con el nombre "{nombre}".', 'danger')
+            return redirect(url_for('nuevo_cliente', user_id=user_id))
         try:
             nuevo = Cliente(
-                nombre=request.form.get('nombre'),
+                nombre=nombre,
                 direccion=request.form.get('direccion'),
                 plan_cuadrante=request.form.get('plan_cuadrante'),
                 contacto_emergencia=request.form.get('contacto_emergencia'),
@@ -1621,8 +1629,19 @@ def eliminar_cliente(cliente_id, user_id):
 def editar_cliente(cliente_id, user_id):
     cliente = Cliente.query.get_or_404(cliente_id)
     
-    # Actualizamos los campos con lo que viene del formulario
-    cliente.nombre = request.form.get('nombre')
+    nuevo_nombre = (request.form.get('nombre') or '').strip()
+    if not nuevo_nombre:
+        flash('El nombre de la sede es obligatorio.', 'danger')
+        return redirect(url_for('ver_clientes', user_id=user_id))
+    existe = Cliente.query.filter(
+        func.lower(Cliente.nombre) == nuevo_nombre.lower(),
+        Cliente.id != cliente_id
+    ).first()
+    if existe:
+        flash(f'Ya existe otra sede con el nombre "{nuevo_nombre}".', 'danger')
+        return redirect(url_for('ver_clientes', user_id=user_id))
+    
+    cliente.nombre = nuevo_nombre
     cliente.direccion = request.form.get('direccion')
     cliente.plan_cuadrante = request.form.get('plan_cuadrante')
     cliente.contacto_emergencia = request.form.get('contacto_emergencia')
