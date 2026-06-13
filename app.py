@@ -1387,14 +1387,12 @@ def gestor_visitas(user_id):
         )
         q_fallas_pend = VisitaProgramada.query.filter(
             VisitaProgramada.falla_id.isnot(None),
+            VisitaProgramada.usuario_id == user_id,
             VisitaProgramada.estado == 'Pendiente'
         )
         q_realizadas = VisitaProgramada.query.filter(
-            VisitaProgramada.estado == 'Realizada',
-            or_(
-                VisitaProgramada.usuario_id == user_id,
-                VisitaProgramada.falla_id.isnot(None)
-            )
+            VisitaProgramada.usuario_id == user_id,
+            VisitaProgramada.estado == 'Realizada'
         )
         for f in filtros_fecha:
             q_agendadas = q_agendadas.filter(f)
@@ -3436,7 +3434,10 @@ def checklist_vehiculo_admin(vehiculo_id):
 @login_required
 def checklist_reporte_pdf(checklist_id):
     ck = ChecklistSemanal.query.get_or_404(checklist_id)
-    if current_user.rol not in ['admin', 'super_su'] and ck.usuario_id != current_user.id:
+    vehiculo = ck.rel_vehiculo
+    es_tecnico_asignado = current_user.rol == 'tecnico' and current_user.ubicacion_id and vehiculo and current_user.ubicacion_id == vehiculo.ubicacion_id
+    dia_correcto = vehiculo and vehiculo.dia_checklist is not None and ck.fecha_registro.weekday() == vehiculo.dia_checklist
+    if current_user.rol not in ['admin', 'super_su'] and ck.usuario_id != current_user.id and not (es_tecnico_asignado and dia_correcto):
         flash('No autorizado', 'danger')
         return redirect(url_for('app_home'))
     pdf = FPDF()
