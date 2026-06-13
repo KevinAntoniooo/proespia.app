@@ -503,15 +503,28 @@ function renderizarContactos(suffix) {
     var hidden = document.getElementById('contactoEmergencia' + suffix);
     var contactos = contactosEmergencia[suffix] || [];
     lista.innerHTML = '';
+    if (contactos.length === 0) {
+        lista.innerHTML = '<div class="text-center py-3 w-100"><i class="fa-solid fa-phone-slash text-muted me-1"></i><small class="text-muted">Sin contactos registrados</small></div>';
+        hidden.value = '';
+        return;
+    }
+    var table = document.createElement('div');
+    table.className = 'w-100';
+    table.style.cssText = 'border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;';
+    var html = '<table class="table table-borderless align-middle mb-0" style="font-size:0.78rem;"><thead><tr style="background:#f1f5f9;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.3px;color:#64748b;"><th class="ps-3 py-2" style="width:40%;font-weight:600;">Nombre</th><th class="py-2" style="width:35%;font-weight:600;">Teléfono</th><th class="text-center pe-3 py-2" style="width:25%;font-weight:600;">Acción</th></tr></thead><tbody>';
     contactos.forEach(function(c, i) {
-        var badge = document.createElement('span');
-        badge.className = 'badge bg-light text-dark d-inline-flex align-items-center gap-1 px-2 py-1';
-        badge.style.cssText = 'border:1px solid #dee2e6;font-size:0.75rem;border-radius:12px;';
-        badge.innerHTML = '<i class="fa-solid fa-phone text-success fa-xs"></i> ' + c.nombre + ' - ' + c.telefono +
-            ' <button type="button" class="btn-close btn-close-sm ms-1" style="font-size:0.4rem;" onclick="eliminarContactoEmergencia(' + i + ',\'' + suffix + '\')"></button>';
-        lista.appendChild(badge);
+        html += '<tr style="border-bottom:1px solid #f1f5f9;"><td class="ps-3 py-2 fw-medium"><i class="fa-solid fa-user text-success me-2 fa-xs"></i>' + escHtml(c.nombre) + '</td><td class="py-2"><i class="fa-solid fa-phone text-primary me-2 fa-xs"></i>' + escHtml(c.telefono) + '</td><td class="text-center pe-3 py-2"><button type="button" class="btn btn-sm btn-outline-danger border-0 px-2" style="font-size:0.7rem;" onclick="eliminarContactoEmergencia(' + i + ',\'' + suffix + '\')" title="Eliminar"><i class="fa-solid fa-trash-can"></i></button></td></tr>';
     });
+    html += '</tbody></table></div>';
+    table.innerHTML = html;
+    lista.appendChild(table);
     hidden.value = JSON.stringify(contactos);
+}
+
+function escHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
 }
 
 function eliminarContactoEmergencia(index, suffix) {
