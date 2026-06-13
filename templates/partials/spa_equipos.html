@@ -356,7 +356,7 @@ function initAutocomplete(inputId, hiddenId, listId, formId) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+setTimeout(function() {
     initAutocomplete('buscarClienteNuevo', 'cliente_id_nuevo_hidden', 'listaClientesNuevo', null);
     {% for e in equipos %}
     initAutocomplete('buscarClienteEdit{{ e.id }}', 'cliente_id_edit_hidden{{ e.id }}', 'listaClientesEdit{{ e.id }}', null);
