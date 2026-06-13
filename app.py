@@ -4195,14 +4195,12 @@ def api_spa_contenido(seccion):
             )
             q_fallas_pend = VisitaProgramada.query.filter(
                 VisitaProgramada.falla_id.isnot(None),
+                VisitaProgramada.usuario_id == u.id,
                 VisitaProgramada.estado == 'Pendiente'
             )
             q_realizadas = VisitaProgramada.query.filter(
-                VisitaProgramada.estado == 'Realizada',
-                or_(
-                    VisitaProgramada.usuario_id == u.id,
-                    VisitaProgramada.falla_id.isnot(None)
-                )
+                VisitaProgramada.usuario_id == u.id,
+                VisitaProgramada.estado == 'Realizada'
             )
             visitas_agendadas = q_agendadas.order_by(
                 VisitaProgramada.prioridad.asc(),
