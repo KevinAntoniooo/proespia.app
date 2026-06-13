@@ -106,6 +106,7 @@ class Bitacora(db.Model):
     # Nueva columna: 1=Crítica, 2=Alta, 3=Media, 4=Baja
     # Por defecto será 3 (Media) para no romper los registros que ya tienes
     prioridad = db.Column(db.Integer, default=3)
+    numero_ot = db.Column(db.Integer, nullable=True)
     rel_cliente = db.relationship('Cliente', backref='bitacoras')
     
 class Tarea(db.Model):

@@ -1966,6 +1966,10 @@ def nueva_entrada(user_id):
 
         # --- DISPARADOR: Crear VisitaProgramada si es falla ---
         if 'falla' in suceso.lower():
+            ultimo_ot = db.session.query(db.func.max(Bitacora.numero_ot)).scalar() or 0
+            nueva.numero_ot = ultimo_ot + 1
+            db.session.flush()
+
             cliente = Cliente.query.get(int(c_id))
             autor = Usuario.query.get(user_id)
             nom_cliente = cliente.nombre if cliente else 'Desconocido'
@@ -2511,7 +2515,7 @@ def reporte_falla_pdf(log_id, user_id):
     
     pdf.set_font('helvetica', 'B', 10)
     pdf.set_text_color(100, 100, 100)
-    pdf.cell(0, -15, f"OT #00{log.id} | REPORTE TECNICO", align='R', new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, -15, f"OT #00{log.numero_ot or log.id} | REPORTE TECNICO", align='R', new_x="LMARGIN", new_y="NEXT")
     pdf.ln(15)
     
     # --- DATOS GENERALES ---
