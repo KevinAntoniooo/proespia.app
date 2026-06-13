@@ -4130,6 +4130,28 @@ def json_api(f):
             return jsonify({'ok': False, 'error': str(e)}), 500
     return decorated
 
+@app.route('/api/spa/counts')
+@login_required
+def api_spa_counts():
+    u = current_user
+    fallas = Bitacora.query.filter(
+        Bitacora.tipo_visita.ilike('%Falla%'),
+        ~Bitacora.tipo_visita.ilike('%RESUELTA%')
+    ).count()
+    if u.rol in ['admin', 'super_su']:
+        visitas = VisitaProgramada.query.filter(
+            VisitaProgramada.estado == 'Pendiente',
+            VisitaProgramada.falla_id.is_(None)
+        ).count()
+    elif u.rol == 'tecnico':
+        visitas = VisitaProgramada.query.filter(
+            VisitaProgramada.estado == 'Pendiente',
+            or_(VisitaProgramada.usuario_id == u.id, VisitaProgramada.falla_id.isnot(None))
+        ).count()
+    else:
+        visitas = 0
+    return jsonify({'fallas': fallas, 'visitas': visitas})
+
 @app.route('/api/spa/contenido/<seccion>', methods=['GET'])
 @login_required
 def api_spa_contenido(seccion):

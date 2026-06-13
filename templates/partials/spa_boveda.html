@@ -37,7 +37,7 @@
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pb-0">
                     <small class="text-muted font-monospace">ID: #{{ app.id }}</small>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-link text-primary p-0" data-bs-toggle="modal" data-bs-target="#editModal{{ app.id }}">
+                        <button class="btn btn-link text-primary p-0" onclick="bovedaEditarSolicitar({{ app.id }}); return false;">
                             <i class="bi bi-pencil-square"></i>
                         </button>
                         <button class="btn btn-link text-danger p-0" data-bs-toggle="modal" data-bs-target="#deleteModal{{ app.id }}">
@@ -89,7 +89,7 @@
                                     <label class="form-label fw-bold">Contraseña</label>
                                     <div class="input-group">
                                         <input type="password" name="password_app" id="pass_edit_{{ app.id }}" 
-                                               class="form-control" value="{{ app.password_app }}" required>
+                                               class="form-control" placeholder="Contraseña" required>
                                         <button class="btn btn-outline-secondary" type="button" onclick="togglePassLocal('pass_edit_{{ app.id }}', event)">
                                             <i class="bi bi-eye"></i>
                                         </button>
@@ -194,6 +194,7 @@
 <script>
 var credencialActiva = null;
 var bovedaEliminarActivo = null;
+var bovedaEditarActivo = null;
 
 window.filtrarBoveda = function() {
     let filtro = document.getElementById("buscadorBoveda").value.toLowerCase();
@@ -250,6 +251,7 @@ function ocultarPasswordCredencial(credenId) {
 window.solicitarClave = function(credenId, event) {
     event.preventDefault();
     credencialActiva = credenId;
+    document.getElementById('modalClaveDescripcion').textContent = 'Ingrese su contraseña de usuario para visualizar esta credencial';
     var inpClave = document.getElementById('inputClaveAdmin'); if (inpClave) inpClave.value = '';
     var errClave = document.getElementById('errorClaveAdmin'); if (errClave) errClave.classList.add('d-none');
     var modal = new bootstrap.Modal(document.getElementById('modalVerificarClave'));
@@ -305,6 +307,14 @@ window.confirmarClave = function() {
                     recargarSeccionSPA('boveda');
                 } else { alert('Error al eliminar'); }
             }).catch(function() { alert('Error de conexion'); });
+        } else if (bovedaEditarActivo) {
+            var id = bovedaEditarActivo;
+            bovedaEditarActivo = null;
+            document.getElementById('modalClaveDescripcion').textContent = 'Ingrese su contraseña de usuario para visualizar esta credencial';
+            var inp = document.getElementById('pass_edit_' + id);
+            if (inp) inp.value = data.password;
+            var modal = new bootstrap.Modal(document.getElementById('editModal' + id));
+            modal.show();
         } else {
             var inputPass = document.getElementById('pass-card-' + credencialActiva);
             var eyeBtn = document.getElementById('eye-btn-' + credencialActiva);
@@ -332,6 +342,8 @@ window.confirmarClave = function() {
         btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirmar';
         document.getElementById('inputClaveAdmin').value = '';
         document.getElementById('inputClaveAdmin').focus();
+        bovedaEditarActivo = null;
+        bovedaEliminarActivo = null;
     });
 }
 
@@ -372,6 +384,20 @@ window.bovedaEditar = function(e, id) {
         } else { alert('Error al editar'); }
     }).catch(function() { alert('Error de conexion'); });
     return false;
+}
+
+document.addEventListener('hidden.bs.modal', function(e) {
+    if (e.target.id && e.target.id.startsWith('editModal')) {
+        var inp = e.target.querySelector('input[name="password_app"]');
+        if (inp) inp.value = '';
+    }
+});
+
+window.bovedaEditarSolicitar = function(id) {
+    bovedaEditarActivo = id;
+    document.getElementById('modalClaveDescripcion').textContent = 'Ingrese su contraseña para editar esta credencial';
+    var fakeEvent = { preventDefault: function(){} };
+    solicitarClave(id, fakeEvent);
 }
 
 window.bovedaEliminar = function(id) {

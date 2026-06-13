@@ -249,7 +249,7 @@
                 <a href="#" data-seccion="fallas" @click="cargarSeccion('fallas')"
                     class="nav-link-pro" :class="pantallaActual === 'fallas' ? 'active-style' : ''">
                     <i class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
-                    {% if pendientes_fallas and pendientes_fallas > 0 %}<span class="badge bg-danger rounded-pill ms-auto">{{ pendientes_fallas }}</span>{% endif %}
+                    {% if pendientes_fallas and pendientes_fallas > 0 %}<span class="badge bg-danger rounded-pill ms-auto" id="badge-fallas">{{ pendientes_fallas }}</span>{% endif %}
                 </a>
                 {% endif %}
 
@@ -257,7 +257,7 @@
                 <a href="#" data-seccion="agenda" @click="cargarSeccion('agenda')"
                     class="nav-link-pro" :class="pantallaActual === 'agenda' ? 'active-style' : ''">
                     <i class="fa-solid fa-calendar-check"></i> <span>Agenda de Terreno</span>
-                    {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}
+                    {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto" id="badge-visitas">{{ pendientes_visitas }}</span>{% endif %}
                 </a>
                 {% endif %}
 
@@ -453,7 +453,7 @@
                 <a href="#" data-seccion="fallas" @click="cargarSeccion('fallas')"
                     class="nav-link-pro" :class="pantallaActual === 'fallas' ? 'active-style' : ''"><i
                         class="fa-solid fa-screwdriver-wrench"></i> <span>Gestión de Fallas</span>
-                    {% if pendientes_fallas and pendientes_fallas > 0 %}<span class="badge bg-danger rounded-pill ms-auto">{{ pendientes_fallas }}</span>{% endif %}</a>
+                    {% if pendientes_fallas and pendientes_fallas > 0 %}<span class="badge bg-danger rounded-pill ms-auto" id="badge-fallas-mobile">{{ pendientes_fallas }}</span>{% endif %}</a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin'] %}
@@ -461,7 +461,7 @@
                 <a href="#" data-seccion="agenda" @click="cargarSeccion('agenda')"
                     class="nav-link-pro" :class="pantallaActual === 'agenda' ? 'active-style' : ''"><i
                         class="fa-solid fa-calendar-check"></i> <span>Agenda de Terreno</span>
-                    {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto">{{ pendientes_visitas }}</span>{% endif %}</a>
+                    {% if pendientes_visitas and pendientes_visitas > 0 %}<span class="badge bg-warning text-dark rounded-pill ms-auto" id="badge-visitas-mobile">{{ pendientes_visitas }}</span>{% endif %}</a>
                 {% endif %}
 
                 {% if usuario.rol in ['super_su', 'admin', 'tecnico', 'operador'] %}
