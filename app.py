@@ -1129,7 +1129,8 @@ def dashboard(user_id):
         fin_semana = datetime.combine(domingo, time.max)
         agenda_semanal = VisitaProgramada.query.filter(
             VisitaProgramada.fecha_programada >= inicio_hoy,
-            VisitaProgramada.fecha_programada <= fin_semana
+            VisitaProgramada.fecha_programada <= fin_semana,
+            VisitaProgramada.falla_id.is_(None)
         ).order_by(VisitaProgramada.fecha_programada.asc()).all()
         dias_semana = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM']
         agenda_por_dia = {}
