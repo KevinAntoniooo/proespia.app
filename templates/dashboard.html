@@ -266,8 +266,8 @@
                                     </div>
                                     <p class="small text-muted mb-0 text-truncate" style="font-size: 0.65rem;">{{ t.descripcion }}</p>
                                 </div>
-                                <div class="ms-2">
-                                     <a href="/gestor_visitas/{{ usuario.id }}#tab_fallas_pend" class="btn btn-sm rounded-3 fw-bold shadow-sm agenda-btn-light" style="font-size:0.6rem;padding:0.15rem 0.6rem;">Gestionar</a>
+                                        <div class="ms-2">
+                                     <a href="/completar_tarea/{{ t.id }}/{{ usuario.id }}" class="btn btn-sm rounded-3 fw-bold shadow-sm agenda-btn-light" style="font-size:0.6rem;padding:0.15rem 0.6rem;">Gestionar</a>
                                 </div>
                             </div>
                         </div>
@@ -637,38 +637,34 @@ setInterval(actualizarReloj, 1000);
 actualizarReloj();
 
 // --- SPA Global API (merge con state de base.html) ---
-(function() {
-    var base = window.SPA || {};
-    window.SPA = base;
-    base.abrirModal = function(tipo, id) {
-        window.location.href = '/' + tipo + 's/nuevo/' + window.USUARIO_ID;
-    };
-    base.verVisita = function(id) {
-        fetch('/api/spa/visita/detalle', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id:id}) })
-        .then(function(r){ return r.json(); })
-        .then(function(data) {
-            if (!data.ok) { alert(data.error); return; }
-            document.getElementById('modal-cliente-nombre').textContent = data.cliente_nombre;
-            document.getElementById('modal-hora').textContent = data.fecha;
-            document.getElementById('modal-tipo').textContent = data.tipo_trabajo;
-            document.getElementById('modal-descripcion').textContent = data.descripcion || 'Sin descripción.';
-            var ub = document.getElementById('modal-ubicacion-container');
-            if (data.ubicacion) { ub.classList.remove('d-none'); document.getElementById('modal-ubicacion-maps').href = data.ubicacion; }
-            else { ub.classList.add('d-none'); }
-            var btnG = document.getElementById('modal-btn-gestionar');
-            var btnL = document.getElementById('modal-btn-listo');
-            var esOT = ['Instalación', 'Reparación', 'Emergencia'].indexOf(data.tipo_trabajo) !== -1 || data.tipo_trabajo.indexOf('Mantención') !== -1;
-            if (esOT) { btnG.classList.remove('d-none'); btnG.href = '/completar_visita/' + data.id + '/{{ usuario.id }}'; btnL.classList.add('d-none'); }
-            else { btnL.classList.remove('d-none'); btnL.setAttribute('data-visita-id', data.id); btnG.classList.add('d-none'); }
-            new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
-        });
-    };
-    base.buscar = function(seccion, q) {
-        fetch('/api/spa/contenido/' + seccion + '?q=' + encodeURIComponent(q))
-        .then(function(r){ return r.json(); })
-        .then(function(resp){ if(resp.ok && resp.html) document.getElementById('spa-'+seccion).innerHTML = resp.html; });
-    };
-})();
+window.SPA.abrirModal = function(tipo, id) {
+    window.location.href = '/' + tipo + 's/nuevo/' + window.USUARIO_ID;
+};
+window.SPA.verVisita = function(id) {
+    fetch('/api/spa/visita/detalle', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({id:id}) })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+        if (!data.ok) { alert(data.error); return; }
+        document.getElementById('modal-cliente-nombre').textContent = data.cliente_nombre;
+        document.getElementById('modal-hora').textContent = data.fecha;
+        document.getElementById('modal-tipo').textContent = data.tipo_trabajo;
+        document.getElementById('modal-descripcion').textContent = data.descripcion || 'Sin descripción.';
+        var ub = document.getElementById('modal-ubicacion-container');
+        if (data.ubicacion) { ub.classList.remove('d-none'); document.getElementById('modal-ubicacion-maps').href = data.ubicacion; }
+        else { ub.classList.add('d-none'); }
+        var btnG = document.getElementById('modal-btn-gestionar');
+        var btnL = document.getElementById('modal-btn-listo');
+        var esOT = ['Instalación', 'Reparación', 'Emergencia'].indexOf(data.tipo_trabajo) !== -1 || data.tipo_trabajo.indexOf('Mantención') !== -1;
+        if (esOT) { btnG.classList.remove('d-none'); btnG.href = '/completar_visita/' + data.id + '/{{ usuario.id }}'; btnL.classList.add('d-none'); }
+        else { btnL.classList.remove('d-none'); btnL.setAttribute('data-visita-id', data.id); btnG.classList.add('d-none'); }
+        new bootstrap.Modal(document.getElementById('modalDetalleVisita')).show();
+    });
+};
+window.SPA.buscar = function(seccion, q) {
+    fetch('/api/spa/contenido/' + seccion + '?q=' + encodeURIComponent(q))
+    .then(function(r){ return r.json(); })
+    .then(function(resp){ if(resp.ok && resp.html) document.getElementById('spa-'+seccion).innerHTML = resp.html; });
+};
 
 var visitaFinalizarId = null;
 window.confirmarFinalizar = function(visitaId) {
