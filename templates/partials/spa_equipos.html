@@ -281,6 +281,13 @@
 <script>
 window.guardarEquipo = function(e) {
     e.preventDefault();
+    var clientId = document.getElementById('cliente_id_nuevo_hidden').value;
+    if (!clientId) {
+        document.getElementById('modalAlertaEquipoTitulo').textContent = 'Cliente requerido';
+        document.getElementById('modalAlertaEquipoMensaje').textContent = 'Selecciona un cliente válido de la lista desplegable.';
+        new bootstrap.Modal(document.getElementById('modalAlertaEquipo')).show();
+        return false;
+    }
     var f = e.target;
     var data = new URLSearchParams(new FormData(f));
     fetch('/api/equipos/crear', { method: 'POST', body: data })

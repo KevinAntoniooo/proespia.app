@@ -1814,9 +1814,13 @@ def nuevo_equipo(user_id):
     usuario = Usuario.query.get_or_404(user_id)
     
     if request.method == 'POST':
+        cliente_id = request.form.get('cliente_id')
+        if not cliente_id or not cliente_id.isdigit():
+            flash('Debes seleccionar un cliente válido de la lista.', 'danger')
+            return redirect(url_for('nuevo_equipo', user_id=user_id))
         try:
             nuevo = Equipo(
-                cliente_id=request.form.get('cliente_id'),
+                cliente_id=int(cliente_id),
                 tipo=request.form.get('tipo'),
                 serie=request.form.get('serie').strip().upper(), # Forzamos mayúsculas
                 ip=request.form.get('ip'),
@@ -1850,7 +1854,11 @@ def editar_equipo(equipo_id, user_id):
     equipo = Equipo.query.get_or_404(equipo_id)
     u_admin = Usuario.query.get_or_404(user_id)
     
-    equipo.cliente_id = request.form.get('cliente_id')
+    cliente_id = request.form.get('cliente_id')
+    if not cliente_id or not cliente_id.isdigit():
+        flash('Debes seleccionar un cliente válido de la lista.', 'danger')
+        return redirect(url_for('ver_equipos', user_id=user_id))
+    equipo.cliente_id = int(cliente_id)
     equipo.tipo = request.form.get('tipo')
     equipo.serie = request.form.get('serie').strip().upper()
     equipo.ip = request.form.get('ip')
@@ -1865,8 +1873,11 @@ def editar_equipo(equipo_id, user_id):
 @login_required
 def api_crear_equipo():
     try:
+        cliente_id = request.form.get('cliente_id')
+        if not cliente_id or not cliente_id.isdigit():
+            return jsonify({'ok': False, 'msg': 'Debes seleccionar un cliente válido de la lista.'}), 400
         nuevo = Equipo(
-            cliente_id=request.form.get('cliente_id'),
+            cliente_id=int(cliente_id),
             tipo=request.form.get('tipo'),
             serie=request.form.get('serie').strip().upper(),
             ip=request.form.get('ip'),
