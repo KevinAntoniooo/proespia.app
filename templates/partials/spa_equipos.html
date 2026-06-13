@@ -16,14 +16,14 @@
                 </div>
             </div>
             <div style="flex:2" class="d-md-none">
-                <button class="btn btn-primary shadow-sm btn-sm fw-bold w-100" style="font-size:0.75rem;height:38px;" data-bs-toggle="modal" data-bs-target="#nuevoEquipoModal">
+                <button class="btn btn-primary shadow-sm btn-sm fw-bold w-100" style="font-size:0.75rem;height:38px;" data-bs-toggle="modal" data-bs-target="#nuevoEquipoModal" {% if not clientes or clientes|length == 0 %}disabled title="Primero registra un cliente en la sección Clientes"{% endif %}>
                     <i class="fas fa-plus-circle"></i><span class="d-none d-sm-inline ms-1"> Nuevo Equipo</span>
                 </button>
             </div>
         </div>
     </div>
     <div class="col-md-4 col-lg-6 text-md-end mt-3 mt-md-0 d-none d-md-block">
-        <button class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#nuevoEquipoModal">
+        <button class="btn btn-primary shadow-sm btn-sm fw-bold" style="font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#nuevoEquipoModal" {% if not clientes or clientes|length == 0 %}disabled title="Primero registra un cliente en la sección Clientes"{% endif %}>
             <i class="fas fa-plus-circle me-1"></i> Nuevo Equipo
         </button>
     </div>
