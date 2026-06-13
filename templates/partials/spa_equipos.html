@@ -424,11 +424,28 @@ function verDetalleEquipo(row) {
     document.getElementById('detalle-ip').textContent = row.getAttribute('data-ip');
     document.getElementById('detalle-usuario').textContent = row.getAttribute('data-usuario');
     var pass = row.getAttribute('data-pass');
-    document.getElementById('detalle-pass').innerHTML = pass && pass !== 'None' ?
-        '<span style=\'cursor:pointer;display:inline-flex;align-items:center;gap:4px;\' onclick=\'event.stopPropagation();verPass(this, \\\'' + pass.replace(/'/g, "\\'") + '\\\')\'>******<i class=\'fas fa-eye text-muted\' style=\'cursor:pointer;\'></i></span>' : '<span class="text-muted">---</span>';
+    var el = document.getElementById('detalle-pass');
+    if (pass && pass !== 'None') {
+        el.innerHTML = '<span class="pass-toggle">******<i class="fas fa-eye text-muted" style="cursor:pointer;"></i></span>';
+        el._pass = pass;
+    } else {
+        el.innerHTML = '<span class="text-muted">---</span>';
+        el._pass = null;
+    }
     var modal = new bootstrap.Modal(document.getElementById('modalDetalleEquipo'));
     modal.show();
 }
+
+document.addEventListener('click', function(e) {
+    var target = e.target.closest('#detalle-pass .pass-toggle, #detalle-pass .pass-toggle i');
+    if (target) {
+        var container = document.getElementById('detalle-pass');
+        if (container && container._pass) {
+            e.stopPropagation();
+            verPass(target.tagName === 'I' ? target.parentNode : target, container._pass);
+        }
+    }
+});
 </script>
 
 <!-- Modal detalle equipo (mobile) -->
