@@ -248,21 +248,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalClienteNoExiste" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-body text-center p-4">
-                <div class="text-warning mb-3">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem;"></i>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Cliente no registrado</h5>
-                <p class="text-muted small mb-3">El cliente que escribió no existe en el sistema. Verifique el nombre o regístrelo primero.</p>
-                <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">Entendido</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="modal fade" id="modalAlertaEquipo" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content border-0 shadow" style="border-radius:16px;">
@@ -370,29 +355,11 @@ function initAutocomplete(inputId, hiddenId, listId, formId) {
         }
     });
 
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            var texto = input.value.trim();
-            var match = null;
-            for (var i = 0; i < clientesData.length; i++) {
-                if (clientesData[i].nombre.toLowerCase() === texto.toLowerCase()) {
-                    match = clientesData[i];
-                    break;
-                }
-            }
-            if (!match) {
-                e.preventDefault();
-                var modal = new bootstrap.Modal(document.getElementById('modalClienteNoExiste'));
-                modal.show();
-            } else if (hidden) {
-                hidden.value = match.id;
-            }
-        });
     }
 }
 
-setTimeout(function() {
-    initAutocomplete('buscarClienteNuevo', 'cliente_id_nuevo_hidden', 'listaClientesNuevo', 'formNuevoEquipo');
+document.addEventListener('DOMContentLoaded', function() {
+    initAutocomplete('buscarClienteNuevo', 'cliente_id_nuevo_hidden', 'listaClientesNuevo', null);
     {% for e in equipos %}
     initAutocomplete('buscarClienteEdit{{ e.id }}', 'cliente_id_edit_hidden{{ e.id }}', 'listaClientesEdit{{ e.id }}', null);
     {% endfor %}

@@ -64,21 +64,6 @@
     </div>
 </div>
 
-<div class="modal fade" id="modalClienteNoExiste" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-body text-center p-4">
-                <div class="text-warning mb-3">
-                    <i class="bi bi-exclamation-triangle-fill" style="font-size: 2.5rem;"></i>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Cliente no registrado</h5>
-                <p class="text-muted small mb-3">El cliente que escribió no existe en el sistema. Verifique el nombre o regístrelo primero.</p>
-                <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">Entendido</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 var clientes = {{ clientes|tojson|safe }};
 
@@ -146,22 +131,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-document.getElementById('formEquipo').addEventListener('submit', function(e) {
-    var texto = inputBuscar.value.trim();
-    var match = null;
-    for (var i = 0; i < clientes.length; i++) {
-        if (clientes[i].nombre.toLowerCase() === texto.toLowerCase()) {
-            match = clientes[i];
-            break;
-        }
-    }
-    if (!match) {
-        e.preventDefault();
-        var modal = new bootstrap.Modal(document.getElementById('modalClienteNoExiste'));
-        modal.show();
-    } else {
-        hiddenId.value = match.id;
-    }
-});
+
 </script>
 {% endblock %}
