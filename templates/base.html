@@ -349,7 +349,7 @@
                                 <small class="fw-bold" style="color:var(--text-heading);"><i
                                         class="fa-regular fa-bell me-1"></i>Notificaciones</small>
                                 <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidas"
-                                    style="font-size:0.75rem;color:var(--bs-info);" title="Marcar todas como leídas" aria-label="Marcar todas como leídas"><i class="fa-regular fa-check-double me-1"></i>Leídas</button>
+                                    style="font-size:0.75rem;color:var(--bs-info);" title="Marcar todas como leídas" aria-label="Marcar todas como leídas"><i class="fa-solid fa-check-double me-1"></i>Leídas</button>
                                 <button class="btn btn-link btn-sm p-0 text-decoration-none ms-2" id="borrarTodasNotif"
                                     style="font-size:0.75rem;color:#dc3545;" title="Borrar todas las notificaciones" aria-label="Borrar todas las notificaciones"><i class="fa-regular fa-trash-can"></i></button>
                             </div>
@@ -509,7 +509,7 @@
                     class="fa-regular fa-bell me-1"></i>Notificaciones</small>
             <div class="d-flex gap-2">
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" id="marcarTodasLeidasMovil"
-                    style="font-size:0.7rem;color:var(--bs-info);" title="Marcar todas como leídas" aria-label="Marcar todas como leídas"><i class="fa-regular fa-check-double me-1"></i>Leídas</button>
+                    style="font-size:0.7rem;color:var(--bs-info);" title="Marcar todas como leídas" aria-label="Marcar todas como leídas"><i class="fa-solid fa-check-double me-1"></i>Leídas</button>
                 <button class="btn btn-link btn-sm p-0 text-decoration-none" id="borrarTodasNotifMovil"
                     style="font-size:0.7rem;color:#dc3545;" title="Borrar todas las notificaciones" aria-label="Borrar todas las notificaciones"><i class="fa-regular fa-trash-can"></i></button>
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas" style="filter:invert(.5);"></button>
@@ -906,12 +906,9 @@
         document.addEventListener('click', function (e) {
             var bell = e.target.closest('#notifBell');
             if (!bell) return;
+            if (Notification.permission === 'granted') return;
             e.preventDefault();
-            // Si no hay permiso, pedir antes de abrir dropdown
-            if (Notification.permission !== 'granted') {
-                toggleNotificaciones();
-            }
-            // Si ya hay permiso, Bootstrap maneja el dropdown
+            toggleNotificaciones();
         });
 
         // ====== NOTIFICACIONES IN-APP ======
