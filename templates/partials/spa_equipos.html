@@ -68,7 +68,9 @@
                 </td>
                 <td class="d-none d-lg-table-cell">{{ e.usuario_equipo or '---' }}</td>
                 <td class="d-none d-lg-table-cell">
-                    <code>{{ e.pass_equipo }}</code>
+                    <span style="cursor:pointer;" onclick="verPass(this, '{{ e.pass_equipo|e }}')">
+                        <i class="fas fa-eye text-muted me-1"></i>******
+                    </span>
                 </td>
                 <td>
                     <div class="btn-group btn-group-sm shadow-sm">
@@ -134,10 +136,15 @@
                             <label class="form-label fw-bold">Usuario Acceso</label>
                             <input type="text" name="usuario_equipo" class="form-control" value="{{ e.usuario_equipo or '' }}">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Contraseña Acceso</label>
-                            <input type="text" name="pass_equipo" class="form-control" value="{{ e.pass_equipo or '' }}">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Contraseña Acceso</label>
+                        <div class="input-group">
+                            <input type="password" name="pass_equipo" class="form-control" value="{{ e.pass_equipo or '' }}" autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" onclick="var inp=this.previousElementSibling;var ic=this.querySelector('i');if(inp.type==='password'){inp.type='text';ic.className='fas fa-eye-slash';setTimeout(function(){inp.type='password';ic.className='fas fa-eye';},15000);}else{inp.type='password';ic.className='fas fa-eye';}">
+                                <i class="fas fa-eye"></i>
+                            </button>
                         </div>
+                    </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0 p-4">
@@ -233,7 +240,12 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold">Contraseña Acceso</label>
-                            <input type="text" name="pass_equipo" class="form-control" placeholder="*******" autocomplete="off">
+                            <div class="input-group">
+                                <input type="password" name="pass_equipo" class="form-control" placeholder="*******" autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" onclick="var inp=this.previousElementSibling;var ic=this.querySelector('i');if(inp.type==='password'){inp.type='text';ic.className='fas fa-eye-slash';setTimeout(function(){inp.type='password';ic.className='fas fa-eye';},15000);}else{inp.type='password';ic.className='fas fa-eye';}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -374,10 +386,34 @@ function filtrarEquipos() {
 }
 
 function verPass(el, pass) {
-    el.innerHTML = '<i class="fas fa-eye-slash"></i> ' + pass;
-    setTimeout(function() {
-        el.innerHTML = '<i class="fas fa-eye"></i> ******';
-    }, 3000);
+    var parent = el.parentNode;
+    var span = document.createElement('span');
+    span.className = 'd-inline-flex align-items-center gap-1';
+    var passSpan = document.createElement('span');
+    passSpan.textContent = pass;
+    passSpan.style.display = 'none';
+    var hiddenSpan = document.createElement('span');
+    hiddenSpan.textContent = '******';
+    var icon = document.createElement('i');
+    icon.className = 'fas fa-eye text-muted';
+    icon.style.cursor = 'pointer';
+    var revealed = false;
+    function toggle() {
+        revealed = !revealed;
+        passSpan.style.display = revealed ? 'inline' : 'none';
+        hiddenSpan.style.display = revealed ? 'none' : 'inline';
+        icon.className = revealed ? 'fas fa-eye-slash text-muted' : 'fas fa-eye text-muted';
+        if (revealed) {
+            setTimeout(function() {
+                if (revealed) toggle();
+            }, 15000);
+        }
+    }
+    icon.onclick = function(e) { e.stopPropagation(); toggle(); };
+    span.appendChild(hiddenSpan);
+    span.appendChild(passSpan);
+    span.appendChild(icon);
+    parent.replaceChild(span, el);
 }
 
 function verDetalleEquipo(row) {
@@ -388,7 +424,7 @@ function verDetalleEquipo(row) {
     document.getElementById('detalle-usuario').textContent = row.getAttribute('data-usuario');
     var pass = row.getAttribute('data-pass');
     document.getElementById('detalle-pass').innerHTML = pass && pass !== 'None' ?
-        '<code>' + pass + '</code>' : '<span class="text-muted">---</span>';
+        '<span style=\'cursor:pointer;\' onclick=\'verPass(this, \\\'' + pass.replace(/'/g, "\\'") + '\\\')\'><i class=\'fas fa-eye text-muted me-1\'></i>******</span>' : '<span class="text-muted">---</span>';
     var modal = new bootstrap.Modal(document.getElementById('modalDetalleEquipo'));
     modal.show();
 }

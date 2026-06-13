@@ -51,7 +51,12 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Contraseña Acceso</label>
-                            <input type="text" name="pass_equipo" class="form-control" placeholder="*******">
+                            <div class="input-group">
+                                <input type="password" name="pass_equipo" class="form-control" placeholder="*******" autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" onclick="var inp=this.previousElementSibling;var ic=this.querySelector('i');if(inp.type==='password'){inp.type='text';ic.className='fas fa-eye-slash';setTimeout(function(){inp.type='password';ic.className='fas fa-eye';},15000);}else{inp.type='password';ic.className='fas fa-eye';}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="d-grid gap-2">
