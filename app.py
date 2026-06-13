@@ -3,7 +3,7 @@ from models import db, Usuario, Equipo, Cliente, Bitacora, Boveda, VisitaProgram
 from datetime import datetime, time, timedelta, date
 from sqlalchemy.exc import IntegrityError, OperationalError
 from fpdf import FPDF
-from sqlalchemy import func, case, or_, and_
+from sqlalchemy import func, case, or_, and_, text
 import io
 import unicodedata
 import os
@@ -978,6 +978,9 @@ def admin_wipe_db():
             db.session.add(CategoriaItem(nombre=nombre))
         db.session.add(Ubicacion(nombre='Bodega Central', color='primary'))
 
+        # Resetear auto-increment de todas las tablas
+        db.session.execute(text("DELETE FROM sqlite_sequence"))
+        
         db.session.commit()
         return jsonify({'ok': True, 'msg': 'BD limpiada. Login: kevix0813@yahoo.es / ProEspia2026', 'resumen': resumen})
     except Exception as e:
