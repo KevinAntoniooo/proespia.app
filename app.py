@@ -1506,30 +1506,43 @@ def historial_pdf(cliente_id, user_id):
     pdf.add_page()
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, 'PROESPIA LTDA - HISTORIAL DEL CLIENTE', 0, 1, 'C')
-    pdf.set_font('Arial', '', 12)
-    pdf.cell(0, 8, enc(f'Cliente: {cliente.nombre}'), 0, 1, 'L')
-    pdf.set_font('Arial', '', 9)
-    pdf.cell(0, 5, enc(f'Direccion: {cliente.direccion}'), 0, 1, 'L')
-    pdf.set_font('Arial', 'I', 9)
-    pdf.cell(0, 5, f'Generado por: {enc(u_admin.nombre)}', 0, 1, 'L')
-    pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'L')
-    pdf.ln(5)
+    pdf.ln(3)
 
-    # --- CONTACTOS DE EMERGENCIA ---
+    izq = [
+        ('B', 12, enc(f'Cliente: {cliente.nombre}')),
+        ('', 9, enc(f'Direccion: {cliente.direccion}')),
+        ('I', 9, f'Generado por: {enc(u_admin.nombre)}'),
+        ('I', 9, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}'),
+    ]
+    der = []
     contactos_raw = cliente.contacto_emergencia
     if contactos_raw:
         try:
             import json
             contactos = json.loads(contactos_raw)
             if isinstance(contactos, list) and len(contactos) > 0:
-                pdf.set_font('Arial', 'B', 10)
-                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'R')
-                pdf.set_font('Arial', '', 9)
+                der.append(('B', 10, 'Contactos de Emergencia:'))
                 for c in contactos:
-                    pdf.cell(0, 6, f"{enc(c.get('nombre', ''))}: {enc(c.get('telefono', ''))}", 0, 1, 'R')
-                pdf.ln(5)
+                    der.append(('', 9, f"{enc(c.get('nombre', ''))}: {enc(c.get('telefono', ''))}"))
         except Exception:
             pass
+
+    max_filas = max(len(izq), len(der))
+    col_w = 90
+    for i in range(max_filas):
+        if i < len(izq):
+            estilo, size, texto = izq[i]
+            pdf.set_font('Arial', estilo, size)
+            pdf.cell(col_w, 6, texto, 0, 0, 'L')
+        else:
+            pdf.cell(col_w, 6, '', 0, 0, 'L')
+        if i < len(der):
+            estilo, size, texto = der[i]
+            pdf.set_font('Arial', estilo, size)
+            pdf.cell(col_w, 6, texto, 0, 1, 'R')
+        else:
+            pdf.cell(col_w, 6, '', 0, 1, 'R')
+    pdf.ln(5)
 
     partes = [s.strip().lower() for s in secciones.split(',') if s.strip()]
 
@@ -1702,30 +1715,48 @@ def generar_pdf(cliente_id, user_id):
     # --- ENCABEZADO ---
     pdf.set_font('Arial', 'B', 16)
     pdf.cell(0, 10, t('PROESPIA LTDA - INVENTARIO TECNICO'), 0, 1, 'C')
-    pdf.set_font('Arial', '', 12)
-    pdf.cell(0, 8, t(f'Cliente: {cliente.nombre}'), 0, 1, 'L')
-    pdf.set_font('Arial', '', 9)
-    pdf.cell(0, 5, t(f'Direccion: {cliente.direccion}'), 0, 1, 'L')
-    pdf.set_font('Arial', 'I', 9)
-    pdf.cell(0, 5, f'Generado por: {t(u_admin.nombre)}', 0, 1, 'L')
-    pdf.cell(0, 5, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'L')
-    pdf.ln(5)
+    pdf.ln(3)
 
-    # --- CONTACTOS DE EMERGENCIA ---
+    # Preparar lineas izquierda (cliente) y derecha (contactos)
+    izq = [
+        ('B', 12, f'Cliente: {cliente.nombre}'),
+        ('', 9, f'Direccion: {cliente.direccion}'),
+        ('I', 9, f'Generado por: {t(u_admin.nombre)}'),
+        ('I', 9, f'Fecha: {datetime.now().strftime("%d/%m/%Y %H:%M")}'),
+    ]
+    der = []
     contactos_raw = cliente.contacto_emergencia
     if contactos_raw:
         try:
             import json
             contactos = json.loads(contactos_raw)
             if isinstance(contactos, list) and len(contactos) > 0:
-                pdf.set_font('Arial', 'B', 10)
-                pdf.cell(0, 7, 'Contactos de Emergencia:', 0, 1, 'R')
-                pdf.set_font('Arial', '', 9)
+                der.append(('B', 10, 'Contactos de Emergencia:'))
                 for c in contactos:
-                    pdf.cell(0, 6, f"{t(c.get('nombre', ''))}: {t(c.get('telefono', ''))}", 0, 1, 'R')
-                pdf.ln(5)
+                    der.append(('', 9, f"{t(c.get('nombre', ''))}: {t(c.get('telefono', ''))}"))
         except Exception:
             pass
+
+    max_filas = max(len(izq), len(der))
+    col_w = 90
+    for i in range(max_filas):
+        x0 = pdf.get_x()
+        y0 = pdf.get_y()
+        # Columna izquierda
+        if i < len(izq):
+            estilo, size, texto = izq[i]
+            pdf.set_font('Arial', estilo, size)
+            pdf.cell(col_w, 6, texto, 0, 0, 'L')
+        else:
+            pdf.cell(col_w, 6, '', 0, 0, 'L')
+        # Columna derecha
+        if i < len(der):
+            estilo, size, texto = der[i]
+            pdf.set_font('Arial', estilo, size)
+            pdf.cell(col_w, 6, texto, 0, 1, 'R')
+        else:
+            pdf.cell(col_w, 6, '', 0, 1, 'R')
+    pdf.ln(5)
 
     # --- TABLA DE EQUIPOS (Ajustamos anchos para la nueva columna) ---
     pdf.set_font('Arial', 'B', 9)
