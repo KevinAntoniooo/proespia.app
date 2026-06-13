@@ -641,6 +641,23 @@
                 if (oc) oc.hide();
             }
         });
+        function actualizarBadges() {
+            fetch('/api/spa/counts?_=' + Date.now())
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    ['fallas', 'visitas'].forEach(function(t) {
+                        var el = document.getElementById('badge-' + t);
+                        var elMob = document.getElementById('badge-' + t + '-mobile');
+                        if (data[t] > 0) {
+                            if (el) { el.style.display = 'inline'; el.textContent = data[t]; }
+                            if (elMob) { elMob.style.display = 'inline'; elMob.textContent = data[t]; }
+                        } else {
+                            if (el) el.style.display = 'none';
+                            if (elMob) elMob.style.display = 'none';
+                        }
+                    });
+                }).catch(function() {});
+        }
         function recargarSeccionSPA(seccion) {
             var el = document.getElementById('spa-contenido-dinamico');
             if (!el) return;
@@ -649,6 +666,7 @@
                 var comp = Alpine.$data(al);
                 if (comp) comp.pantallaActual = seccion;
             }
+            actualizarBadges();
             fetch('/api/spa/contenido/' + seccion + '?_=' + Date.now())
                 .then(function(r) { return r.json(); })
                 .then(function(resp) {

@@ -691,6 +691,10 @@ function ejecutarTraspaso(e) {
         cantidad: f.cantidad.value,
         descripcion: 'Traspaso manual'
     };
+    if (!data.producto_id) {
+        mostrarAdvertencia('Producto requerido', 'Selecciona un producto válido de la lista desplegable.');
+        return;
+    }
     fetch('/api/bodega/traspaso', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -710,6 +714,10 @@ function ejecutarConsumo(e) {
         cantidad: f.cantidad.value,
         descripcion: 'Consumo registrado'
     };
+    if (!data.producto_id) {
+        mostrarAdvertencia('Producto requerido', 'Selecciona un producto válido de la lista desplegable.');
+        return;
+    }
     fetch('/api/bodega/consumo', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},

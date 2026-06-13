@@ -3007,7 +3007,10 @@ def eliminar_producto(producto_id):
 def traspaso_bodega():
     try:
         data = request.get_json()
-        producto_id = int(data['producto_id'])
+        pid = data.get('producto_id')
+        if not pid or not str(pid).isdigit():
+            return jsonify({'ok': False, 'msg': 'Debes seleccionar un producto válido de la lista.'}), 400
+        producto_id = int(pid)
         desde_id = int(data['desde_id']) if data.get('desde_id') else None
         hacia_id = int(data['hacia_id']) if data.get('hacia_id') else None
         cantidad = int(data['cantidad'])
@@ -3061,7 +3064,10 @@ def traspaso_bodega():
 def registrar_consumo():
     try:
         data = request.get_json()
-        producto_id = int(data['producto_id'])
+        pid = data.get('producto_id')
+        if not pid or not str(pid).isdigit():
+            return jsonify({'ok': False, 'msg': 'Debes seleccionar un producto válido de la lista.'}), 400
+        producto_id = int(pid)
         cantidad = int(data['cantidad'])
         descripcion = data.get('descripcion', '')
         ubicacion_id = int(data['ubicacion_id']) if data.get('ubicacion_id') else None
