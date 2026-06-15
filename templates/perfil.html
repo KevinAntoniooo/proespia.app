@@ -283,7 +283,10 @@
                                 Se perderán clientes, equipos, bitácoras, visitas, bóveda, productos y vehículos.
                                 Las categorías de bodega y Bodega Central se recrearán automáticamente.
                             </p>
-                            <div class="d-flex flex-column flex-md-row justify-content-md-end">
+                            <div class="d-flex flex-column flex-md-row gap-2 justify-content-md-end">
+                                <button type="button" class="btn btn-outline-info w-100 w-md-auto" onclick="respaldarBD(this)">
+                                    <i class="fa-solid fa-download me-2"></i>Respaldar Base de Datos
+                                </button>
                                 <button type="button" class="btn btn-danger w-100 w-md-auto" data-bs-toggle="modal" data-bs-target="#modalWipeDB">
                                     <i class="fa-solid fa-radiation me-2"></i>Limpiar Base de Datos
                                 </button>
@@ -322,6 +325,34 @@
 
 <script>
     {% if usuario.es_super_admin() %}
+    function respaldarBD(btn) {
+        var orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Respaldando...';
+        fetch('/admin/backup_db')
+        .then(function(r) {
+            if (!r.ok) { return r.json().then(function(d) { throw new Error(d.msg || 'Error al respaldar'); }); }
+            return r.blob();
+        })
+        .then(function(blob) {
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = blob.name || ('proespia_backup_' + new Date().toISOString().slice(0,10) + '.sql');
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            btn.disabled = false;
+            btn.innerHTML = orig;
+        })
+        .catch(function(err) {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            var errDiv = document.getElementById('errorWipeDB');
+            if (errDiv) { errDiv.textContent = err.message; errDiv.classList.remove('d-none'); }
+        });
+    }
     document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('inputWipeConfirm')?.addEventListener('input', function() {
             document.getElementById('btnWipeDB').disabled = this.value !== 'LIMPIAR';

@@ -1003,6 +1003,54 @@ def admin_wipe_db():
         db.session.rollback()
         return jsonify({'ok': False, 'msg': str(e)}), 500
 
+@app.route('/admin/backup_db', methods=['GET'])
+@login_required
+def admin_backup_db():
+    if not current_user.es_super_admin() or not current_user.puede_acceder():
+        return jsonify({'ok': False, 'msg': 'Solo el Súper Admin puede ejecutar esta acción.'}), 403
+
+    import subprocess, tempfile, datetime as dt
+    ts = dt.datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    try:
+        if _is_postgres:
+            from urllib.parse import urlparse
+            parsed = urlparse(_db_url)
+            db_name = parsed.path.lstrip('/')
+            result = subprocess.run(
+                ['pg_dump', '--no-owner', '--no-acl', '-h', parsed.hostname, '-p', str(parsed.port or 5432),
+                 '-U', parsed.username, db_name],
+                capture_output=True, text=True, env={'PGPASSWORD': parsed.password},
+                timeout=60
+            )
+            if result.returncode != 0:
+                return jsonify({'ok': False, 'msg': f'pg_dump error: {result.stderr[:200]}'}), 500
+            content = result.stdout.encode('utf-8')
+            filename = f'proespia_backup_{ts}.sql'
+        else:
+            db_path = None
+            uri = app.config['SQLALCHEMY_DATABASE_URI']
+            if uri.startswith('sqlite:///'):
+                rel = uri.replace('sqlite:///', '', 1)
+                db_path = os.path.join(app.instance_path, rel) if not os.path.isabs(rel) else rel
+            if not db_path or not os.path.exists(db_path):
+                return jsonify({'ok': False, 'msg': 'Archivo de base de datos no encontrado.'}), 500
+            content = open(db_path, 'rb').read()
+            filename = f'proespia_backup_{ts}.db'
+
+        return send_file(
+            io.BytesIO(content),
+            mimetype='application/octet-stream',
+            as_attachment=True,
+            download_name=filename
+        )
+    except subprocess.TimeoutExpired:
+        return jsonify({'ok': False, 'msg': 'La operación excedió el tiempo máximo (60s).'}), 500
+    except FileNotFoundError:
+        return jsonify({'ok': False, 'msg': 'pg_dump no está instalado en el servidor.'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'msg': str(e)}), 500
+
 # ==========================================
 # 4. DASHBOARD PRINCIPAL
 # ==========================================
